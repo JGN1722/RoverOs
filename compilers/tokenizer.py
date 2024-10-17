@@ -103,9 +103,9 @@ def GetString():
 	
 	if not lookahead == chr(34):
 		Expected("String")
+	GetChar()
 	token = "s"
 	value = ""
-	GetChar()
 	while not lookahead == chr(34):
 		if lookahead == "\0":
 			abort("unfinished string literal")

@@ -2,6 +2,9 @@ def StackAlloc(n):
 	if n != 0:
 		EmitLn("SUB esp, " + str(n * 4))
 
+def CleanStack(n):
+	EmitLn("ADD esp, " + str(n))
+
 def Clear():
 	EmitLn("MOV eax, 0")
 
@@ -125,6 +128,38 @@ def DereferenceLocal(o, size):
 	else:
 		EmitLn("MOV ebx, DWORD [ebp - " + str(o * 4 + 4) + "]")
 	EmitLn("MOV " + size + " [ebx], " + register)
+
+def LoadDereferenceGlobal(n, size):
+	if size == "DWORD":
+		register = "eax"
+	elif size == "WORD":
+		register = "ax"
+	elif size == "BYTE":
+		register = "al"
+	else:
+		register = ""
+	
+	EmitLn("MOV ebx, DWORD [V_" + n + "]")
+	EmitLn("MOV eax, 0")
+	EmitLn("MOV " + register + ", " + size + " [ebx]")
+
+def LoadDereferenceLocal(o, size):
+	if size == "DWORD":
+		register = "eax"
+	elif size == "WORD":
+		register = "ax"
+	elif size == "BYTE":
+		register = "al"
+	else:
+		register = ""
+	
+	o -= local_param_number
+	if o < 0:
+		EmitLn("MOV ebx, DWORD [ebp + " + str((-o + 1) * 4) + "]")
+	else:
+		EmitLn("MOV ebx, DWORD [ebp - " + str(o * 4 + 4) + "]")
+	EmitLn("MOV eax, 0")
+	EmitLn("MOV " + register + ", " + size + " [ebx]")
 
 def LoadConst(n):
 	EmitLn("MOV eax, " + n)
@@ -277,6 +312,9 @@ def NewLabel():
 
 def PutLabel(l):
 	EmitLn(l + ":")
+
+def LoadLabel(l):
+	EmitLn("MOV eax, " + l)
 
 
 

@@ -41,7 +41,9 @@ def convert_to_bin(file_path):
 	return base + '.bin'
 
 def compile():
-	global source_file
+	global source_file, output, output_data
+	
+	output += output_data
 	
 	if len(sys.argv) >= 3:
 		output_file = sys.argv[2]
@@ -98,6 +100,8 @@ output += "use32\n"
 output += "org " + str(0x7e00 + 512) + "\n"
 output += "JMP V_MAIN\n" # Immediately add the entry point code
 
+output_data = ""
+
 def dbg():
 	print("token: ", token)
 	print("value: ", value)
@@ -111,6 +115,10 @@ def Emit(s):
 def EmitLn(s):
 	Emit(s + "\n")
 
+def EmitLnData(s):
+	global output_data
+	
+	output_data += s + "\n"
 
 # Parsing unit
 
@@ -122,8 +130,14 @@ def program():
 			IncludeFile()
 		elif IsType(value):
 			Function()
+		elif token == "#":
+			PrettyConstantDeclaration()
 		else:
-			Expected("function declaration")
+			n = value
+			Next()
+			if not token == "=":
+				Expected("function declaration")
+			ConstantDeclaration(n)
 
 def IncludeFile():
 	global source_text, streampos, lookahead
@@ -140,7 +154,7 @@ def IncludeFile():
 		new_source_file = os.path.dirname(abs_source_file) + "\\" + value
 	
 	if not os.path.isfile(new_source_file):
-		abort("source file not found")
+		abort("source file not found (" + new_source_file + ")")
 	
 	text_to_add = open(new_source_file).read()
 	source_text = source_text[:(streampos-1)] + text_to_add + source_text[(streampos-1):]
@@ -148,6 +162,32 @@ def IncludeFile():
 	lookahead = source_text[streampos-1]
 	
 	Next()
+
+def PrettyConstantDeclaration():
+	MatchString("#")
+	n = value
+	Next()
+	ConstantDeclaration(n)
+
+def ConstantDeclaration(n):
+	MatchString("=")
+	Emit(n + " = ")
+	
+	if not token == "0":
+		Expected("litteral constant")
+	
+	Emit(value)
+	Next()
+	
+	while token == "+" or token == "-" or token == "*":
+		Emit(token)
+		Next()
+		if not token == "0":
+			Expected("litteral constant")
+		Emit(value)
+		Next()
+	
+	Emit("\n")
 
 #_________________________________________________________________________________________
 # Functions and blocks
@@ -233,9 +273,7 @@ def Block(L):
 	StackAlloc(block_loc_vars_count)
 	
 	while not token == "}":
-		if token == "[":
-			BracketsDereferencing()
-		elif token == "*":
+		if token == "*":
 			StarDereferencing()
 		elif IsSize(value):
 			Dereferencing()
@@ -267,7 +305,7 @@ def Block(L):
 			if get_symbol_type(value) == IDENTIFIER_VARIABLE:
 				AssignStatement()
 			elif get_symbol_type(value) == IDENTIFIER_FUNCTION:
-				CallProc(value)
+				CallProcStatement()
 			else:
 				abort("unrecognized identifier")
 	
@@ -279,16 +317,31 @@ def DoPass():
 	MatchString(".")
 	MatchString(".")
 
-def CallProc(name):
+def CallProcStatement():
+	name = value
 	Next()
-	MatchString("(")
-	ParamList()
-	MatchString(")")
+	CallProc(name)
 	MatchString(";")
+
+def CallProc(name):
+	MatchString("(")
+	param_number = ParamList()
+	MatchString(")")
 	JmpToProc(name)
+	CleanStack(param_number)
 
 def ParamList():
-	...
+	if value == ")":
+		return 0
+	BoolExpression()
+	Push()
+	param_number = 4
+	while token == ",":
+		Next()
+		BoolExpression()
+		Push()
+		param_number += 4
+	return param_number
 
 def AssignStatement():
 	Assignement()
@@ -369,19 +422,6 @@ def DoReturn():
 	MatchString(";")
 	Branch("RET_" + current_function)
 
-def BracketsDereferencing(size="DWORD"):
-	MatchString("[")
-	n = value
-	Next()
-	MatchString("]")
-	MatchString("=")
-	BoolExpression()
-	if is_global_symbol(n):
-		DereferenceGlobal(n, size)
-	else:
-		DereferenceLocal(get_local_symbol_offset(n), size)
-	MatchString(";")
-
 def StarDereferencing(size="DWORD"):
 	MatchString("*")
 	n = value
@@ -397,10 +437,14 @@ def StarDereferencing(size="DWORD"):
 def Dereferencing():
 	size = value
 	Next()
-	if token == "[":
-		BracketsDereferencing(size)
-	elif token == "*":
-		StarDereferencing(size)
+	StarDereferencing(size)
+
+def LoadPointerContent(n,size):
+	if is_global_symbol(n):
+		LoadDereferenceGlobal(n,size)
+	else:
+		LoadDereferenceLocal(get_local_symbol_offset(n),size)
+		
 
 #_________________________________________________________________________________________
 # Control structures
@@ -408,8 +452,6 @@ def DoIf(L):
 	MatchString("IF")
 	L1 = NewLabel()
 	BoolExpression()
-	if value == "THEN":
-		MatchString("THEN")
 	L2 = NewLabel()
 	BranchFalse(L2)
 	Block(L)
@@ -418,9 +460,6 @@ def DoIf(L):
 	while value == "ELSEIF":
 		MatchString("ELSEIF")
 		BoolExpression()
-		if value == "THEN":
-			MatchString("THEN")
-		MatchString("{")
 		L2 = NewLabel()
 		BranchFalse(L2)
 		Block(L)
@@ -522,24 +561,50 @@ def BitWiseFactor():
 	elif token == "x":
 		n = value
 		Next()
+		if is_global_symbol(n) or is_local_symbol(n):
+			if get_symbol_type(n) == IDENTIFIER_VARIABLE:
+				if get_data_type(n) != "INT":
+					abort("Type mismatch, variable " + n + " is not of type INT")
+				if is_global_symbol(n):
+					LoadGlobal(n)
+				else:
+					LoadLocal(get_local_symbol_offset(n))
+			elif get_symbol_type(n) == IDENTIFIER_FUNCTION:
+				CallProc(n)
+			else:
+				abort("unexpected identifier type")
+		elif IsSize(n):
+			size = n
+			MatchString("*")
+			n = value
+			Next()
+			LoadPointerContent(n,size)
 	#	if GetIdentType(n) == "procedure":
 	#		if GetDataType(n) != "INT":
 	#			Abort("Type mismatch, procedure " + n + " is not of type INT")
 	#		CallProc(n)
-		if is_global_symbol(n) or is_local_symbol(n):
-			if get_data_type(n) != "INT":
-				abort("Type mismatch, variable " + n + " is not of type INT")
-			if is_global_symbol(n):
-				LoadGlobal(n)
-			else:
-				LoadLocal(get_local_symbol_offset(n))
 	#	ElseIf Constants.Exists(n) Then
 	#		If Constants.Item(n)(0) <> "INT" Then Abort("Type mismatch, constant " & n & " is not of type INT")
 	#		LoadConstant(n)
-	#	else:
-	#		Undefined(n)
+		else:
+			Undefined(n)
+	elif token == "*":
+		size = "DWORD"
+		MatchString("*")
+		n = value
+		Next()
+		LoadPointerContent(n,size)
+	elif token == "#":
+		MatchString("#")
+		LoadConst(value)
+		Next()
 	elif token == "0":
 		LoadConst(value)
+		Next()
+	elif token == "s":
+		L = NewLabel()
+		EmitLnData(FormatString(L, value))
+		LoadLabel(L)
 		Next()
 	else:
 		Expected("Math Factor")
@@ -722,7 +787,7 @@ def BoolTerm():
 		PopAnd()
 
 def BoolOr():
-	Next1()
+	Next()
 	BoolTerm()
 	PopOr()
 

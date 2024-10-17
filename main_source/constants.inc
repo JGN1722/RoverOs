@@ -1,6 +1,11 @@
-; the first inodes will be loaded 512 bytes before the
-; kernel code
-; we must ensure that these 512 bytes don't overwrite
-; anything important, the bootloader for instance
-KERNEL_ADDRESS equ 0x7e00 + 512
-STACK_ADDRESS equ 0x520
+KERNEL_ADDRESS = 0x7e00 + 512
+STACK_ADDRESS = 0x520
+
+
+VIDEO_MEMORY = 0xB8000
+WHITE_ON_BLACK = 0x0f
+MAX_ROWS = 25
+MAX_COLS = 80
+
+REG_SCREEN_CTRL = 0x3D4
+REG_SCREEN_DATA = 0x3D5

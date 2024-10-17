@@ -1,18 +1,22 @@
+include "C:\Users\comedelfini--thibaud\Desktop\RoverOs\main_source\constants.inc"
 include "C:\Users\comedelfini--thibaud\Desktop\RoverOs\kernel\io\io_driver.rl"
 
 int main() {
-	int videomem_addr, white_on_black;
-	
-	videomem_addr = 0xB8000;
-	white_on_black = 0x0f;
-	
 	clear_screen();
 	
-	BYTE *videomem_addr = 'B';
-	videomem_addr++;
-	BYTE *videomem_addr = white_on_black;
-
+	printf("Hello\n");
+	printf("This is a test\r");
 	
-	\ hang \
+	putchar("A",5,2);
+	putchar("B",5,1);
+	putchar("C",5,0);
+	
+	set_cursor_pos(0, #MAX_ROWS - 3);
+	
+	do {
+		printf("Hey There!\r\n");
+		sleep();
+	}
+	
 	do {}
 }

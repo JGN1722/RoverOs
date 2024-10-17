@@ -6,6 +6,11 @@ use16
 org 0x7c00
 
 jmp     0x0000:start            ; set CS to 0, just in case it's not already done
+				; that also allows us to put the GDT at the
+				; top and jump over it, so the labels are
+				; defined in the rest of the code
+
+include 'c:\users\comedelfini--thibaud\desktop\RoverOs\boot\gdt.asm'
 
 start:
 mov     [BOOT_DRIVE], dl        ; save the boot drive for later
@@ -17,9 +22,6 @@ mov     ss, ax
 
 mov     bp, STACK_ADDRESS       ; set up the stack
 mov     sp, bp
-
-mov     bx, MSG_REAL_MODE       ; inform the user that the bootloader started successfully
-call    print_string
 
                                 ; load the kernel inode
                                 ; it is at address 1024 + 512 + 64 (bootloader + superblock + root inode)
@@ -55,12 +57,15 @@ shl     ah, 1                   ; verify that we read the expected number of sec
 cmp     ah, al
 jne     disk_error
 
-call    switch_to_pm
+.pmode_switch:
+cli
 
-;_____________________________________________________________
-;infinite loop
+lgdt [gdt_descriptor]
 
-jmp     $
+mov eax, cr0
+or  eax, 0x1
+mov cr0, eax
+jmp CODE_SEG:init_pm
 
 ;_____________________________________________________________
 ;error messages
@@ -73,37 +78,30 @@ jmp     $
 ;16 bits data and includes
 
 BOOT_DRIVE db 0
-MSG_REAL_MODE:
-db 'Jumping to protected mode...',0
 MSG_ERR_PROT_MODE:
 db 'Error while trying to jump to protected mode',0
 MSG_ERR_DISK:
 db 'Error while reading disk',0
 
-include 'c:\users\comedelfini--thibaud\desktop\RoverOs\boot\io\print_string.asm'
-include 'c:\users\comedelfini--thibaud\desktop\RoverOs\boot\pm\gdt.asm'
-include 'c:\users\comedelfini--thibaud\desktop\RoverOs\boot\pm\switch_to_pm.asm'
+include 'c:\users\comedelfini--thibaud\desktop\RoverOs\boot\print_string.asm'
 
 ;_____________________________________________________________
 ;real mode code
 use32
 
-BEGIN_PM:
-call    hide_bios_cursor
+init_pm:
+mov	ax, DATA_SEG
+mov	ds, ax
+mov	ss, ax
+mov	es, ax
+mov	fs, ax
+mov	gs, ax
 
-mov     ebx, MSG_PROT_MOD
-call    print_string_pm
+mov	ebp, STACK_ADDRESS
+mov	esp, ebp
 
 jmp     CODE_SEG:KERNEL_ADDRESS ; jump to the kernel code
 
-jmp     $                       ; hang if we ever return from the kernel
-
-;_____________________________________________________________
-;32 bits data and includes
-include 'c:\users\comedelfini--thibaud\desktop\RoverOs\boot\pm\io_pm.asm'
-
-MSG_PROT_MOD:
-db 'Starting protected mode...',0
 ;_____________________________________________________________
 ;padding and signature
 
