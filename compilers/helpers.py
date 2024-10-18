@@ -31,7 +31,6 @@ def IsKeyword(t):
 	return t in keyword_list
 
 def FormatString(L, s):
-	print("formatting",s)
 	# Define a dictionary to map C-style escape sequences to their ASCII equivalents
 	escape_sequences = {
 		r'\n': '\n',  # newline
@@ -62,5 +61,4 @@ def FormatString(L, s):
 	# Remove the trailing ", " and append the terminator
 	r = r.rstrip(", ") + ", 0"
 	
-	print("returning",L + " db " + r)
 	return L + " db " + r

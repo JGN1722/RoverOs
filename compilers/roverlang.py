@@ -60,6 +60,9 @@ def abort(s):
 	print("Error: " + s, file=sys.stderr)
 	sys.exit()
 
+def Warning(s):
+	print("Warning: " + s)
+
 def Undefined(n):
 	if IsKeyword(n):
 		abort("keyword is misplaced ( " + n + " )")
@@ -174,17 +177,18 @@ def ConstantDeclaration(n):
 	Emit(n + " = ")
 	
 	if not token == "0":
-		Expected("litteral constant")
-	
-	Emit(value)
+		Emit(value) # This is another constant
+	else:
+		Emit(value)
 	Next()
 	
 	while token == "+" or token == "-" or token == "*":
 		Emit(token)
 		Next()
 		if not token == "0":
-			Expected("litteral constant")
-		Emit(value)
+			Emit(value) # This is another constant
+		else:
+			Emit(value)
 		Next()
 	
 	Emit("\n")
@@ -300,14 +304,18 @@ def Block(L):
 		elif token == "s":
 			Next()
 		else:
-			if not is_global_symbol(value) and not is_local_symbol(value):
-				Undefined(value)
 			if get_symbol_type(value) == IDENTIFIER_VARIABLE:
 				AssignStatement()
 			elif get_symbol_type(value) == IDENTIFIER_FUNCTION:
 				CallProcStatement()
 			else:
-				abort("unrecognized identifier")
+				n = value
+				Next()
+				if not token == "(":
+					Undefined(n)
+				Warning("call to undefined function (" + n + ")")
+				CallProc(n)
+				MatchString(";")
 	
 	local_symbol_table = local_symbol_table[:old_local_identifier_number]
 	MatchString("}")
@@ -553,11 +561,8 @@ def BitWiseFactor():
 		MatchString(")")
 	elif token == "@":
 		MatchString("@")
-		if GetIdentType(value) != "":
-			LoadPointer(value)
-			Next()
-		else:
-			Undefined(value)
+		LoadPointer(value)
+		Next()
 	elif token == "x":
 		n = value
 		Next()
@@ -579,13 +584,6 @@ def BitWiseFactor():
 			n = value
 			Next()
 			LoadPointerContent(n,size)
-	#	if GetIdentType(n) == "procedure":
-	#		if GetDataType(n) != "INT":
-	#			Abort("Type mismatch, procedure " + n + " is not of type INT")
-	#		CallProc(n)
-	#	ElseIf Constants.Exists(n) Then
-	#		If Constants.Item(n)(0) <> "INT" Then Abort("Type mismatch, constant " & n & " is not of type INT")
-	#		LoadConstant(n)
 		else:
 			Undefined(n)
 	elif token == "*":
@@ -628,7 +626,6 @@ def ShiftArRight():
 	MatchString("SAR")
 	BitWiseFactor()
 	PopArShiftRight()
-
 
 def Factor():
 	BitWiseFactor()

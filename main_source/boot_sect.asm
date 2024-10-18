@@ -57,7 +57,7 @@ shl     ah, 1                   ; verify that we read the expected number of sec
 cmp     ah, al
 jne     disk_error
 
-.pmode_switch:
+.32bits_mode_switch:
 cli
 
 lgdt [gdt_descriptor]
