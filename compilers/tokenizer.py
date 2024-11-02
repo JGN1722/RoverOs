@@ -63,22 +63,27 @@ def GetNum():
 	if value == "0":
 		if lookahead.upper() == "X":
 			base = 16
-			value += lookahead
 			GetChar()
 		elif lookahead.upper() == "B":
 			base = 2
-			value += lookahead
 			GetChar()
 		elif not IsDigit(lookahead) and IsAlpha(lookahead):
 			abort("unexpected number base")
+		else:
+			base = 10
 	else:
 		base = 10
 	
 	while IsDigit(lookahead) or lookahead.upper() == "X" or IsHexDigit(lookahead):
-		if (IsHexDigit(lookahead) and not IsDigit(lookahead) and base != 16) or (base == 2 and lookahead != 0 and lookahead != 1):
-			abort("unexpected character in digit ( " + lookahead + " )")
+		if (IsHexDigit(lookahead) and not IsDigit(lookahead) and base != 16) or (base == 2 and lookahead != "0" and lookahead != "1"):
+			abort("unexpected character in digit ( " + lookahead + " ) in base " + str(base))
 		value += lookahead
 		GetChar()
+	
+	if base == 16:
+		value += "h"
+	elif base == 2:
+		value += "b"
 
 def GetOp():
 	global lookahead, token, value

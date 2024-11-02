@@ -131,6 +131,8 @@ def program():
 	while token != "\0":
 		if value == "INCLUDE":
 			IncludeFile()
+		elif value == "GLOBAL":
+			GlobalDeclaration()
 		elif IsType(value):
 			Function()
 		elif token == "#":
@@ -192,6 +194,40 @@ def ConstantDeclaration(n):
 		Next()
 	
 	Emit("\n")
+
+def GlobalDeclaration():
+	MatchString("GLOBAL")
+	if not IsType(value):
+		Expected("type")
+	Next()
+	add_global_symbol(value)
+	if token == "=":
+		MatchString("=");
+		if not token == "0":
+			Expected("Literal numeric constant")
+		v = value
+	else:
+		v = "0"
+	DeclareGlobalVar(value, v)
+	Next()
+	
+	if token == ",":
+		MatchString(",");
+		if not IsType(value):
+			Expected("type")
+		Next()
+		add_global_symbol(value)
+		if token == "=":
+			MatchString("=");
+			if not token == "0":
+				Expected("Literal numeric constant")
+			v = value
+		else:
+			v = 0
+		DeclareGlobalVar(value, v)
+		Next()
+	
+	MatchString(";")
 
 #_________________________________________________________________________________________
 # Functions and blocks

@@ -1,3 +1,6 @@
+def DeclareGlobalVar(n, val):
+	EmitLnData("V_" + n + " db " + val);
+
 def StackAlloc(n):
 	if n != 0:
 		EmitLn("SUB esp, " + str(n * 4))

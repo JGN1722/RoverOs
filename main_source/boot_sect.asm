@@ -1,4 +1,4 @@
-include 'c:\users\comedelfini--thibaud\desktop\RoverOs\main_source\constants.inc'
+include 'constants.inc'
 
 ;a simple boot sector
 ;_____________________________________________________________
@@ -10,7 +10,7 @@ jmp     0x0000:start            ; set CS to 0, just in case it's not already don
 				; top and jump over it, so the labels are
 				; defined in the rest of the code
 
-include 'c:\users\comedelfini--thibaud\desktop\RoverOs\boot\gdt.asm'
+include '..\boot\gdt.asm'
 
 start:
 mov     [BOOT_DRIVE], dl        ; save the boot drive for later
@@ -83,7 +83,7 @@ db 'Error while trying to jump to protected mode',0
 MSG_ERR_DISK:
 db 'Error while reading disk',0
 
-include 'c:\users\comedelfini--thibaud\desktop\RoverOs\boot\print_string.asm'
+include '..\boot\print_string.asm'
 
 ;_____________________________________________________________
 ;real mode code

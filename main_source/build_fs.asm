@@ -1,6 +1,6 @@
 format PE console
 entry start
-include 'C:\Users\comedelfini--thibaud\Desktop\fasm\INCLUDE\win32a.inc'
+include '..\compilers\INCLUDE\win32a.inc'
 
 boot_sect_size  equ 512
 superblock_size equ 1024
