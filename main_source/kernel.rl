@@ -3,13 +3,7 @@ include "..\kernel\low_level.rl"
 
 \ Drivers \
 include "..\kernel\drivers\vga.rl"
-include "..\kernel\drivers\keyboard.rl"
-include "..\kernel\drivers\ps2.rl"
 
-\ Interrupts \
-include "..\kernel\interrupts\interrupts.rl"
-include "..\kernel\interrupts\exceptions.rl"
-include "..\kernel\interrupts\irqs.rl"\
 
 int main() {
 	init_vga();

@@ -7,16 +7,13 @@ int init_vga() {
 }
 
 int set_terminal_color(int col) {
-	printf("there");
 	terminal_color = col;
 }
 
 int set_blinking(int b) {
 	if b = 0 {
-		printf("b is 0\r\n");
 		set_terminal_color(terminal_color & 0x7f);
 	} else {
-		printf("b isn't 0\r\n");
 		set_terminal_color((terminal_color & 0x7f) + 0x80);
 	}
 }

@@ -105,10 +105,6 @@ RET
 V_SET_TERMINAL_COLOR:
 PUSH ebp
 MOV ebp, esp
-MOV eax, L0
-PUSHD eax
-CALL V_PRINTF
-ADD esp, 4
 MOV eax, DWORD [ebp + 8]
 MOV DWORD [V_TERMINAL_COLOR], eax
 RET_SET_TERMINAL_COLOR:
@@ -128,11 +124,7 @@ MOV eax, 0
 SETE al
 IMUL eax, 0xFFFFFFFF
 TEST eax, eax
-JZ L2
-MOV eax, L3
-PUSHD eax
-CALL V_PRINTF
-ADD esp, 4
+JZ L1
 MOV eax, DWORD [V_TERMINAL_COLOR]
 PUSHD eax
 MOV eax, 07fh
@@ -141,12 +133,8 @@ ADD esp, 4
 PUSHD eax
 CALL V_SET_TERMINAL_COLOR
 ADD esp, 4
-JMP L1
-L2:
-MOV eax, L4
-PUSHD eax
-CALL V_PRINTF
-ADD esp, 4
+JMP L0
+L1:
 MOV eax, DWORD [V_TERMINAL_COLOR]
 PUSHD eax
 MOV eax, 07fh
@@ -159,8 +147,8 @@ ADD esp, 4
 PUSHD eax
 CALL V_SET_TERMINAL_COLOR
 ADD esp, 4
-JMP L1
-L1:
+JMP L0
+L0:
 RET_SET_BLINKING:
 MOV esp, ebp
 POP ebp
@@ -302,12 +290,12 @@ MOV eax, 0
 SETE al
 IMUL eax, 0xFFFFFFFF
 TEST eax, eax
-JZ L6
+JZ L3
 MOV eax, DWORD [V_TERMINAL_COLOR]
 MOV DWORD [ebp + 8], eax
-JMP L5
-L6:
-L5:
+JMP L2
+L3:
+L2:
 MOV eax, DWORD [ebp + 16]
 PUSHD eax
 MOV eax, 0
@@ -340,7 +328,7 @@ IMUL eax, 0xFFFFFFFF
 OR eax, DWORD [esp]
 ADD esp, 4
 TEST eax, eax
-JZ L8
+JZ L5
 CALL V_GET_CURSOR_POS
 ADD esp, 0
 MOV DWORD [ebp - 4], eax
@@ -380,13 +368,13 @@ MOV eax, 0
 SETE al
 IMUL eax, 0xFFFFFFFF
 TEST eax, eax
-JZ L10
+JZ L7
 MOV eax, 0
 MOV DWORD [ebp - 12], eax
 MOV eax, DWORD [ebp + 12]
 MOV DWORD [ebp - 16], eax
-JMP L9
-L10:
+JMP L6
+L7:
 MOV ebx, DWORD [ebp + 20]
 MOV eax, 0
 MOV al, BYTE [ebx]
@@ -399,7 +387,7 @@ MOV eax, 0
 SETE al
 IMUL eax, 0xFFFFFFFF
 TEST eax, eax
-JZ L11
+JZ L8
 MOV eax, DWORD [ebp + 16]
 MOV DWORD [ebp - 12], eax
 MOV eax, DWORD [ebp + 12]
@@ -408,8 +396,8 @@ MOV eax, 1
 ADD eax, DWORD [esp]
 ADD esp, 4
 MOV DWORD [ebp - 16], eax
-JMP L9
-L11:
+JMP L6
+L8:
 MOV eax, MAX_COLS
 PUSHD eax
 MOV eax, DWORD [ebp + 12]
@@ -455,7 +443,7 @@ MOV eax, 0
 SETB al
 IMUL eax, 0xFFFFFFFF
 TEST eax, eax
-JZ L13
+JZ L10
 MOV eax, DWORD [ebp + 16]
 PUSHD eax
 MOV eax, 1
@@ -464,8 +452,8 @@ ADD esp, 4
 MOV DWORD [ebp - 12], eax
 MOV eax, DWORD [ebp + 12]
 MOV DWORD [ebp - 16], eax
-JMP L12
-L13:
+JMP L9
+L10:
 MOV eax, 0
 MOV DWORD [ebp - 12], eax
 MOV eax, DWORD [ebp + 12]
@@ -474,10 +462,10 @@ MOV eax, 1
 ADD eax, DWORD [esp]
 ADD esp, 4
 MOV DWORD [ebp - 16], eax
-JMP L12
-L12:
 JMP L9
 L9:
+JMP L6
+L6:
 MOV eax, DWORD [ebp - 16]
 PUSHD eax
 MOV eax, MAX_ROWS
@@ -488,22 +476,22 @@ MOV eax, 0
 SETGE al
 IMUL eax, 0xFFFFFFFF
 TEST eax, eax
-JZ L15
+JZ L12
 MOV eax, 1
 SUB DWORD [ebp - 16], eax
 CALL V_SCROLL
 ADD esp, 0
-JMP L14
-L15:
-L14:
+JMP L11
+L12:
+L11:
 MOV eax, DWORD [ebp - 12]
 PUSHD eax
 MOV eax, DWORD [ebp - 16]
 PUSHD eax
 CALL V_SET_CURSOR_POS
 ADD esp, 8
-JMP L7
-L8:
+JMP L4
+L5:
 MOV eax, MAX_COLS
 PUSHD eax
 MOV eax, DWORD [ebp + 12]
@@ -539,8 +527,8 @@ ADD eax, DWORD [esp]
 ADD esp, 4
 MOV ebx, DWORD [ebp - 8]
 MOV WORD [ebx], ax
-JMP L7
-L7:
+JMP L4
+L4:
 RET_PUTCHAR:
 MOV esp, ebp
 POP ebp
@@ -548,7 +536,7 @@ RET
 V_PRINTF:
 PUSH ebp
 MOV ebp, esp
-L16:
+L13:
 MOV ebx, DWORD [ebp + 8]
 MOV eax, 0
 MOV al, BYTE [ebx]
@@ -561,7 +549,7 @@ MOV eax, 0
 SETNE al
 IMUL eax, 0xFFFFFFFF
 TEST eax, eax
-JZ L17
+JZ L14
 MOV eax, DWORD [ebp + 8]
 PUSHD eax
 MOV eax, 0
@@ -583,8 +571,8 @@ PUSHD eax
 CALL V_PUTCHAR
 ADD esp, 16
 INC DWORD [ebp + 8]
-JMP L16
-L17:
+JMP L13
+L14:
 RET_PRINTF:
 MOV esp, ebp
 POP ebp
@@ -595,7 +583,7 @@ MOV ebp, esp
 SUB esp, 4
 MOV eax, 0
 MOV DWORD [ebp - 4], eax
-L18:
+L15:
 MOV eax, DWORD [ebp - 4]
 PUSHD eax
 MOV eax, 0FFFFFh
@@ -606,10 +594,10 @@ MOV eax, 0
 SETB al
 IMUL eax, 0xFFFFFFFF
 TEST eax, eax
-JZ L19
+JZ L16
 INC DWORD [ebp - 4]
-JMP L18
-L19:
+JMP L15
+L16:
 RET_SLEEP:
 MOV esp, ebp
 POP ebp
@@ -619,11 +607,11 @@ PUSH ebp
 MOV ebp, esp
 CALL V_INIT_VGA
 ADD esp, 0
-MOV eax, L20
+MOV eax, L17
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
-MOV eax, L21
+MOV eax, L18
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
@@ -635,7 +623,7 @@ MOV eax, 1
 PUSHD eax
 CALL V_SET_BLINKING
 ADD esp, 4
-MOV eax, L22
+MOV eax, L19
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
@@ -643,18 +631,18 @@ MOV eax, 0
 PUSHD eax
 CALL V_SET_BLINKING
 ADD esp, 4
-MOV eax, L23
+MOV eax, L20
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
-MOV eax, L24
+MOV eax, L21
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
-L25:
+L22:
 hlt
-JMP L25
-L26:
+JMP L22
+L23:
 RET_MAIN:
 MOV esp, ebp
 POP ebp
@@ -663,7 +651,7 @@ V_KEYBOARD_HANDLER:
 PUSH ebp
 MOV ebp, esp
 pushad
-MOV eax, L27
+MOV eax, L24
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
@@ -688,12 +676,9 @@ MOV esp, ebp
 POP ebp
 RET
 V_TERMINAL_COLOR db 0
-L0 db 116, 104, 101, 114, 101, 0
-L3 db 98, 32, 105, 115, 32, 48, 13, 10, 0
-L4 db 98, 32, 105, 115, 110, 39, 116, 32, 48, 13, 10, 0
-L20 db 73, 110, 105, 116, 105, 97, 108, 105, 122, 105, 110, 103, 32, 116, 104, 101, 32, 115, 121, 115, 116, 101, 109, 46, 46, 46, 13, 10, 0
-L21 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 105, 110, 116, 101, 114, 114, 117, 112, 116, 115, 46, 46, 46, 13, 10, 0
-L22 db 84, 104, 105, 115, 32, 115, 104, 111, 117, 108, 100, 32, 98, 108, 105, 110, 107, 13, 10, 0
-L23 db 84, 104, 105, 115, 32, 115, 104, 111, 117, 108, 100, 110, 39, 116, 13, 10, 0
-L24 db 97, 108, 108, 32, 100, 111, 110, 101, 44, 32, 104, 97, 110, 103, 105, 110, 103, 13, 10, 0
-L27 db 75, 101, 121, 32, 112, 114, 101, 115, 115, 101, 100, 33, 13, 10, 0
+L17 db 73, 110, 105, 116, 105, 97, 108, 105, 122, 105, 110, 103, 32, 116, 104, 101, 32, 115, 121, 115, 116, 101, 109, 46, 46, 46, 13, 10, 0
+L18 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 105, 110, 116, 101, 114, 114, 117, 112, 116, 115, 46, 46, 46, 13, 10, 0
+L19 db 84, 104, 105, 115, 32, 115, 104, 111, 117, 108, 100, 32, 98, 108, 105, 110, 107, 13, 10, 0
+L20 db 84, 104, 105, 115, 32, 115, 104, 111, 117, 108, 100, 110, 39, 116, 13, 10, 0
+L21 db 97, 108, 108, 32, 100, 111, 110, 101, 44, 32, 104, 97, 110, 103, 105, 110, 103, 13, 10, 0
+L24 db 75, 101, 121, 32, 112, 114, 101, 115, 115, 101, 100, 33, 13, 10, 0

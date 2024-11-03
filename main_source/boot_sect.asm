@@ -103,7 +103,10 @@ mov	esp, ebp
 jmp     CODE_SEG:KERNEL_ADDRESS ; jump to the kernel code
 
 ;_____________________________________________________________
-;padding and signature
+;padding, partition table and signature
 
-TIMES 510-($-$$) DB 0
-DW 0xAA55
+times 446-($-$$) db 0
+
+include '..\boot\partition_table.asm'
+
+dw 0xAA55
