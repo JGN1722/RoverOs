@@ -4,6 +4,7 @@ IDENTIFIER_FUNCTION = 2
 # The symbol table is an array of symbol classes
 global_symbol_table = []
 local_symbol_table = []
+struct_table = []
 local_param_number = 0
 
 class Symbol():
@@ -79,3 +80,36 @@ def get_symbol_type(n):
 	elif is_local_symbol(n):
 		return local_symbol_table[get_local_symbol_offset(n)].type
 	return None
+
+def is_struct(n):
+	return any(s["name"] == n for s in struct_table)
+
+def add_struct(n):
+	global struct_table
+	
+	if not is_struct(n):
+		struct_table.append({"name": n, "attributes": []})
+
+def get_struct_number(n):
+	for i in range(len(struct_table)):
+		if struct_table[i]["name"] == n:
+			return i
+	return -1
+
+def add_member(n, type, name):
+	global struct_table
+	
+	i = get_struct_number(n)
+	if struct_table[i]["attributes"] == []:
+		total_offset = 0
+	else:
+		total_offset = struct_table[i]["attributes"][-1][2] + SizeOf(struct_table[i]["attributes"][-1][1])
+	struct_table[i]["attributes"].append((name, type, total_offset))
+
+def get_member_info(n, attr):
+	global struct_table
+	
+	i = get_struct_number(n)
+	for a in struct_table[i]["attributes"]:
+		if a[0] == attr:
+			return a

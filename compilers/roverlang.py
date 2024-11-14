@@ -100,7 +100,7 @@ value = ""
 
 output = ""
 output += "use32\n"
-output += "org " + str(0x7e00 + 512) + "\n"
+output += "org " + str(0x7c00 + 512 + 512) + "\n"
 output += "JMP V_MAIN\n" # Immediately add the entry point code
 
 output_data = ""
@@ -133,6 +133,8 @@ def program():
 			IncludeFile()
 		elif value == "GLOBAL":
 			GlobalDeclaration()
+		elif value == "STRUCT":
+			StructDeclaration()
 		elif IsType(value):
 			Function()
 		elif token == "#":
@@ -230,6 +232,28 @@ def GlobalDeclaration():
 	MatchString(";")
 
 #_________________________________________________________________________________________
+# Structures and arrays
+def StructDeclaration():
+	MatchString("STRUCT")
+	name = value
+	add_struct(name)
+	Next()
+	MatchString("{")
+	while IsType(value) or IsSize(value):
+		t = value
+		Next()
+		n = value
+		Next()
+		add_member(name, t, n)
+		while value == ",":
+			MatchString(",")
+			n = value
+			Next()
+			add_member(name, t, n)
+		MatchString(";")
+	MatchString("}")
+
+#_________________________________________________________________________________________
 # Functions and blocks
 current_function = ""
 def Function():
@@ -285,7 +309,9 @@ def ArgList():
 def LocalDeclarations():
 	var_num = 0
 	
-	while IsType(value):
+	while IsType(value) or value == "STRUCT":
+		if value == "STRUCT":
+			Next()
 		variable_type = value
 		Next()
 		variable_name = value
@@ -347,6 +373,8 @@ def Block(L):
 			else:
 				n = value
 				Next()
+				if token == "[":
+					ArrayDereferencing()
 				if not token == "(":
 					Undefined(n)
 				Warning("call to undefined function (" + n + ")")
@@ -372,7 +400,8 @@ def CallProc(name):
 	param_number = ParamList()
 	MatchString(")")
 	JmpToProc(name)
-	CleanStack(param_number)
+	if param_number != 0:
+		CleanStack(param_number)
 
 def ParamList():
 	if value == ")":
@@ -396,6 +425,10 @@ def Assignement():
 		Undefined(value)
 	n = value
 	Next()
+	
+	if token == ".":
+		StructDereferencing(n)
+		return
 	
 	if token == "=":
 		MatchString("=")
@@ -445,6 +478,9 @@ def Assignement():
 			MulGlobal(n)
 		else:
 			MulLocal(get_local_symbol_offset(n))
+	
+	else:
+		Expected("=")
 
 def InlineAssembly():
 	MatchString("ASM")
@@ -478,10 +514,50 @@ def StarDereferencing(size="DWORD"):
 		DereferenceLocal(get_local_symbol_offset(n), size)
 	MatchString(";")
 
+def ArrayDereferencing(size="DWORD"):
+	n = value
+	Next()
+	MatchString("[")
+	BoolExpression()
+	MatchString("]")
+	PrimaryToSecondary()
+	LoadConst(str(SizeOf(size)))
+	MulPrimarySecondary()
+	PrimaryToSecondary()
+	if is_global_symbol(n):
+		LoadGlobal(n)
+	else:
+		LoadLocal(get_local_symbol_offset(n))
+	AddPrimarySecondary()
+	Push()
+	MatchString("=")
+	BoolExpression()
+	PopSecondary()
+	StoreDereferenceSecondary(size)
+	MatchString(";")
+
+def StructDereferencing(n):
+	MatchString(".")
+	attr = value
+	Next()
+	MatchString("=")
+	BoolExpression()
+	PrimaryToSecondary()
+	if is_global_symbol(n):
+		LoadGlobal(n)
+	else:
+		LoadLocal(get_local_symbol_offset(n))
+	AddToPrimary(str(get_member_info(get_data_type(n), attr)[2]))
+	XchgPrimarySecondary()
+	StoreDereferenceSecondary(get_member_info(get_data_type(n), attr)[1])
+
 def Dereferencing():
 	size = value
 	Next()
-	StarDereferencing(size)
+	if token != "*":
+		ArrayDereferencing(size)
+	else:
+		StarDereferencing(size)
 
 def LoadPointerContent(n,size):
 	if is_global_symbol(n):
@@ -605,8 +681,20 @@ def BitWiseFactor():
 		if is_global_symbol(n) or is_local_symbol(n):
 			if get_symbol_type(n) == IDENTIFIER_VARIABLE:
 				if get_data_type(n) != "INT":
-					abort("Type mismatch, variable " + n + " is not of type INT")
-				if is_global_symbol(n):
+					t = get_data_type(n)
+					if is_struct(t):
+						MatchString(".")
+						attr = value
+						Next()
+						if is_global_symbol(n):
+							LoadGlobal(n)
+						else:
+							LoadLocal(get_local_symbol_offset(n))
+						AddToPrimary(str(get_member_info(t, attr)[2]))
+						DereferencePrimary(get_member_info(t, attr)[1])
+					else:
+						abort("Variable " + n + " is not a math factor")
+				elif is_global_symbol(n):
 					LoadGlobal(n)
 				else:
 					LoadLocal(get_local_symbol_offset(n))
@@ -616,10 +704,27 @@ def BitWiseFactor():
 				abort("unexpected identifier type")
 		elif IsSize(n):
 			size = n
-			MatchString("*")
-			n = value
-			Next()
-			LoadPointerContent(n,size)
+			if token == "*":
+				MatchString("*")
+				n = value
+				Next()
+				LoadPointerContent(n,size)
+			else:
+				n = value
+				Next()
+				MatchString("[")
+				BoolExpression()
+				MatchString("]")
+				PrimaryToSecondary()
+				LoadConst(str(SizeOf(size)))
+				MulPrimarySecondary()
+				PrimaryToSecondary()
+				if is_global_symbol(n):
+					LoadGlobal(n)
+				else:
+					LoadLocal(get_local_symbol_offset(n))
+				AddPrimarySecondary()
+				DereferencePrimary(size)
 		else:
 			Undefined(n)
 	elif token == "*":

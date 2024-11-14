@@ -2,6 +2,7 @@ keyword_list = [
 	'INT',
 	'MAIN',
 	'ASM',
+	'DWORD',
 	'WORD',
 	'BYTE'
 ]
@@ -26,6 +27,14 @@ def IsType(t):
 
 def IsSize(t):
 	return t == "DWORD" or t == "WORD" or t == "BYTE"
+
+def SizeOf(t):
+	if t == "BYTE":
+		return 1
+	elif t == "WORD":
+		return 2
+	elif t == "DWORD" or t == "INT":
+		return 4
 
 def IsKeyword(t):
 	return t in keyword_list

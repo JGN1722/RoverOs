@@ -1,5 +1,5 @@
 def DeclareGlobalVar(n, val):
-	EmitLnData("V_" + n + " db " + val);
+	EmitLnData("V_" + n + " dd " + val);
 
 def StackAlloc(n):
 	if n != 0:
@@ -14,8 +14,41 @@ def Clear():
 def SecondaryToPrimary():
 	EmitLn("MOV eax, ebx")
 
+def XchgPrimarySecondary():
+	EmitLn("XCHG eax, ebx")
+
+def LoadConstSecondary(n):
+	EmitLn("MOV ebx, " + n)
+
 def PrimaryToSecondary():
 	EmitLn("MOV ebx, eax")
+
+def AddPrimarySecondary():
+	EmitLn("ADD eax, ebx")
+
+def AddToPrimary(n):
+	EmitLn("ADD eax, " + n)
+
+def MulPrimarySecondary():
+	EmitLn("IMUL ebx")
+
+def DereferencePrimary(size):
+	if size != "DWORD":
+		EmitLn("MOVZX eax, " + size + " [eax]")
+	else:
+		EmitLn("MOV eax, DWORD [eax]")
+
+def StoreDereferenceSecondary(size):
+	if size == "DWORD":
+		register = "eax"
+	elif size == "WORD":
+		register = "ax"
+	elif size == "BYTE":
+		register = "al"
+	else:
+		register = ""
+	
+	EmitLn("MOV " + size + " [ebx], " + register)
 
 def PopSecondary():
 	EmitLn("POP ebx")
@@ -274,22 +307,22 @@ def SetNEqual():
 
 def SetGreater():
 	EmitLn("MOV eax, 0")
-	EmitLn("SETG al")
+	EmitLn("SETA al")
 	EmitLn("IMUL eax, 0xFFFFFFFF")
 
 def SetLess():
 	EmitLn("MOV eax, 0")
-	EmitLn("SETB al")
+	EmitLn("SETL al")
 	EmitLn("IMUL eax, 0xFFFFFFFF")
 
 def SetLessOrEqual():
 	EmitLn("MOV eax, 0")
-	EmitLn("SETBE al")
+	EmitLn("SETLE al")
 	EmitLn("IMUL eax, 0xFFFFFFFF")
 
 def SetGreaterOrEqual():
 	EmitLn("MOV eax, 0")
-	EmitLn("SETGE al")
+	EmitLn("SETAE al")
 	EmitLn("IMUL eax, 0xFFFFFFFF")
 
 def XchgTopMain():

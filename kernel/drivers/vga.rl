@@ -2,7 +2,7 @@ global int terminal_color;
 
 int init_vga() {
 	clear_screen();
-	set_terminal_color(0x0f);
+	set_terminal_color(#WHITE_ON_BLACK);
 	set_cursor_pos(0,0);
 }
 
@@ -45,7 +45,7 @@ int clear_screen() {
 	asm("
 	pusha
 	mov edi, VIDEO_MEMORY
-	mov ax, 0x0f * 256 + ' '
+	mov ax, WHITE_ON_BLACK * 256 + ' '
 	mov ecx, MAX_ROWS * MAX_COLS
 	rep stosw
 	popa
@@ -59,7 +59,7 @@ int scroll() {
 	mov esi, VIDEO_MEMORY + MAX_COLS * 2
 	mov ecx, MAX_COLS * (MAX_ROWS - 1)
 	rep movsw
-	mov ax, 0x0F20
+	mov ax, WHITE_ON_BLACK * 256 + ' '
 	mov ecx, MAX_COLS
 	rep stosw
 	popa
@@ -75,17 +75,24 @@ int putchar(int ptr, int x, int y, int attr) {
 	}
 	
 	\ If x = -1 or y = -1, use the cursor position instead \
-	if x = -1 or y = -1 {
+	if x = -1 or y = -1 or x >= #MAX_COLS or y >= #MAX_ROWS {
 		linear_pos = get_cursor_pos();
 		x = linear_pos % #MAX_COLS;
 		y = (linear_pos - x) / #MAX_COLS;
 		
-		if BYTE *ptr = 13 {	"\r"
+		if BYTE *ptr = 13 {		"\r"
 			new_x = 0;
 			new_y = y;
 		} elseif BYTE *ptr = 10 {	"\n"
 			new_x = x;
 			new_y = y + 1;
+		} elseif BYTE *ptr = 9 {	"\t"
+			new_x = (x + 8) & (not (8 - 1));
+			new_y = y;
+			if x > 79 {
+				new_x = 0;
+				new_y++;
+			}
 		} else {
 			addr = ((#MAX_COLS * y + x) SHL 1) + #VIDEO_MEMORY;
 			WORD *addr = attr SHL 8 + BYTE *ptr;
@@ -98,7 +105,7 @@ int putchar(int ptr, int x, int y, int attr) {
 			}
 		}
 		if new_y >= #MAX_ROWS {
-			new_y -= 1;
+			new_y--;
 			scroll();
 		}
 		set_cursor_pos(new_x, new_y);
@@ -116,4 +123,4 @@ int printf(int str) {
 	}
 }
 
-int sleep() {int i;i = 0;while i < 0xFFFFF {i++;}}
+int sleep() {int i;i = 0;while i < 0x4FFFFF {i++;}}

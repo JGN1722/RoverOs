@@ -1,6 +1,4 @@
 print_string:
-	pusha
-	
 	mov ah, 0x0e
 	
 	.print_next_char:
@@ -14,5 +12,5 @@ print_string:
 	
 	.end_print:
 	
-	popa
-	ret
+	;we only ever call print_string for error messages
+	jmp hang
