@@ -20,6 +20,7 @@ int main() {
 	printf("Initializing the system...\r\n");
 	
 	printf("Setting up memory...\r\n");
+	sort_memory_map();
 	enum_memory_map();
 	fill_bitmap();
 	

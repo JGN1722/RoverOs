@@ -1,3 +1,5 @@
+token_stream = []
+
 def GetChar():
 	global streampos, lookahead
 	
@@ -148,3 +150,40 @@ def Next():
 		Next()
 	else:
 		GetOp()
+
+def Tokenize():
+	global streampos, token_stream
+	
+	streampos = 0
+	GetChar()
+	Next()
+	while token != "\0":
+		if token == "x" and value == "INCLUDE":
+			Next()
+		token_stream.append((token,value,0, 0)) # The last two are line and character
+		Next()
+	print(token_stream)
+
+def IncludeFile():
+	global source_text, streampos, lookahead
+	
+	MatchString("INCLUDE")
+	if not token == "s":
+		Expected("name of file to include")
+	if value == "":
+		abort("source file not specified")
+	
+	if value[:3][1:] == ":\\":
+		new_source_file = value
+	else:
+		new_source_file = os.path.dirname(abs_source_file) + "\\" + value
+	
+	if not os.path.isfile(new_source_file):
+		abort("source file not found (" + new_source_file + ")")
+	
+	text_to_add = open(new_source_file).read()
+	source_text = source_text[:(streampos-1)] + text_to_add + source_text[(streampos-1):]
+	# Reupdate lookahead, because the source text changed
+	lookahead = source_text[streampos-1]
+	
+	Next()

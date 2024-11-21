@@ -93,8 +93,8 @@ file = open(abs_source_file)
 source_text = file.read()
 file.close()
 
-lookahead = source_text[0]
-streampos = 1
+lookahead = ""
+streampos = 0
 token = ""
 value = ""
 
@@ -130,7 +130,7 @@ def EmitLnData(s):
 def program():
 	while token != "\0":
 		if value == "INCLUDE":
-			IncludeFile()
+			IncludeFileX()
 		elif value == "GLOBAL":
 			GlobalDeclaration()
 		elif value == "STRUCT":
@@ -146,7 +146,7 @@ def program():
 				Expected("function declaration")
 			ConstantDeclaration(n)
 
-def IncludeFile():
+def IncludeFileX():
 	global source_text, streampos, lookahead
 	
 	MatchString("INCLUDE")
@@ -186,7 +186,7 @@ def ConstantDeclaration(n):
 		Emit(value)
 	Next()
 	
-	while token == "+" or token == "-" or token == "*":
+	while token == "+" or token == "-" or token == "*" or token == "/":
 		Emit(token)
 		Next()
 		if not token == "0":
@@ -496,9 +496,7 @@ def DoReturn():
 	global current_function
 	
 	MatchString("RETURN")
-	MatchString("(")
 	BoolExpression()
-	MatchString(")")
 	MatchString(";")
 	Branch("RET_" + current_function)
 
@@ -945,6 +943,9 @@ def BoolExpression():
 
 # Main code
 if __name__ == "__main__":
+	Tokenize()
+	streampos = 0
+	GetChar()
 	Next()
 	program()
 	compile()
