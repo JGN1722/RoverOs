@@ -1,37 +1,6 @@
 use32
 org 32768
 JMP V_MAIN
-KERNEL_ADDRESS = 07c00h+512+512
-STACK_ADDRESS = 07c00h-1
-IDT_ADDRESS = 00h
-IDT_ENTRIES = 256
-IDTR_ADDRESS = IDT_ADDRESS+IDT_ENTRIES*8
-IDTR_SIZE = 6
-MEM_MAP_ADDRESS = IDTR_ADDRESS+IDTR_SIZE
-MEM_MAP_ENTRIES_START = MEM_MAP_ADDRESS+4
-IDT_ERR_ENTRIES = 32
-IRQ_NUMBER = 16
-MASTER_IRQ_VECTOR_OFFSET = 020h
-SLAVE_IRQ_VECTOR_OFFSET = 028h
-VIDEO_MEMORY = 0B8000h
-WHITE_ON_BLACK = 00fh
-MAX_ROWS = 25
-MAX_COLS = 80
-REG_SCREEN_CTRL = 03D4h
-REG_SCREEN_DATA = 03D5h
-PIC1_COMMAND = 020h
-PIC1_DATA = 021h
-PIC2_COMMAND = 0A0h
-PIC2_DATA = 0A1h
-ICW1_INIT = 010h
-ICW1_ICW4 = 001h
-PIC_EOI = 020h
-ICW4_8086 = 001h
-PMM_BLOCK_SIZE = 4096
-MAX_MEMORY = 0FFFFFFFFh
-MAX_BLOCK_NUMBER = MAX_MEMORY/PMM_BLOCK_SIZE
-BITMAP_SIZE = MAX_BLOCK_NUMBER/8
-BITMAP_SECTORS = BITMAP_SIZE/4096
 V_INB:
 PUSH ebp
 MOV ebp, esp
@@ -201,7 +170,7 @@ V_INIT_VGA:
 PUSH ebp
 MOV ebp, esp
 CALL V_CLEAR_SCREEN
-MOV eax, WHITE_ON_BLACK
+MOV eax, 00fh
 PUSHD eax
 CALL V_SET_TERMINAL_COLOR
 ADD esp, 4
@@ -270,7 +239,7 @@ V_SET_CURSOR_POS:
 PUSH ebp
 MOV ebp, esp
 SUB esp, 4
-MOV eax, MAX_COLS
+MOV eax, 80
 PUSHD eax
 MOV eax, DWORD [ebp + 8]
 IMUL DWORD [esp]
@@ -280,13 +249,13 @@ MOV eax, DWORD [ebp + 12]
 ADD eax, DWORD [esp]
 ADD esp, 4
 MOV DWORD [ebp - 4], eax
-MOV eax, REG_SCREEN_CTRL
+MOV eax, 03D4h
 PUSHD eax
 MOV eax, 00Eh
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, REG_SCREEN_DATA
+MOV eax, 03D5h
 PUSHD eax
 MOV eax, DWORD [ebp - 4]
 PUSHD eax
@@ -298,13 +267,13 @@ ADD esp, 4
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, REG_SCREEN_CTRL
+MOV eax, 03D4h
 PUSHD eax
 MOV eax, 00Fh
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, REG_SCREEN_DATA
+MOV eax, 03D5h
 PUSHD eax
 MOV eax, DWORD [ebp - 4]
 PUSHD eax
@@ -318,24 +287,24 @@ V_GET_CURSOR_POS:
 PUSH ebp
 MOV ebp, esp
 SUB esp, 8
-MOV eax, REG_SCREEN_CTRL
+MOV eax, 03D4h
 PUSHD eax
 MOV eax, 00Eh
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, REG_SCREEN_DATA
+MOV eax, 03D5h
 PUSHD eax
 CALL V_INB
 ADD esp, 4
 MOV DWORD [ebp - 4], eax
-MOV eax, REG_SCREEN_CTRL
+MOV eax, 03D4h
 PUSHD eax
 MOV eax, 00Fh
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, REG_SCREEN_DATA
+MOV eax, 03D5h
 PUSHD eax
 CALL V_INB
 ADD esp, 4
@@ -443,7 +412,7 @@ ADD esp, 4
 PUSHD eax
 MOV eax, DWORD [ebp + 16]
 PUSHD eax
-MOV eax, MAX_COLS
+MOV eax, 80
 MOV ebx, DWORD [esp]
 ADD esp, 4
 CMP ebx, eax
@@ -455,7 +424,7 @@ ADD esp, 4
 PUSHD eax
 MOV eax, DWORD [ebp + 12]
 PUSHD eax
-MOV eax, MAX_ROWS
+MOV eax, 25
 MOV ebx, DWORD [esp]
 ADD esp, 4
 CMP ebx, eax
@@ -470,7 +439,7 @@ CALL V_GET_CURSOR_POS
 MOV DWORD [ebp - 4], eax
 MOV eax, DWORD [ebp - 4]
 PUSHD eax
-MOV eax, MAX_COLS
+MOV eax, 80
 MOV ebx, DWORD [esp]
 ADD esp, 4
 XCHG eax, ebx
@@ -485,7 +454,7 @@ SUB eax, DWORD [esp]
 ADD esp, 4
 NEG eax
 PUSHD eax
-MOV eax, MAX_COLS
+MOV eax, 80
 MOV ebx, DWORD [esp]
 ADD esp, 4
 XCHG eax, ebx
@@ -584,7 +553,7 @@ L11:
 L10:
 JMP L6
 L9:
-MOV eax, MAX_COLS
+MOV eax, 80
 PUSHD eax
 MOV eax, DWORD [ebp + 12]
 IMUL DWORD [esp]
@@ -600,7 +569,7 @@ SHL DWORD [esp], cl
 MOV eax, DWORD [esp]
 ADD esp, 4
 PUSHD eax
-MOV eax, VIDEO_MEMORY
+MOV eax, 0B8000h
 ADD eax, DWORD [esp]
 ADD esp, 4
 MOV DWORD [ebp - 8], eax
@@ -654,7 +623,7 @@ JMP L6
 L6:
 MOV eax, DWORD [ebp - 16]
 PUSHD eax
-MOV eax, MAX_ROWS
+MOV eax, 25
 MOV ebx, DWORD [esp]
 ADD esp, 4
 CMP ebx, eax
@@ -676,7 +645,7 @@ CALL V_SET_CURSOR_POS
 ADD esp, 8
 JMP L4
 L5:
-MOV eax, MAX_COLS
+MOV eax, 80
 PUSHD eax
 MOV eax, DWORD [ebp + 12]
 IMUL DWORD [esp]
@@ -692,7 +661,7 @@ SHL DWORD [esp], cl
 MOV eax, DWORD [esp]
 ADD esp, 4
 PUSHD eax
-MOV eax, VIDEO_MEMORY
+MOV eax, 0B8000h
 ADD eax, DWORD [esp]
 ADD esp, 4
 MOV DWORD [ebp - 8], eax
@@ -790,7 +759,19 @@ V_ENUM_MEMORY_MAP:
 PUSH ebp
 MOV ebp, esp
 SUB esp, 8
-MOV eax, MEM_MAP_ADDRESS
+MOV eax, 00h
+PUSHD eax
+MOV eax, 256
+PUSHD eax
+MOV eax, 8
+IMUL DWORD [esp]
+ADD esp, 4
+ADD eax, DWORD [esp]
+ADD esp, 4
+PUSHD eax
+MOV eax, 6
+ADD eax, DWORD [esp]
+ADD esp, 4
 MOV DWORD [ebp - 8], eax
 MOV ebx, DWORD [ebp - 8]
 MOV eax, 0
@@ -999,7 +980,19 @@ V_FILL_BITMAP:
 PUSH ebp
 MOV ebp, esp
 SUB esp, 16
-MOV eax, MEM_MAP_ADDRESS
+MOV eax, 00h
+PUSHD eax
+MOV eax, 256
+PUSHD eax
+MOV eax, 8
+IMUL DWORD [esp]
+ADD esp, 4
+ADD eax, DWORD [esp]
+ADD esp, 4
+PUSHD eax
+MOV eax, 6
+ADD eax, DWORD [esp]
+ADD esp, 4
 MOV DWORD [ebp - 8], eax
 MOV ebx, DWORD [ebp - 8]
 MOV eax, 0
@@ -1096,7 +1089,7 @@ MOV eax, L38
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
-MOV eax, PMM_BLOCK_SIZE
+MOV eax, 4096
 PUSHD eax
 CALL V_CSTRUD
 ADD esp, 4
@@ -1111,7 +1104,7 @@ MOV eax, L40
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
-MOV eax, MAX_MEMORY
+MOV eax, 0FFFFFFFFh
 PUSHD eax
 CALL V_CSTRUD
 ADD esp, 4
@@ -1126,7 +1119,14 @@ MOV eax, L42
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
-MOV eax, MAX_BLOCK_NUMBER
+MOV eax, 0FFFFFFFFh
+PUSHD eax
+MOV eax, 4096
+MOV ebx, DWORD [esp]
+ADD esp, 4
+XCHG eax, ebx
+XOR edx, edx
+IDIV ebx
 PUSHD eax
 CALL V_CSTRUD
 ADD esp, 4
@@ -1141,7 +1141,21 @@ MOV eax, L44
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
-MOV eax, BITMAP_SIZE
+MOV eax, 0FFFFFFFFh
+PUSHD eax
+MOV eax, 4096
+MOV ebx, DWORD [esp]
+ADD esp, 4
+XCHG eax, ebx
+XOR edx, edx
+IDIV ebx
+PUSHD eax
+MOV eax, 8
+MOV ebx, DWORD [esp]
+ADD esp, 4
+XCHG eax, ebx
+XOR edx, edx
+IDIV ebx
 PUSHD eax
 CALL V_CSTRUD
 ADD esp, 4
@@ -1156,7 +1170,28 @@ MOV eax, L46
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
-MOV eax, BITMAP_SECTORS
+MOV eax, 0FFFFFFFFh
+PUSHD eax
+MOV eax, 4096
+MOV ebx, DWORD [esp]
+ADD esp, 4
+XCHG eax, ebx
+XOR edx, edx
+IDIV ebx
+PUSHD eax
+MOV eax, 8
+MOV ebx, DWORD [esp]
+ADD esp, 4
+XCHG eax, ebx
+XOR edx, edx
+IDIV ebx
+PUSHD eax
+MOV eax, 4096
+MOV ebx, DWORD [esp]
+ADD esp, 4
+XCHG eax, ebx
+XOR edx, edx
+IDIV ebx
 PUSHD eax
 CALL V_CSTRUD
 ADD esp, 4
@@ -1219,79 +1254,79 @@ V_PIC_REMAP:
 PUSH ebp
 MOV ebp, esp
 SUB esp, 8
-MOV eax, PIC1_DATA
+MOV eax, 021h
 PUSHD eax
 CALL V_INB
 ADD esp, 4
 MOV DWORD [ebp - 4], eax
-MOV eax, PIC2_DATA
+MOV eax, 0A1h
 PUSHD eax
 CALL V_INB
 ADD esp, 4
 MOV DWORD [ebp - 8], eax
-MOV eax, PIC1_COMMAND
+MOV eax, 020h
 PUSHD eax
-MOV eax, ICW1_INIT
+MOV eax, 010h
 PUSHD eax
-MOV eax, ICW1_ICW4
+MOV eax, 001h
 OR eax, DWORD [esp]
 ADD esp, 4
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, PIC2_COMMAND
+MOV eax, 0A0h
 PUSHD eax
-MOV eax, ICW1_INIT
+MOV eax, 010h
 PUSHD eax
-MOV eax, ICW1_ICW4
+MOV eax, 001h
 OR eax, DWORD [esp]
 ADD esp, 4
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, PIC1_DATA
+MOV eax, 021h
 PUSHD eax
 MOV eax, DWORD [ebp + 12]
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, PIC2_DATA
+MOV eax, 0A1h
 PUSHD eax
 MOV eax, DWORD [ebp + 8]
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, PIC1_DATA
+MOV eax, 021h
 PUSHD eax
 MOV eax, 4
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, PIC2_DATA
+MOV eax, 0A1h
 PUSHD eax
 MOV eax, 2
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, PIC1_DATA
+MOV eax, 021h
 PUSHD eax
-MOV eax, ICW4_8086
-PUSHD eax
-CALL V_OUTB
-ADD esp, 8
-MOV eax, PIC2_DATA
-PUSHD eax
-MOV eax, ICW4_8086
+MOV eax, 001h
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, PIC1_DATA
+MOV eax, 0A1h
+PUSHD eax
+MOV eax, 001h
+PUSHD eax
+CALL V_OUTB
+ADD esp, 8
+MOV eax, 021h
 PUSHD eax
 MOV eax, DWORD [ebp - 4]
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, PIC2_DATA
+MOV eax, 0A1h
 PUSHD eax
 MOV eax, DWORD [ebp - 8]
 PUSHD eax
@@ -1304,13 +1339,13 @@ RET
 V_PIC_MASK:
 PUSH ebp
 MOV ebp, esp
-MOV eax, PIC1_DATA
+MOV eax, 021h
 PUSHD eax
 MOV eax, DWORD [ebp + 12]
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, PIC2_DATA
+MOV eax, 0A1h
 PUSHD eax
 MOV eax, DWORD [ebp + 8]
 PUSHD eax
@@ -1347,7 +1382,7 @@ MOV DWORD [ebp - 4], eax
 L49:
 MOV eax, DWORD [ebp - 4]
 PUSHD eax
-MOV eax, IDT_ENTRIES
+MOV eax, 256
 MOV ebx, DWORD [esp]
 ADD esp, 4
 CMP ebx, eax
@@ -1522,7 +1557,7 @@ MOV DWORD [ebp - 4], eax
 L59:
 MOV eax, DWORD [ebp - 4]
 PUSHD eax
-MOV eax, IDT_ERR_ENTRIES
+MOV eax, 32
 MOV ebx, DWORD [esp]
 ADD esp, 4
 CMP ebx, eax
@@ -1594,9 +1629,9 @@ MOV eax, L61
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
-MOV eax, PIC1_COMMAND
+MOV eax, 020h
 PUSHD eax
-MOV eax, PIC_EOI
+MOV eax, 020h
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
@@ -1618,15 +1653,15 @@ MOV eax, L62
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
-MOV eax, PIC2_COMMAND
+MOV eax, 0A0h
 PUSHD eax
-MOV eax, PIC_EOI
+MOV eax, 020h
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
-MOV eax, PIC1_COMMAND
+MOV eax, 020h
 PUSHD eax
-MOV eax, PIC_EOI
+MOV eax, 020h
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8
@@ -1644,12 +1679,12 @@ V_INSTALL_IRQ_INTERRUPTS:
 PUSH ebp
 MOV ebp, esp
 SUB esp, 4
-MOV eax, MASTER_IRQ_VECTOR_OFFSET
+MOV eax, 020h
 MOV DWORD [ebp - 4], eax
 L63:
 MOV eax, DWORD [ebp - 4]
 PUSHD eax
-MOV eax, MASTER_IRQ_VECTOR_OFFSET
+MOV eax, 020h
 PUSHD eax
 MOV eax, 8
 ADD eax, DWORD [esp]
@@ -1671,12 +1706,12 @@ ADD esp, 8
 INC DWORD [ebp - 4]
 JMP L63
 L64:
-MOV eax, SLAVE_IRQ_VECTOR_OFFSET
+MOV eax, 028h
 MOV DWORD [ebp - 4], eax
 L65:
 MOV eax, DWORD [ebp - 4]
 PUSHD eax
-MOV eax, SLAVE_IRQ_VECTOR_OFFSET
+MOV eax, 028h
 PUSHD eax
 MOV eax, 8
 ADD eax, DWORD [esp]
@@ -1698,7 +1733,7 @@ ADD esp, 8
 INC DWORD [ebp - 4]
 JMP L65
 L66:
-MOV eax, MASTER_IRQ_VECTOR_OFFSET
+MOV eax, 020h
 PUSHD eax
 MOV eax, 1
 ADD eax, DWORD [esp]
@@ -1715,6 +1750,17 @@ RET
 V_MAIN:
 PUSH ebp
 MOV ebp, esp
+SUB esp, 4
+MOV eax, 07c00h
+PUSHD eax
+MOV eax, 512
+ADD eax, DWORD [esp]
+ADD esp, 4
+PUSHD eax
+MOV eax, 512
+ADD eax, DWORD [esp]
+ADD esp, 4
+MOV DWORD [ebp - 4], eax
 CALL V_INIT_VGA
 MOV eax, L67
 PUSHD eax
@@ -1735,9 +1781,9 @@ CALL V_BUILD_IDT
 CALL V_INSTALL_GENERIC_INTERRUPT_HANDLER
 CALL V_INSTALL_EXCEPTION_INTERRUPTS
 CALL V_INSTALL_IRQ_INTERRUPTS
-MOV eax, MASTER_IRQ_VECTOR_OFFSET
+MOV eax, 020h
 PUSHD eax
-MOV eax, SLAVE_IRQ_VECTOR_OFFSET
+MOV eax, 028h
 PUSHD eax
 CALL V_PIC_REMAP
 ADD esp, 8
@@ -1786,9 +1832,9 @@ MOV eax, L75
 PUSHD eax
 CALL V_PRINTF
 ADD esp, 4
-MOV eax, PIC1_COMMAND
+MOV eax, 020h
 PUSHD eax
-MOV eax, PIC_EOI
+MOV eax, 020h
 PUSHD eax
 CALL V_OUTB
 ADD esp, 8

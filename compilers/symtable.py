@@ -1,3 +1,5 @@
+from helpers import *
+
 IDENTIFIER_VARIABLE = 1
 IDENTIFIER_FUNCTION = 2
 

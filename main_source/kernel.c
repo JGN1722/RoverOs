@@ -1,21 +1,23 @@
-include "constants.inc"
-include "..\kernel\low_level.rl"
-include "..\kernel\print_hex.rl"
+include "constants.h"
+include "..\kernel-c\low_level.c"
+include "..\kernel-c\print_hex.c"
 
 // Drivers
-include "..\kernel\drivers\vga.rl"
-include "..\kernel\drivers\keyboard.rl"
-include "..\kernel\drivers\ps2.rl"
+include "..\kernel-c\drivers\vga.c"
+include "..\kernel-c\drivers\keyboard.c"
+include "..\kernel-c\drivers\ps2.c"
 
 // Memory
-include "..\kernel\memory\pmm.rl"
+include "..\kernel-c\memory\pmm.c"
 
 // Interrupts
-include "..\kernel\interrupts\interrupts.rl"
-include "..\kernel\interrupts\exceptions.rl"
-include "..\kernel\interrupts\irqs.rl"
+include "..\kernel-c\interrupts\interrupts.c"
+include "..\kernel-c\interrupts\exceptions.c"
+include "..\kernel-c\interrupts\irqs.c"
 
 int main() {
+	int addr;
+	addr = KERNEL_ADDRESS;
 	init_vga();
 	
 	printf("Initializing the system...\r\n");
@@ -31,7 +33,7 @@ int main() {
 	install_exception_interrupts();
 	install_irq_interrupts();
 	
-	PIC_remap(#MASTER_IRQ_VECTOR_OFFSET, #SLAVE_IRQ_VECTOR_OFFSET);
+	PIC_remap(MASTER_IRQ_VECTOR_OFFSET, SLAVE_IRQ_VECTOR_OFFSET);
 	PIC_mask(0xfd, 0xff); /* Enable the keyboard only */
 	
 	asm("sti");
@@ -51,7 +53,7 @@ int keyboard_handler() {
 	printf(cstrub(inb(0x60)));
 	printf("\r\n");
 	
-	outb(#PIC1_COMMAND, #PIC_EOI);
+	outb(PIC1_COMMAND, PIC_EOI);
 	
 	asm("
 	popad

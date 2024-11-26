@@ -1,3 +1,31 @@
+# Utilities
+output = ""
+output += "use32\n"
+output += "org " + str(0x7c00 + 512 + 512) + "\n"
+output += "JMP V_MAIN\n" # Immediately add the entry point code
+
+output_data = ""
+
+def Emit(s):
+	global output
+	
+	output += s
+
+def EmitLn(s):
+	Emit(s + "\n")
+
+def EmitAsIs(s):
+	EmitLn(s)
+
+def EmitLnData(s):
+	global output_data
+	
+	output_data += s + "\n"
+
+def GetOutput():
+	return output, output_data
+
+# Code generators
 def DeclareGlobalVar(n, val):
 	EmitLnData("V_" + n + " dd " + val);
 
@@ -71,7 +99,7 @@ def Negate():
 def LoadGlobal(n):
 	EmitLn("MOV eax, DWORD [V_" + n + "]")
 
-def LoadLocal(o):
+def LoadLocal(o, local_param_number):
 	o -= local_param_number
 	if o < 0:
 		EmitLn("MOV eax, DWORD [ebp + " + str((-o + 1) * 4) + "]")
@@ -81,7 +109,7 @@ def LoadLocal(o):
 def AddGlobal(n):
 	EmitLn("ADD DWORD [V_" + n + "], eax")
 
-def AddLocal(o):
+def AddLocal(o, local_param_number):
 	o -= local_param_number
 	if o < 0:
 		EmitLn("ADD DWORD [ebp + " + str((-o + 1) * 4) + "], eax")
@@ -91,14 +119,14 @@ def AddLocal(o):
 def SubGlobal(n):
 	EmitLn("SUB DWORD [V_" + n + "], eax")
 
-def DecLocal(o):
+def DecLocal(o, local_param_number):
 	o -= local_param_number
 	if o < 0:
 		EmitLn("DEC DWORD [ebp + " + str((-o + 1) * 4) + "]")
 	else:
 		EmitLn("DEC DWORD [ebp - " + str(o * 4 + 4) + "]")
 
-def IncLocal(o):
+def IncLocal(o, local_param_number):
 	o -= local_param_number
 	if o < 0:
 		EmitLn("INC DWORD [ebp + " + str((-o + 1) * 4) + "]")
@@ -108,7 +136,7 @@ def IncLocal(o):
 def SubGlobal(n):
 	EmitLn("SUB DWORD [V_" + n + "], eax")
 
-def SubLocal(o):
+def SubLocal(o, local_param_number):
 	o -= local_param_number
 	if o < 0:
 		EmitLn("SUB DWORD [ebp + " + str((-o + 1) * 4) + "], eax")
@@ -118,7 +146,7 @@ def SubLocal(o):
 def MulGlobal(n):
 	EmitLn("IMUL DWORD [V_" + n + "], eax")
 
-def MulLocal(o):
+def MulLocal(o, local_param_number):
 	o -= local_param_number
 	if o < 0:
 		EmitLn("IMUL DWORD [ebp + " + str((-o + 1) * 4) + "]")
@@ -128,7 +156,7 @@ def MulLocal(o):
 def StoreGlobal(n):
 	EmitLn("MOV DWORD [V_" + n + "], eax")
 
-def StoreLocal(o):
+def StoreLocal(o, local_param_number):
 	o -= local_param_number
 	if o < 0:
 		EmitLn("MOV DWORD [ebp + " + str((-o + 1) * 4) + "], eax")
@@ -148,7 +176,7 @@ def DereferenceGlobal(n, size):
 	EmitLn("MOV ebx, DWORD [V_" + n + "]")
 	EmitLn("MOV " + size + " [ebx], " + register)
 
-def DereferenceLocal(o, size):
+def DereferenceLocal(o, size, local_param_number):
 	if size == "DWORD":
 		register = "eax"
 	elif size == "WORD":
@@ -179,7 +207,7 @@ def LoadDereferenceGlobal(n, size):
 	EmitLn("MOV eax, 0")
 	EmitLn("MOV " + register + ", " + size + " [ebx]")
 
-def LoadDereferenceLocal(o, size):
+def LoadDereferenceLocal(o, size, local_param_number):
 	if size == "DWORD":
 		register = "eax"
 	elif size == "WORD":
@@ -271,7 +299,6 @@ def PopShiftRight():
 	EmitLn("MOV eax, DWORD [esp]")
 	EmitLn("ADD esp, 4")
 
-
 def NotIt():
 	EmitLn("NOT eax")
 
@@ -352,8 +379,6 @@ def PutLabel(l):
 def LoadLabel(l):
 	EmitLn("MOV eax, " + l)
 
-
-
 def JmpToProc(n):
 	EmitLn("CALL V_" + n)
 
@@ -368,7 +393,3 @@ def FunctionFooter():
 
 def Return():
 	EmitLn("RET")
-
-
-def EmitAsIs(s):
-	EmitLn(s)

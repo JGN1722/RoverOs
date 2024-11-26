@@ -1,42 +1,50 @@
+import sys
+
+from helpers import *
+
+source_text = ""
+lookahead = ""
+streampos = 0
+
 token_stream = []
+token = ""
+value = ""
+
+script_directory = ""
+file_name = ""
+line_number = 1
+character_number = 1
+
+# Error functions
+def abort(s):
+	print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
+	sys.exit()
+
+def Warning(s):
+	print("Warning: " + s, "(file", file_name, "line", line_number, "character", character_number, ")")
+
+def Expected(s):
+	abort("Expected " + s)
 
 def GetChar():
-	global streampos, lookahead
+	global streampos, lookahead, character_number, line_number
 	
 	if streampos >= len(source_text):
 		lookahead = "\0"
 	else:
 		lookahead = source_text[streampos]
 		streampos += 1
-
-def Expected(s):
-	abort("Expected " + s)
-
-# I wrote MatchString in some places and Match in some others
-def MatchString(t):
-	Match(t)
-
-def Match(t):
-	if value == t:
-		Next()
-	else:
-		Expected(t)
-
-def IsAlpha(c):
-	return ord(c.upper()) >= 65 and ord(c.upper()) <= 90 or c == "_"
-
-def IsDigit(c):
-	return ord(c) >= 48 and ord(c) <= 57
-
-def IsHexDigit(c):
-	return (ord(c) >= 48 and ord(c) <= 57) or (ord(c.upper()) >= ord("A") and ord(c.upper()) <= ord("F"))
-
-def IsAlnum(c):
-	return IsAlpha(c) or IsDigit(c)
+		
+		# Update the line and character values, used for error reporting
+		character_number += 1
+		if lookahead == chr(10):
+			line_number += 1
+			character_number = 1
 
 def SkipWhite():
-	global lookahead
+	global lookahead, last_whitespace_call_got_newline
 	
+	last_whitespace_call_got_newline = False
 	while lookahead in [" ", "	", chr(10), chr(13)]:
 		GetChar()
 
@@ -90,19 +98,8 @@ def GetNum():
 def GetOp():
 	global lookahead, token, value
 	
-	SkipWhite()
 	token = lookahead
 	value = lookahead
-	GetChar()
-
-def GetComment():
-	global lookahead
-	
-	if not lookahead == "\\":
-		Expected("Comment")
-	GetChar()
-	while not lookahead == "\\":
-		GetChar()
 	GetChar()
 
 def GetString():
@@ -133,8 +130,41 @@ def GetAsciiCode():
 		abort("more than one character in ascii literal")
 	GetChar()
 
-def Next():
+def next_token_comment():
 	global lookahead
+	
+	if IsDigit(lookahead):
+		GetNum()
+	elif IsAlpha(lookahead):
+		GetName()
+	else:
+		GetOp()
+
+def SkipInlineComment():
+	next_token_comment() # Skip the first '/' of the comment symbol
+	next_token_comment() # Skip the second '/' of the comment symbol
+	while not token == "\n":
+		next_token_comment()
+	next_token() # Prepare the terrain for the return to normal lexing
+
+def SkipPrologueComment(main_comment=True):
+	next_token_comment() # Skip the '/' of the comment symbol. The '*' will be skipped in the loop
+	while True:
+		next_token_comment()
+		if token == "*":
+			next_token_comment()
+			if token == "/":
+				break
+		if token == "/":
+			if lookahead == "*":
+				SkipPrologueComment(False)
+		if token == "\0":
+			abort("Unfinished comment")
+	if main_comment:
+		next_token() # Prepare the terrain for the return to normal lexing
+
+def next_token():
+	global lookahead, token_stream
 	
 	SkipWhite()
 	if IsDigit(lookahead):
@@ -145,45 +175,59 @@ def Next():
 		GetString()
 	elif lookahead == "'":
 		GetAsciiCode()
-	elif lookahead == "\\":
-		GetComment()
-		Next()
 	else:
 		GetOp()
+		if token == "/":
+			if lookahead == "*":
+				SkipPrologueComment()
+			elif lookahead == "/":
+				SkipInlineComment()
 
-def Tokenize():
-	global streampos, token_stream
+def Tokenize(is_main_file=False):
+	global token_stream, streampos, token_stream, lookahead, source_text, line_number, character_number, file_name
 	
 	streampos = 0
+	current_file_name = file_name
+	line_number, character_number = 1, 1
+	old_line_number, old_character_number = 1, 1
+	
 	GetChar()
-	Next()
+	next_token()
 	while token != "\0":
 		if token == "x" and value == "INCLUDE":
-			Next()
-		token_stream.append((token,value,0, 0)) # The last two are line and character
-		Next()
-	print(token_stream)
-
-def IncludeFile():
-	global source_text, streampos, lookahead
+			next_token()
+			IncludeFile(token, value)
+			next_token()
+		else:
+			token_stream.append((token,value, file_name, old_line_number, old_character_number))
+			old_line_number, old_character_number = line_number, character_number
+			
+			next_token()
 	
-	MatchString("INCLUDE")
-	if not token == "s":
-		Expected("name of file to include")
-	if value == "":
+	if is_main_file:
+		token_stream.append(("\0", "\0", current_file_name, line_number, character_number))
+		
+		# Clean the namespace a bit
+		del lookahead
+		del source_text
+		
+		return token_stream
+
+def IncludeFile(new_source_file_token, new_source_file_name):
+	global source_text, streampos, lookahead, file_name, line_number, character_number, token, value
+	
+	if not new_source_file_token == "s":
+		Expected("name of file to include (not" + new_source_file_name + ")")
+	if new_source_file_name == "":
 		abort("source file not specified")
 	
-	if value[:3][1:] == ":\\":
-		new_source_file = value
-	else:
-		new_source_file = os.path.dirname(abs_source_file) + "\\" + value
+	new_source_file = get_abs_path(new_source_file_name, os.path.dirname(file_name))
 	
 	if not os.path.isfile(new_source_file):
 		abort("source file not found (" + new_source_file + ")")
 	
-	text_to_add = open(new_source_file).read()
-	source_text = source_text[:(streampos-1)] + text_to_add + source_text[(streampos-1):]
-	# Reupdate lookahead, because the source text changed
-	lookahead = source_text[streampos-1]
-	
-	Next()
+	(tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8) = source_text, streampos, lookahead, file_name, line_number, character_number, token, value
+	file_name = get_abs_path(new_source_file, script_directory)
+	source_text = open(new_source_file).read()
+	Tokenize()
+	source_text, streampos, lookahead, file_name, line_number, character_number, token, value = (tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8)

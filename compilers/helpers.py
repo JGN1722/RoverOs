@@ -1,3 +1,5 @@
+import os
+
 keyword_list = [
 	'INT',
 	'MAIN',
@@ -6,6 +8,18 @@ keyword_list = [
 	'WORD',
 	'BYTE'
 ]
+
+def IsAlpha(c):
+	return ord(c.upper()) >= 65 and ord(c.upper()) <= 90 or c == "_"
+
+def IsDigit(c):
+	return ord(c) >= 48 and ord(c) <= 57
+
+def IsHexDigit(c):
+	return (ord(c) >= 48 and ord(c) <= 57) or (ord(c.upper()) >= ord("A") and ord(c.upper()) <= ord("F"))
+
+def IsAlnum(c):
+	return IsAlpha(c) or IsDigit(c)
 
 def IsAddop(c):
 	return c == "+" or c == "-"
@@ -71,3 +85,34 @@ def FormatString(L, s):
 	r = r.rstrip(", ") + ", 0"
 	
 	return L + " db " + r
+
+def get_abs_path(path, base_path):
+	if path[:3][1:] == ":\\":
+		abs_path = path
+	else:
+		abs_path = base_path + "\\" + path
+	
+	return os.path.realpath(abs_path)
+
+def ReadSourceText(path, base_directory):
+	abs_path = get_abs_path(path, base_directory)
+		
+	if not os.path.isfile(abs_path):
+		abort("source file not found (" + abs_path + ")")
+	
+	file = open(abs_path)
+	source_text = file.read()
+	file.close()
+	
+	return source_text
+
+def convert_to_bin(file_path):
+	# Split the file path into base and extension
+	base, ext = os.path.splitext(file_path)
+	
+	# If there's no extension, just append .bin
+	if ext == '':
+		return file_path + '.bin'
+		
+	# If an extension exists, replace it with .bin
+	return base + '.bin'

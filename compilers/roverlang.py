@@ -11,44 +11,25 @@ import os
 script_directory = os.path.dirname(os.path.abspath(__file__))
 
 # Import the needed files
-exec(open(script_directory + "\\" + "codegen.py").read())
-exec(open(script_directory + "\\" + "tokenizer.py").read())
-exec(open(script_directory + "\\" + "helpers.py").read())
-exec(open(script_directory + "\\" + "symtable.py").read())
+from symtable import *
+from helpers import *
+from codegen import *
+import commandline
+import tokenizer
+import preproc
+import parser
 
-"""
-commmand line options:
--h / --help : help message
-"""
+tokenizer.script_directory = script_directory
+commandline.script_directory = script_directory
 
-if len(sys.argv) >= 2:
-	if sys.argv[1] == "-h" or sys.argv[1] == "--help":
-		print("RoverLang Compiler\n" +
-		      "Written for RoverOs\n" + 
-		      "Author: JGN1722 (Github)\n\n" +
-		      "Usage: roverlang.py [-h | --help] | [filename]")
-		sys.exit()
-
-def convert_to_bin(file_path):
-	# Split the file path into base and extension
-	base, ext = os.path.splitext(file_path)
-	
-	# If there's no extension, just append .bin
-	if ext == '':
-		return file_path + '.bin'
-		
-	# If an extension exists, replace it with .bin
-	return base + '.bin'
+debug_mode = 0
 
 def compile():
-	global source_file, output, output_data
+	global source_file, output_file
+	
+	output, output_data = GetOutput()
 	
 	output += output_data
-	
-	if len(sys.argv) >= 3:
-		output_file = sys.argv[2]
-	else:
-		output_file = convert_to_bin(abs_source_file)
 	
 	with open(script_directory + "\\output.asm", "w") as file:
 		file.write(output)
@@ -57,145 +38,67 @@ def compile():
 
 # Error functions
 def abort(s):
-	print("Error: " + s, file=sys.stderr)
+	print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
 	sys.exit()
 
 def Warning(s):
-	print("Warning: " + s)
+	print("Warning: " + s, "(file", file_name, "line", line_number, "character", character_number, ")")
 
 def Undefined(n):
 	if IsKeyword(n):
 		abort("keyword is misplaced ( " + n + " )")
 	abort("undefined name ( " + n + " )")
 
-# Compiling unit
+def Expected(s):
+	abort("Expected " + s)
 
-# Open the source file and set global variables
-# Check if it exists. If not, print an error message
+# Output functions
 
-if len(sys.argv) >= 2:
-	source_file = sys.argv[1]
-else:
-	abort("source file not specified")
-
-if source_file == "":
-	abort("source file not specified")
-
-if source_file[:3][1:] == ":\\":
-	abs_source_file = source_file
-else:
-	abs_source_file = script_directory + "\\" + source_file
-
-if not os.path.isfile(abs_source_file):
-	abort("source file not found (" + abs_source_file + ")")
-
-file = open(abs_source_file)
-source_text = file.read()
-file.close()
-
-lookahead = ""
-streampos = 0
-token = ""
-value = ""
-
-output = ""
-output += "use32\n"
-output += "org " + str(0x7c00 + 512 + 512) + "\n"
-output += "JMP V_MAIN\n" # Immediately add the entry point code
-
-output_data = ""
+file_name = ""
+line_number = 0
+character_number = 0
+source_file = ""
+output_file = ""
 
 def dbg():
 	print("token: ", token)
 	print("value: ", value)
-	print("streampos: ", streampos)
-
-def Emit(s):
-	global output
-	
-	output += s
-
-def EmitLn(s):
-	Emit(s + "\n")
-
-def EmitLnData(s):
-	global output_data
-	
-	output_data += s + "\n"
 
 # Parsing unit
+def Next():
+	global token_stream, streampos, token, value, file_name, line_number, character_number
+	
+	streampos += 1
+	
+	new_token = token_stream[streampos]
+	token, value, file_name, line_number, character_number = new_token
+
+def Previous():
+	global token_stream, streampos, token, value, file_name, file_number, character_number
+	
+	streampos -= 1
+	
+	new_token = token_stream[streampos]
+	token, value, file_name, line_number, character_number = new_token
+
+def MatchString(t):
+	if value == t:
+		Next()
+	else:
+		Expected(t)
 
 #_________________________________________________________________________________________
 # Main code
 def program():
 	while token != "\0":
-		if value == "INCLUDE":
-			IncludeFileX()
-		elif value == "GLOBAL":
+		if token == "x" and value == "GLOBAL":
 			GlobalDeclaration()
-		elif value == "STRUCT":
+		elif token == "x" and value == "STRUCT":
 			StructDeclaration()
-		elif IsType(value):
+		elif token == "x" and IsType(value):
 			Function()
-		elif token == "#":
-			PrettyConstantDeclaration()
 		else:
-			n = value
-			Next()
-			if not token == "=":
-				Expected("function declaration")
-			ConstantDeclaration(n)
-
-def IncludeFileX():
-	global source_text, streampos, lookahead
-	
-	MatchString("INCLUDE")
-	if not token == "s":
-		Expected("name of file to include")
-	if value == "":
-		abort("source file not specified")
-	
-	if value[:3][1:] == ":\\":
-		new_source_file = value
-	else:
-		new_source_file = os.path.dirname(abs_source_file) + "\\" + value
-	
-	if not os.path.isfile(new_source_file):
-		abort("source file not found (" + new_source_file + ")")
-	
-	text_to_add = open(new_source_file).read()
-	source_text = source_text[:(streampos-1)] + text_to_add + source_text[(streampos-1):]
-	# Reupdate lookahead, because the source text changed
-	lookahead = source_text[streampos-1]
-	
-	Next()
-
-def PrettyConstantDeclaration():
-	MatchString("#")
-	n = value
-	Next()
-	ConstantDeclaration(n)
-
-def ConstantDeclaration(n):
-	MatchString("=")
-	Emit(n + " = ")
-	
-	if not token == "0":
-		Emit(value) # This is another constant
-	else:
-		Emit(value)
-	Next()
-	
-	while token == "+" or token == "-" or token == "*" or token == "/":
-		Emit(token)
-		Next()
-		if not token == "0":
-			Emit(value) # This is another constant
-		else:
-			Emit(value)
-		Next()
-	
-	Emit("\n")
+			Expected("function declaration")
 
 def GlobalDeclaration():
 	MatchString("GLOBAL")
@@ -436,7 +339,7 @@ def Assignement():
 		if is_global_symbol(n):
 			StoreGlobal(n)
 		else:
-			StoreLocal(get_local_symbol_offset(n))
+			StoreLocal(get_local_symbol_offset(n), local_param_number)
 	
 	elif token == "-":
 		MatchString("-")
@@ -446,14 +349,14 @@ def Assignement():
 			if is_global_symbol(n):
 				DecGlobal(n)
 			else:
-				DecLocal(get_local_symbol_offset(n))
+				DecLocal(get_local_symbol_offset(n), local_param_number)
 		else:
 			MatchString("=")
 			BoolExpression()
 			if is_global_symbol(n):
 				SubGlobal(n)
 			else:
-				SubLocal(get_local_symbol_offset(n))
+				SubLocal(get_local_symbol_offset(n), local_param_number)
 	elif token == "+":
 		MatchString("+")
 		
@@ -462,14 +365,14 @@ def Assignement():
 			if is_global_symbol(n):
 				IncGlobal(n)
 			else:
-				IncLocal(get_local_symbol_offset(n))
+				IncLocal(get_local_symbol_offset(n), local_param_number)
 		else:
 			MatchString("=")
 			BoolExpression()
 			if is_global_symbol(n):
 				AddGlobal(n)
 			else:
-				AddLocal(get_local_symbol_offset(n))
+				AddLocal(get_local_symbol_offset(n), local_param_number)
 	elif token == "*":
 		MatchString("*")
 		MatchString("=")
@@ -477,7 +380,7 @@ def Assignement():
 		if is_global_symbol(n):
 			MulGlobal(n)
 		else:
-			MulLocal(get_local_symbol_offset(n))
+			MulLocal(get_local_symbol_offset(n), local_param_number)
 	
 	else:
 		Expected("=")
@@ -509,7 +412,7 @@ def StarDereferencing(size="DWORD"):
 	if is_global_symbol(n):
 		DereferenceGlobal(n, size)
 	else:
-		DereferenceLocal(get_local_symbol_offset(n), size)
+		DereferenceLocal(get_local_symbol_offset(n), size, local_param_number)
 	MatchString(";")
 
 def ArrayDereferencing(size="DWORD"):
@@ -561,7 +464,7 @@ def LoadPointerContent(n,size):
 	if is_global_symbol(n):
 		LoadDereferenceGlobal(n,size)
 	else:
-		LoadDereferenceLocal(get_local_symbol_offset(n),size)
+		LoadDereferenceLocal(get_local_symbol_offset(n),size,local_param_number)
 		
 
 #_________________________________________________________________________________________
@@ -687,7 +590,7 @@ def BitWiseFactor():
 						if is_global_symbol(n):
 							LoadGlobal(n)
 						else:
-							LoadLocal(get_local_symbol_offset(n))
+							LoadLocal(get_local_symbol_offset(n), local_param_number)
 						AddToPrimary(str(get_member_info(t, attr)[2]))
 						DereferencePrimary(get_member_info(t, attr)[1])
 					else:
@@ -695,7 +598,7 @@ def BitWiseFactor():
 				elif is_global_symbol(n):
 					LoadGlobal(n)
 				else:
-					LoadLocal(get_local_symbol_offset(n))
+					LoadLocal(get_local_symbol_offset(n), local_param_number)
 			elif get_symbol_type(n) == IDENTIFIER_FUNCTION:
 				CallProc(n)
 			else:
@@ -943,9 +846,30 @@ def BoolExpression():
 
 # Main code
 if __name__ == "__main__":
-	Tokenize()
-	streampos = 0
-	GetChar()
+	# Check the command line arguments and options
+	source_file, output_file = commandline.ParseCommandLine()
+	
+	# Read the source
+	if source_file == "":
+		abort("source file not specified")
+	source_text = ReadSourceText(source_file, script_directory)
+	
+	file_name = source_file
+	
+	# Tokenize the program
+	tokenizer.file_name = file_name
+	tokenizer.source_text = source_text
+	token_stream = tokenizer.Tokenize(is_main_file=True)
+	
+	# Extend the macros, include the files and such
+	preproc.token_stream = token_stream
+	preproc.Preprocess()
+	
+	# Produce the AST
+	AST = parser.ProduceAST()
+	
+	# Begin compiling
+	streampos = -1
 	Next()
 	program()
 	compile()
