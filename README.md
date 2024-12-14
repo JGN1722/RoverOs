@@ -1,9 +1,9 @@
-# MyOS - A Work-in-Progress Operating System  
+# RoverOS - A Work-in-Progress Operating System  
 
-**MyOS** is a custom operating system designed from scratch, with a focus on being built entirely in my custom programming language. This project is in its early stages and serves as a platform to explore low-level system programming, language design, and operating system concepts.  
+**RoverOS** is a custom operating system designed from scratch, with a focus on being built entirely in my custom programming language. This project is in its early stages and serves as a platform to explore low-level system programming, language design, and operating system concepts.  
 
 ## 🚧 **Work in Progress**  
-Please note that **MyOS** is still under heavy development. A custom compiler for my language is under construction, and most of the current functionality has been implemented using a combination of assembly and placeholder code for my language. Expect frequent changes, incomplete features, and rough edges.  
+Please note that **RoverOS** is still under heavy development. A custom compiler for my language is under construction, and most of the current functionality has been implemented using a combination of assembly and placeholder code for my language. Expect frequent changes, incomplete features, and rough edges.  
 
 ## Features (So Far)  
 
@@ -31,7 +31,7 @@ Please note that **MyOS** is still under heavy development. A custom compiler fo
 
 - **Custom Language Integration**:  
   - The compiler for my custom programming language is in progress.  
-  - MyOS will eventually be written entirely in this language.  
+  - RoverOs will eventually be written entirely in this language.  
 
 ## Goals  
 - Develop a fully functional operating system written in my custom language.  
@@ -39,7 +39,7 @@ Please note that **MyOS** is still under heavy development. A custom compiler fo
 - Create a seamless development environment for the custom language.  
 
 ## How to Build  
-Currently, building MyOS requires a cross-compilation toolchain for x86 architecture. Detailed instructions will be provided once the custom language compiler is ready.  
+Currently, building RoverOS requires only a python interpreter, even if I am yet to provide a build script. Detailed instructions will be provided once the custom language compiler is ready.  
 
 ## Contribution  
 Contributions are welcome, but due to the early stage of development, the project lacks comprehensive documentation and well-defined workflows. If you'd like to contribute, feel free to reach out or submit issues/PRs.  
