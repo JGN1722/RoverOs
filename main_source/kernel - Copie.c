@@ -39,7 +39,7 @@ int main() {
 	asm("sti");
 	
 	printf("all done, hanging\r\n");
-	while (1) {
+	do {
 		asm("hlt");
 	}
 }

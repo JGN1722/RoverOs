@@ -1750,17 +1750,7 @@ RET
 V_MAIN:
 PUSH ebp
 MOV ebp, esp
-SUB esp, 4
-MOV eax, 07c00h
-PUSHD eax
-MOV eax, 512
-ADD eax, DWORD [esp]
-ADD esp, 4
-PUSHD eax
-MOV eax, 512
-ADD eax, DWORD [esp]
-ADD esp, 4
-MOV DWORD [ebp - 4], eax
+include '..\boot\constants.inc'
 CALL V_INIT_VGA
 MOV eax, L67
 PUSHD eax

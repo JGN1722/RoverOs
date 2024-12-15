@@ -33,7 +33,7 @@ int main() {
 	printf("This shouldn't\r\n");
 	
 	printf("all done, hanging\r\n");
-	do {
+	while (1) {
 		asm("hlt");
 	}
 }

@@ -42,8 +42,8 @@ int PIC_remap(int offset1, int offset2) {
 	mask2 = inb(PIC2_DATA);
 	
 	// Start cascade initialisation
-	outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);
-	outb(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4);
+	outb(PIC1_COMMAND, ICW1_INIT || ICW1_ICW4);
+	outb(PIC2_COMMAND, ICW1_INIT || ICW1_ICW4);
 	
 	// Set PICs vector offset
 	outb(PIC1_DATA, offset1);
@@ -82,11 +82,10 @@ int generic_interrupt_handler() {
 }
 
 int install_generic_interrupt_handler() {
-	int i;
+	int i = 0;
 	
-	i = 0;
-	while i < IDT_ENTRIES {
-		install_interrupt_handler(i, @generic_interrupt_handler);
+	while (i < IDT_ENTRIES) {
+		install_interrupt_handler(i, generic_interrupt_handler);
 		i++;
 	}
 }

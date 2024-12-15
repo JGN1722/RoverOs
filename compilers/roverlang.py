@@ -19,8 +19,9 @@ import tokenizer
 import preproc
 import parser
 
-tokenizer.script_directory = script_directory
 commandline.script_directory = script_directory
+tokenizer.script_directory = script_directory
+preproc.script_directory = script_directory
 
 debug_mode = 0
 
@@ -266,8 +267,6 @@ def Block(L):
 			InlineAssembly()
 		elif token == ".":
 			DoPass()
-		elif token == "s":
-			Next()
 		else:
 			if get_symbol_type(value) == IDENTIFIER_VARIABLE:
 				AssignStatement()
@@ -844,6 +843,24 @@ def BoolExpression():
 		elif value == "XOR" or value == "~":
 			BoolXor()
 
+#Pretty printing the AST
+tab_number = 0
+
+def print_node(node):
+	global tab_number
+	
+	print("\t" * tab_number,"Node",node.type,"with value",node.value)
+	if node.children != []:
+		tab_number += 1
+		
+		for child in node.children:
+			try:
+				print_node(child)
+			except:
+				print("\t" * tab_number,child)
+		
+		tab_number -= 1
+
 # Main code
 if __name__ == "__main__":
 	# Check the command line arguments and options
@@ -863,10 +880,14 @@ if __name__ == "__main__":
 	
 	# Extend the macros, include the files and such
 	preproc.token_stream = token_stream
-	preproc.Preprocess()
+	token_stream = preproc.Preprocess()
 	
 	# Produce the AST
+	parser.token_stream = token_stream
 	AST = parser.ProduceAST()
+	print_node(AST)
+	
+	sys.exit()
 	
 	# Begin compiling
 	streampos = -1

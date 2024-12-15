@@ -30,20 +30,19 @@ int slave_irq_default() {
 }
 
 int install_irq_interrupts() {
-	int i;
+	int i = MASTER_IRQ_VECTOR_OFFSET;
 	
 	// Install the default handler everywhere
-	i = MASTER_IRQ_VECTOR_OFFSET;
-	while i < MASTER_IRQ_VECTOR_OFFSET + 8 {
-		install_interrupt_handler(i, @master_irq_default);
+	while (i < MASTER_IRQ_VECTOR_OFFSET + 8) {
+		install_interrupt_handler(i, master_irq_default);
 		i++;
 	}
 	i = SLAVE_IRQ_VECTOR_OFFSET;
-	while i < SLAVE_IRQ_VECTOR_OFFSET + 8 {
-		install_interrupt_handler(i, @slave_irq_default);
+	while (i < SLAVE_IRQ_VECTOR_OFFSET + 8) {
+		install_interrupt_handler(i, slave_irq_default);
 		i++;
 	}
 	
 	// Install keyboard interrupt handler
-	install_interrupt_handler(MASTER_IRQ_VECTOR_OFFSET + 1, @keyboard_handler);
+	install_interrupt_handler(MASTER_IRQ_VECTOR_OFFSET + 1, keyboard_handler);
 }

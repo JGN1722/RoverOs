@@ -17,7 +17,7 @@ int main() {
 	printf("all done, hanging\r\n");
 	putchar("x",1,1,0);
 	
-	do {
+	while (1) {
 		asm("hlt");
 	}
 }

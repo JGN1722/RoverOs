@@ -1,4 +1,4 @@
-global int terminal_color;
+int terminal_color;
 
 int init_vga() {
 	clear_screen();
@@ -11,10 +11,10 @@ int set_terminal_color(int col) {
 }
 
 int set_blinking(int b) {
-	if b = 0 {
-		set_terminal_color(terminal_color & 0x7f);
+	if (b == 0) {
+		set_terminal_color(terminal_color && 0x7f);
 	} else {
-		set_terminal_color((terminal_color & 0x7f) + 0x80);
+		set_terminal_color((terminal_color && 0x7f) + 0x80);
 	}
 }
 
@@ -23,7 +23,7 @@ int set_cursor_pos(int x, int y) {
 	linear_position = MAX_COLS * y + x;
 	
 	outb(REG_SCREEN_CTRL, 0x0E);
-	outb(REG_SCREEN_DATA, (linear_position SHR 8));
+	outb(REG_SCREEN_DATA, (linear_position >> 8));
 	
 	outb(REG_SCREEN_CTRL, 0x0F);
 	outb(REG_SCREEN_DATA, linear_position);
@@ -38,7 +38,7 @@ int get_cursor_pos() {
 	outb(REG_SCREEN_CTRL, 0x0F);
 	low = inb(REG_SCREEN_DATA);
 	
-	return(high SHL 8 + low);
+	return(high << 8 + low);
 }
 
 int clear_screen() {
@@ -66,37 +66,37 @@ int scroll() {
 	");
 }
 
-int putchar(int ptr, int x, int y, int attr) {
+int putchar(char ptr, int x, int y, int attr) {
 	int linear_pos, addr;
 	int new_x, new_y;
 	
-	if attr = 0 {
+	if (attr == 0) {
 		attr = terminal_color;
 	}
 	
 	// If x = -1 or y = -1, use the cursor position instead
-	if x = -1 or y = -1 or x >= MAX_COLS or y >= MAX_ROWS {
+	if (x == -1 || y == -1 || x >= MAX_COLS || y >= MAX_ROWS) {
 		linear_pos = get_cursor_pos();
 		x = linear_pos % MAX_COLS;
 		y = (linear_pos - x) / MAX_COLS;
 		
-		if BYTE *ptr = 13 {		"\r"
+		if (*ptr == 13) {		// \r
 			new_x = 0;
 			new_y = y;
-		} elseif BYTE *ptr = 10 {	"\n"
+		} elseif (*ptr == 10) {	// \n
 			new_x = x;
 			new_y = y + 1;
-		} elseif BYTE *ptr = 9 {	"\t"
-			new_x = (x + 8) & (not (8 - 1));
+		} elseif (*ptr == 9) {	// \t
+			new_x = (x + 8) && !(8 - 1);
 			new_y = y;
-			if x > 79 {
+			if (x > 79) {
 				new_x = 0;
 				new_y++;
 			}
 		} else {
-			addr = ((MAX_COLS * y + x) SHL 1) + VIDEO_MEMORY;
-			WORD *addr = attr SHL 8 + BYTE *ptr;
-			if x < 79 {
+			addr = ((MAX_COLS * y + x) << 1) + VIDEO_MEMORY;
+			*addr = attr << 8 + *ptr;
+			if (x < 79) {
 				new_x = x + 1;
 				new_y = y;
 			} else {
@@ -104,23 +104,23 @@ int putchar(int ptr, int x, int y, int attr) {
 				new_y = y + 1;
 			}
 		}
-		if new_y >= MAX_ROWS {
+		if (new_y >= MAX_ROWS) {
 			new_y--;
 			scroll();
 		}
 		set_cursor_pos(new_x, new_y);
 	} else {
-		addr = ((MAX_COLS * y + x) SHL 1) + VIDEO_MEMORY;
+		addr = ((MAX_COLS * y + x) << 1) + VIDEO_MEMORY;
 		
-		WORD *addr = attr SHL 8 + BYTE *ptr;
+		*addr = attr << 8 + *ptr;
 	}
 }
 
 int printf(int str) {
-	while BYTE *str <> 0 {
+	while (*str != 0) {
 		putchar(str,-1,-1, 0);
 		str++;
 	}
 }
 
-int sleep() {int i;i = 0;while i < 0x4FFFFF {i++;}}
+int sleep() {int i = 0;while (i < 0x4FFFFF) {i++;}}

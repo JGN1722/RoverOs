@@ -20,9 +20,6 @@ def abort(s):
 	print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
 	sys.exit()
 
-def Warning(s):
-	print("Warning: " + s, "(file", file_name, "line", line_number, "character", character_number, ")")
-
 def Expected(s):
 	abort("Expected " + s)
 
@@ -183,10 +180,15 @@ def next_token():
 			elif lookahead == "/":
 				SkipInlineComment()
 
+# In order to start this routine, the following variables must have been initialized:
+# -script_directory
+# -file_name
+# -source_text
 def Tokenize(is_main_file=False):
-	global token_stream, streampos, token_stream, lookahead, source_text, line_number, character_number, file_name
+	global streampos, token_stream, character_number, line_number, file_name
 	
 	streampos = 0
+	token_stream = []
 	current_file_name = file_name
 	line_number, character_number = 1, 1
 	old_line_number, old_character_number = 1, 1
@@ -194,40 +196,12 @@ def Tokenize(is_main_file=False):
 	GetChar()
 	next_token()
 	while token != "\0":
-		if token == "x" and value == "INCLUDE":
-			next_token()
-			IncludeFile(token, value)
-			next_token()
-		else:
-			token_stream.append((token,value, file_name, old_line_number, old_character_number))
-			old_line_number, old_character_number = line_number, character_number
-			
-			next_token()
+		token_stream.append((token,value, file_name, old_line_number, old_character_number))
+		old_line_number, old_character_number = line_number, character_number
+		
+		next_token()
 	
 	if is_main_file:
-		token_stream.append(("\0", "\0", current_file_name, line_number, character_number))
-		
-		# Clean the namespace a bit
-		del lookahead
-		del source_text
-		
-		return token_stream
-
-def IncludeFile(new_source_file_token, new_source_file_name):
-	global source_text, streampos, lookahead, file_name, line_number, character_number, token, value
+		token_stream.append(("\0","\0", file_name, old_line_number, old_character_number))
 	
-	if not new_source_file_token == "s":
-		Expected("name of file to include (not" + new_source_file_name + ")")
-	if new_source_file_name == "":
-		abort("source file not specified")
-	
-	new_source_file = get_abs_path(new_source_file_name, os.path.dirname(file_name))
-	
-	if not os.path.isfile(new_source_file):
-		abort("source file not found (" + new_source_file + ")")
-	
-	(tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8) = source_text, streampos, lookahead, file_name, line_number, character_number, token, value
-	file_name = get_abs_path(new_source_file, script_directory)
-	source_text = open(new_source_file).read()
-	Tokenize()
-	source_text, streampos, lookahead, file_name, line_number, character_number, token, value = (tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7, tmp8)
+	return token_stream

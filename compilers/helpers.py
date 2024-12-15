@@ -6,7 +6,18 @@ keyword_list = [
 	'ASM',
 	'DWORD',
 	'WORD',
-	'BYTE'
+	'BYTE',
+	'IF',
+	'WHILE',
+	'GLOBAL',
+	'STRUCT'
+]
+
+built_in_types = [
+	'CHAR',
+	'WORD',
+	'INT',
+	'VOID'
 ]
 
 def IsAlpha(c):
@@ -24,9 +35,6 @@ def IsAlnum(c):
 def IsAddop(c):
 	return c == "+" or c == "-"
 
-def IsBitWiseOp(t):
-	return t == "SHL" or t == "SHR" or t == "SAR" or t == "SAL"
-
 def IsMulop(c):
 	return c == "*" or c == "/" or c == "%"
 
@@ -34,10 +42,13 @@ def IsRelop(c):
 	return c == "<" or c == ">" or c == "=" or c == "!"
 
 def IsOrop(c):
-	return c == "|" or c == "~" or c == "OR" or c == "XOR"
+	return c == "|" or c == "~"
 
-def IsType(t):
-	return t == "INT"
+def IsAndop(c):
+	return c == "&"
+
+def IsBuiltInType(t):
+	return t in built_in_types
 
 def IsSize(t):
 	return t == "DWORD" or t == "WORD" or t == "BYTE"

@@ -103,21 +103,20 @@ int except_float() {
 }
 
 int install_exception_interrupts() {
-	int i;
+	int i = 0;
 	
 	// First, install the default handler everywhere
-	i = 0;
-	while i < IDT_ERR_ENTRIES {
-		install_interrupt_handler(i, @except_default);
+	while (i < IDT_ERR_ENTRIES) {
+		install_interrupt_handler(i, except_default);
 		i++;
 	}
 	
 	// Then, install the specific handlers
-	install_interrupt_handler(0, @except_null_div);
-	install_interrupt_handler(4, @except_overflow);
-	install_interrupt_handler(8, @except_double_fault);
-	install_interrupt_handler(12, @except_ss_fault);
-	install_interrupt_handler(13, @except_gpf);
-	install_interrupt_handler(14, @except_page_fault);
-	install_interrupt_handler(16, @except_float);
+	install_interrupt_handler(0, except_null_div);
+	install_interrupt_handler(4, except_overflow);
+	install_interrupt_handler(8, except_double_fault);
+	install_interrupt_handler(12, except_ss_fault);
+	install_interrupt_handler(13, except_gpf);
+	install_interrupt_handler(14, except_page_fault);
+	install_interrupt_handler(16, except_float);
 }

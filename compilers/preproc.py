@@ -16,14 +16,6 @@ def abort(s):
 	print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
 	sys.exit()
 
-def Warning(s):
-	print("Warning: " + s, "(file", file_name, "line", line_number, "character", character_number, ")")
-
-def Undefined(n):
-	if IsKeyword(n):
-		abort("keyword is misplaced ( " + n + " )")
-	abort("undefined name ( " + n + " )")
-
 def Expected(s):
 	abort("Expected " + s)
 
@@ -109,25 +101,81 @@ def DefineDirective():
 	
 	Previous() # So if another directive directly follows, the main loop can find it
 
-def PreprocessorDirective():
-	global token_stream
+def IncludeFile(new_source_file_token, new_source_file_name):
+	global lookahead, file_name, line_number, character_number, token, value
 	
+	if not new_source_file_token == "s":
+		Expected("name of file to include (not" + new_source_file_name + ")")
+	if new_source_file_name == "":
+		abort("source file not specified")
+	
+	new_source_file = get_abs_path(new_source_file_name, os.path.dirname(file_name))
+	
+	if not os.path.isfile(new_source_file):
+		abort("source file not found (" + new_source_file + ")")
+	
+	tokenizer.file_name = get_abs_path(new_source_file, script_directory)
+	tokenizer.source_text = open(new_source_file).read()
+	return tokenizer.Tokenize()
+
+def IncludeDirective():
+	MatchString("#")
+	MatchString("INCLUDE")
+	file = value
+	file_token = token
+	
+	Previous()
+	Previous()
+	
+	for i in range(3):
+		del token_stream[streampos]
+	
+	new_stream = IncludeFile(file_token, file)
+	
+	for i in range(len(new_stream)):
+		token_stream.insert(streampos + i, new_stream[i])
+	
+	Previous()
+
+def PreprocessorDirective():
 	MatchString("#")
 	if not token == "x":
-		Expected("Preprocessor directive")
+		Expected("Preprocessor directive (instead of " + value + ")")
+	directive = value
+	Previous()
+	
+	if directive == "DEFINE":
+		DefineDirective()
+	else:
+		abort("Unrecognized preprocessor directive (" + directive + ")")
+
+def CheckIncludeDirective():
+	MatchString("#")
+	if not token == "x":
+		Expected("Preprocessor directive (instead of " + value + ")")
 	directive = value
 	Previous()
 	
 	if directive == "INCLUDE":
 		IncludeDirective()
-	elif directive == "DEFINE":
-		DefineDirective()
 	else:
-		abort("Unrecognized preprocessor directive (" + directive + ")")
+		pass # We only treat include directives here
 
+# In order to run this routine, this module must have received a token_stream
 def Preprocess():
-	global streampos, token, value, token_stream
+	global streampos, token, value
 	
+	streampos = -1
+	token = ""
+	value = ""
+	
+	# Only process includes right now
+	while streampos < len(token_stream) - 1:
+		Next()
+		if token == "#":
+			CheckIncludeDirective()
+	
+	# Iterate once more now that all the code has been read
 	streampos = -1
 	token = ""
 	value = ""
@@ -136,3 +184,5 @@ def Preprocess():
 		Next()
 		if token == "#":
 			PreprocessorDirective()
+	
+	return token_stream

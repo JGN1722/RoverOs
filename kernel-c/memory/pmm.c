@@ -1,10 +1,10 @@
 // Physical Memory Manager
 
 struct memory_map_entry {
-	DWORD base_low, base_hi;
-	DWORD len_low, len_hi;
-	DWORD type;
-	DWORD acpi_attribs;
+	int base_low, base_hi;
+	int len_low, len_hi;
+	int type;
+	int acpi_attribs;
 }
 
 int enum_memory_map() {
@@ -50,7 +50,7 @@ int get_sector_count(int high, int low, int high_or_low) {
 
 // Renvoie la partie haute de l'addition des 2 qwords si hi_or_low = 1, la partie basse sinon
 int add_qword(int hi1, int low1, int hi2, int low2, int hi_or_low) {
-	if (hi_or_low = 0) {
+	if (hi_or_low == 0) {
 		return low1 + low2;
 	} else {
 		asm("
@@ -68,7 +68,7 @@ int add_qword(int hi1, int low1, int hi2, int low2, int hi_or_low) {
 int compare_qword(int hi1, int low1, int hi2, int low2) {
 	if (hi1 > hi2) {
 		return 1;
-	} elseif (hi1 = hi2 and low1 > low2) {
+	} elseif (hi1 == hi2 && low1 > low2) {
 		return 1;
 	} else {
 		return 0;
@@ -90,7 +90,7 @@ int fill_bitmap() {
 	entry += 4;
 	
 	while (entry_count > 0) {
-		if (entry.type = 1) {
+		if (entry.type == 1) {
 			// Get the maximum number of sectors the memory chunk can be divided into
 			sect_high = get_sector_count(entry.len_hi, entry.len_low, 1);
 			sect_low = get_sector_count(entry.len_hi, entry.len_low, 0);
