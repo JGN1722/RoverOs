@@ -1,4 +1,4 @@
-int cstrud(int num) {
+char* cstrud(int num) {
 	asm("
 	mov ecx, 0
 	
@@ -48,7 +48,7 @@ int cstrud(int num) {
 	");
 }
 
-int cstrub(int num) {
+char* cstrub(int num) {
 	asm("
 	mov ecx, 0
 	

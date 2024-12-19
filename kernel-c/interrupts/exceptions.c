@@ -1,4 +1,4 @@
-int except_default() {
+void except_default() {
 	asm("pushad");
 	
 	printf("Unhandled exception\r\n");
@@ -11,7 +11,7 @@ int except_default() {
 	");
 }
 
-int except_null_div() {
+void except_null_div() {
 	asm("pushad");
 	
 	printf("Division by 0\r\n");
@@ -24,7 +24,7 @@ int except_null_div() {
 	");
 }
 
-int except_overflow() {
+void except_overflow() {
 	asm("pushad");
 	
 	printf("Overflow\r\n");
@@ -37,7 +37,7 @@ int except_overflow() {
 	");
 }
 
-int except_double_fault() {
+void except_double_fault() {
 	asm("pushad");
 	
 	printf("Double fault\r\n");
@@ -50,7 +50,7 @@ int except_double_fault() {
 	");
 }
 
-int except_ss_fault() {
+void except_ss_fault() {
 	asm("pushad");
 	
 	printf("Stack segment fault\r\n");
@@ -63,7 +63,7 @@ int except_ss_fault() {
 	");
 }
 
-int except_gpf() {
+void except_gpf() {
 	asm("pushad");
 	
 	printf("General protection fault\r\n");
@@ -76,7 +76,7 @@ int except_gpf() {
 	");
 }
 
-int except_page_fault() {
+void except_page_fault() {
 	asm("pushad");
 	
 	printf("Page fault\r\n");
@@ -89,7 +89,7 @@ int except_page_fault() {
 	");
 }
 
-int except_float() {
+void except_float() {
 	asm("pushad");
 	
 	printf("Floating point exception\r\n");
@@ -102,7 +102,7 @@ int except_float() {
 	");
 }
 
-int install_exception_interrupts() {
+void install_exception_interrupts() {
 	int i = 0;
 	
 	// First, install the default handler everywhere

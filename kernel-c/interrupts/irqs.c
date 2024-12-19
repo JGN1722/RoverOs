@@ -1,4 +1,4 @@
-int master_irq_default() {
+void master_irq_default() {
 	asm("pushad");
 	
 	printf("Unhandled IRQ received\r\n");
@@ -13,7 +13,7 @@ int master_irq_default() {
 	");
 }
 
-int slave_irq_default() {
+void slave_irq_default() {
 	asm("pushad");
 	
 	printf("Unhandled IRQ received\r\n");
@@ -29,7 +29,7 @@ int slave_irq_default() {
 	");
 }
 
-int install_irq_interrupts() {
+void install_irq_interrupts() {
 	int i = MASTER_IRQ_VECTOR_OFFSET;
 	
 	// Install the default handler everywhere

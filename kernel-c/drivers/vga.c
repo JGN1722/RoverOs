@@ -1,16 +1,16 @@
-int terminal_color;
+char terminal_color;
 
-int init_vga() {
+void init_vga() {
 	clear_screen();
 	set_terminal_color(WHITE_ON_BLACK);
 	set_cursor_pos(0,0);
 }
 
-int set_terminal_color(int col) {
+void set_terminal_color(char col) {
 	terminal_color = col;
 }
 
-int set_blinking(int b) {
+void set_blinking(int b) {
 	if (b == 0) {
 		set_terminal_color(terminal_color && 0x7f);
 	} else {
@@ -18,8 +18,8 @@ int set_blinking(int b) {
 	}
 }
 
-int set_cursor_pos(int x, int y) {
-	int linear_position;
+void set_cursor_pos(int x, int y) {
+	char linear_position;
 	linear_position = MAX_COLS * y + x;
 	
 	outb(REG_SCREEN_CTRL, 0x0E);
@@ -30,7 +30,7 @@ int set_cursor_pos(int x, int y) {
 }
 
 int get_cursor_pos() {
-	int high, low;
+	char high, low;
 	
 	outb(REG_SCREEN_CTRL, 0x0E);
 	high = inb(REG_SCREEN_DATA);
@@ -38,10 +38,10 @@ int get_cursor_pos() {
 	outb(REG_SCREEN_CTRL, 0x0F);
 	low = inb(REG_SCREEN_DATA);
 	
-	return(high << 8 + low);
+	return high << 8 + low;
 }
 
-int clear_screen() {
+void clear_screen() {
 	asm("
 	pusha
 	mov edi, VIDEO_MEMORY
@@ -52,7 +52,7 @@ int clear_screen() {
 	");
 }
 
-int scroll() {
+void scroll() {
 	asm("
 	pusha
 	mov edi, VIDEO_MEMORY
@@ -66,9 +66,9 @@ int scroll() {
 	");
 }
 
-int putchar(char ptr, int x, int y, int attr) {
-	int linear_pos, addr;
-	int new_x, new_y;
+void putchar(char* ptr, int x, int y, int attr) {
+	word* addr;
+	int linear_pos, new_x, new_y;
 	
 	if (attr == 0) {
 		attr = terminal_color;
@@ -116,11 +116,11 @@ int putchar(char ptr, int x, int y, int attr) {
 	}
 }
 
-int printf(int str) {
+void printf(char* str) {
 	while (*str != 0) {
 		putchar(str,-1,-1, 0);
 		str++;
 	}
 }
 
-int sleep() {int i = 0;while (i < 0x4FFFFF) {i++;}}
+void sleep() {int i = 0;while (i < 0x4FFFFF) {i++;}}

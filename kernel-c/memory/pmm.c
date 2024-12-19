@@ -1,7 +1,7 @@
 // Physical Memory Manager
 
 struct memory_map_entry {
-	int base_low, base_hi;
+	int* base_low, base_hi;
 	int len_low, len_hi;
 	int type;
 	int acpi_attribs;

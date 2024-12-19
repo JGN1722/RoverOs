@@ -1,14 +1,10 @@
 #include "constants.h"
 #include "..\kernel-c\low_level.c"
-#include "..\kernel-c\print_hex.c"
 
 // Drivers
 #include "..\kernel-c\drivers\vga.c"
 #include "..\kernel-c\drivers\keyboard.c"
 #include "..\kernel-c\drivers\ps2.c"
-
-// Memory
-#include "..\kernel-c\memory\pmm.c"
 
 // Interrupts
 #include "..\kernel-c\interrupts\interrupts.c"
@@ -16,16 +12,8 @@
 #include "..\kernel-c\interrupts\irqs.c"
 
 int main() {
-	asm("include '..\boot\constants.inc'"); // This is a temporary solution
-	
 	init_vga();
-	
 	printf("Initializing the system...\r\n");
-	
-	printf("Setting up memory...\r\n");
-	sort_memory_map();
-	enum_memory_map();
-	fill_bitmap();
 	
 	printf("Setting up interrupts...\r\n");
 	build_idt();
@@ -34,9 +22,15 @@ int main() {
 	install_irq_interrupts();
 	
 	PIC_remap(MASTER_IRQ_VECTOR_OFFSET, SLAVE_IRQ_VECTOR_OFFSET);
-	PIC_mask(0xfd, 0xff); /* Enable the keyboard only */
+	PIC_mask(0xfd, 0xff); // Enable the keyboard only
 	
 	asm("sti");
+	
+	set_terminal_color(0x1f);
+	set_blinking(1);
+	printf("This should blink\r\n");
+	set_blinking(0);
+	printf("This shouldn't\r\n");
 	
 	printf("all done, hanging\r\n");
 	while (1) {
@@ -48,12 +42,10 @@ int main() {
 
 void keyboard_handler() {
 	asm("pushad");
-	printf("Key pressed! ");
+	printf("Key pressed!\r\n");
 	
 	// For now, read and discard the key scan code
-	printf("Key code: ");
-	printf(cstrub(inb(0x60)));
-	printf("\r\n");
+	inb(0x60);
 	
 	outb(PIC1_COMMAND, PIC_EOI);
 	

@@ -1,4 +1,4 @@
-int build_idt() {
+void build_idt() {
 	asm("
 	; Build IDT
 	mov ecx, IDT_ENTRIES
@@ -14,7 +14,7 @@ int build_idt() {
 	");
 }
 
-int install_interrupt_handler(int i, int ptr) {
+void install_interrupt_handler(int i, int* ptr) {
 	asm("
 	mov edi, DWORD [ebp + 12]
 	shl edi, 3
@@ -34,8 +34,8 @@ int install_interrupt_handler(int i, int ptr) {
 	");
 }
 
-int PIC_remap(int offset1, int offset2) {
-	int mask1, mask2;
+void PIC_remap(int offset1, int offset2) {
+	char mask1, mask2;
 	
 	// Save masks
 	mask1 = inb(PIC1_DATA);
@@ -63,12 +63,12 @@ int PIC_remap(int offset1, int offset2) {
 	outb(PIC2_DATA, mask2);
 }
 
-int PIC_mask(int mask1, int mask2) {
+void PIC_mask(char mask1, char mask2) {
 	outb(PIC1_DATA, mask1);
 	outb(PIC2_DATA, mask2);
 }
 
-int generic_interrupt_handler() {
+void generic_interrupt_handler() {
 	asm("pushad");
 	
 	printf("Unhandled interrupt received\r\n");
@@ -81,7 +81,7 @@ int generic_interrupt_handler() {
 	");
 }
 
-int install_generic_interrupt_handler() {
+void install_generic_interrupt_handler() {
 	int i = 0;
 	
 	while (i < IDT_ENTRIES) {
