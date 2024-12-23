@@ -1,45 +1,46 @@
 # RoverOS - A Work-in-Progress Operating System  
 
-**RoverOS** is a custom operating system designed from scratch, with a focus on being built entirely in my custom programming language. This project is in its early stages and serves as a platform to explore low-level system programming, language design, and operating system concepts.  
+**RoverOS** is a custom operating system designed from entirely from scratch, because I believe we learn the most by reinventing the wheel. And by from scratch, I mean that I am using a self made compiler for a subset of C, and that I'm not using an IDE.  
 
-## 🚧 **Work in Progress**  
-Please note that **RoverOS** is still under heavy development. A custom compiler for my language is under construction, and most of the current functionality has been implemented using a combination of assembly and placeholder code for my language. Expect frequent changes, incomplete features, and rough edges.  
+## 🚧 **Work in Progress**
+Because of these added challenges, **RoverOs** is currently under heavy development, and will be for a while.  
 
 ## Features (So Far)  
 
 ### ✅ Implemented:  
 - **Basic VGA Driver**:  
   - Provides text-mode output to the screen.  
-  - Useful for debugging and basic UI during development.  
+  - Allows for multiple colors and blinking text.  
 
-- **Basic Filesystem**:  
-  - A simple, custom filesystem implementation for reading and writing files.  
-  - Serves as a starting point for more complex storage systems.  
+- **Minimalist Filesystem**:  
+  - Allows for 56 characters file names and 3 characters extensions.  
+  - Can manage up to 2Gb of storage.  
+  - Can contain up to 256 files or folders.  
 
 - **Interrupt Handling**:  
-  - Robust interrupt handling for hardware and software interrupts.  
-  - Includes support for IRQs and exception handling.  
-
-- **Keyboard Input**:  
-  - A basic driver for processing keyboard input.  
-  - Currently supports scancode translation for text input.  
+  - Can receive and respond to any software, IRQ or error interrupt.
+  - Allows for keyboard input, and much more coming soon.   
 
 ### 🛠️ In Progress:  
 - **Memory Management**:  
-  - Developing a memory manager for heap and stack allocations.  
+  - Developing a physical memory manager for heap allocations.  
   - Future plans include support for paging and virtual memory.  
 
-- **Custom Language Integration**:  
-  - The compiler for my custom programming language is in progress.  
-  - RoverOs will eventually be written entirely in this language.  
-
 ## Goals  
-- Develop a fully functional operating system written in my custom language.  
-- Implement core OS features, including process management, networking, and a graphical user interface (GUI).  
-- Create a seamless development environment for the custom language.  
+- My plan for RoverOs is to make it an OS one can use in their everyday life, with a CLI, multiple terminals, a text editor, a network stack, multiprocessing, complete power management, and multiple programming languages ported to it. And who knows, maybe one day a web browser ...?   
+- RoverOs is likely to never contain any kind of GUI, as I personally believe CLIs look better, and can provide user interfaces that are just as good.  
+- Create a nice and cozy development environment for everyday programming, without all the bloat of windows or linux.   
 
 ## How to Build  
-Currently, building RoverOS requires only a python interpreter, even if I am yet to provide a build script. Detailed instructions will be provided once the custom language compiler is ready.  
+No build script is provided right now, but an image file can be found in the [image](/image) folder. If you really wish to build it yourself, you can do so on Windows by running the following commands from the root of the repo:  
++ assemble the boot sector:  
+  ```compilers\FASM.EXE main_source\boot_sect.asm image\boot_sect.bin```
++ compile the kernel:  
+  ```roverc.py ..\main_source\kernel.c```
++ build the image file system:  
+  ```buildfs.py```
++ create the image file:
+  
 
 ## Contribution  
 Contributions are welcome, but due to the early stage of development, the project lacks comprehensive documentation and well-defined workflows. If you'd like to contribute, feel free to reach out or submit issues/PRs.  
