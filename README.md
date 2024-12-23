@@ -32,27 +32,26 @@ Because of these added challenges, **RoverOs** is currently under heavy developm
 - Create a nice and cozy development environment for everyday programming, without all the bloat of windows or linux.   
 
 ## How to Build  
+### Requirements  
+As the compiler is part of the project, all you need is a python interpreter. I'm personnally using python 3.12.1.  
+### Instructions  
 No build script is provided right now, but an image file can be found in the [image](/image) folder. If you really wish to build it yourself, you can do so on Windows by running the following commands from the root of the repo:  
 + assemble the boot sector:  
   ```compilers\FASM.EXE main_source\boot_sect.asm image\boot_sect.bin```
 + compile the kernel:  
-  ```roverc.py ..\main_source\kernel.c```
+  ```compilers\roverc.py main_source\kernel.c image\kernel.bin```
 + build the image file system:  
-  ```buildfs.py```
-+ create the image file:
-  
+  ```main_source\buildfs.py```
++ create the image file:  
+  ```copy /b image\boot_sect.bin+image\fs.bin image\image.bin```
+
+you can then run the file image\image.bin with whatever emulator you prefer.
 
 ## Contribution  
-Contributions are welcome, but due to the early stage of development, the project lacks comprehensive documentation and well-defined workflows. If you'd like to contribute, feel free to reach out or submit issues/PRs.  
-
-## Future Plans  
-- Complete the memory management system.  
-- Expand the custom language compiler to support advanced features.  
-- Implement a multitasking kernel.  
-- Explore support for other hardware architectures.  
+Contributions are welcome, but due to the early stage of development, the project lacks comprehensive documentation and well-defined workflows, I cannot give pointers to the parts of the code that must be improved
 
 ## Acknowledgments  
-This project is inspired by various OS development resources and the incredible open-source community.  
+This project is inspired by various OS development resources, mostly on the [OsDev wiki](https://wiki.osdev.org/Expanded_Main_Page). For the compiler, I must thank Jack Crenshaw and his incredibly useful [Let's Build a Compiler](https://compilers.iecc.com/crenshaw/), as well as Ruslan Spivak for his blog series [Let's build a simple interpreter](https://ruslanspivak.com/lsbasi-part1/). My inspiration comes from tishion's [PiscisOs](https://tishion.github.io/PiscisOS/).
 
 ---
 
