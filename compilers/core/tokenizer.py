@@ -1,3 +1,10 @@
+"""
+RoverC Compiler
+Written for RoverOs
+Author: JGN1722 (Github)
+Description: The first stage of the compiler, that breaks up the source into an array of tokens
+"""
+
 import sys
 
 from core.helpers import *

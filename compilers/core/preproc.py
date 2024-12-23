@@ -1,3 +1,10 @@
+"""
+RoverC Compiler
+Written for RoverOs
+Author: JGN1722 (Github)
+Description: The second stage of the compiler, that takes a stream of tokens and expands the preprocessor directives. The only directives supported right now are INCLUDE and a limited DEFINE
+"""
+
 import sys
 
 from core.helpers import *

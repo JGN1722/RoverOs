@@ -63,6 +63,7 @@ def dbg():
 #Pretty printing the AST
 tab_number = 0
 
+# A debug routine to dump the AST
 def print_node(node):
 	global tab_number
 	
@@ -106,7 +107,6 @@ if __name__ == "__main__":
 	# Generate the assembly from the AST
 	transpiler.AST = AST
 	asm = transpiler.transpile()
-	# print(asm)
 	
 	# Begin compiling
 	compile(asm)

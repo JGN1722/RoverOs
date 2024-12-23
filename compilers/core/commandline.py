@@ -1,3 +1,10 @@
+"""
+RoverC Compiler
+Written for RoverOs
+Author: JGN1722 (Github)
+Description: This module parses the command line and returns the results to the main code
+"""
+
 import sys
 
 from core.helpers import *

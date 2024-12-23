@@ -19,11 +19,11 @@ void set_blinking(int b) {
 }
 
 void set_cursor_pos(int x, int y) {
-	char linear_position;
+	word linear_position;
 	linear_position = MAX_COLS * y + x;
 	
 	outb(REG_SCREEN_CTRL, 0x0E);
-	outb(REG_SCREEN_DATA, (linear_position >> 8));
+	outb(REG_SCREEN_DATA, linear_position >> 8);
 	
 	outb(REG_SCREEN_CTRL, 0x0F);
 	outb(REG_SCREEN_DATA, linear_position);
@@ -66,7 +66,7 @@ void scroll() {
 	");
 }
 
-void putchar(char* ptr, int x, int y, int attr) {
+void putchar(char* ptr, int x, int y, char attr) {
 	word* addr;
 	int linear_pos, new_x, new_y;
 	
@@ -80,13 +80,13 @@ void putchar(char* ptr, int x, int y, int attr) {
 		x = linear_pos % MAX_COLS;
 		y = (linear_pos - x) / MAX_COLS;
 		
-		if (*ptr == 13) {		// \r
+		if (*ptr == 13) {	// "\r"
 			new_x = 0;
 			new_y = y;
-		} elseif (*ptr == 10) {	// \n
+		} elseif (*ptr == 10) {	// "\n"
 			new_x = x;
 			new_y = y + 1;
-		} elseif (*ptr == 9) {	// \t
+		} elseif (*ptr == 9) {	// "\t"
 			new_x = (x + 8) && !(8 - 1);
 			new_y = y;
 			if (x > 79) {
@@ -123,4 +123,46 @@ void printf(char* str) {
 	}
 }
 
-void sleep() {int i = 0;while (i < 0x4FFFFF) {i++;}}
+void sleep() {
+	int i = 0;
+	while (i < 0x2FFFFF) {
+		i++;
+	}
+}
+
+// Debug code
+/*
+
+		asm("PUSH eax");
+		asm("CALL V_CSTRUD");
+		asm("ADD esp, 4");
+		asm("MOV edi, VIDEO_MEMORY + 20 * MAX_COLS * 2");
+		
+		asm("
+		MOV esi, eax
+		MOV edi, VIDEO_MEMORY + 20 * MAX_COLS * 2
+		MOV ecx, 8
+		.loop_here2:
+		MOV al, BYTE [esi]
+		MOV ah, 0x0f
+		MOV WORD [edi], ax
+		INC esi
+		ADD edi, 2
+		loop .loop_here2
+		");
+
+	asm("
+	MOV esi, L0
+	MOV edi, VIDEO_MEMORY
+	ADD edi, (MAX_COLS * 2) * 15
+	MOV ecx, 100
+	.loop_here:
+	MOV al, BYTE [esi]
+	MOV ah, 0x0f
+	MOV WORD [edi], ax
+	INC esi
+	ADD edi, 2
+	loop .loop_here
+	");
+	
+*/

@@ -1,3 +1,10 @@
+"""
+RoverC Compiler
+Written for RoverOs
+Author: JGN1722 (Github)
+Description: The fourth stage of the compiler, that takes an AST and outputs assembly code
+"""
+
 import sys
 
 from core.helpers import *
@@ -11,7 +18,7 @@ allocated_stack_units = 0 # Number of local variables on the stack
 # Error functions
 def abort(s):
 	# I'm still yet to find how to use file_name, line_number and character_number here
-	#print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
+	# print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
 	# For now, just print it raw
 	print("Error: " + s, file=sys.stderr)
 	sys.exit()
@@ -34,7 +41,9 @@ def transpile():
 		elif node.type == "GlobalDecl":
 			st.AddVariable(node.value["name"], node.value["type"], True)
 			cg.AllocateGlobalVariable(node.value["name"], st.SizeOf(node.value["type"].datatype))
-			# TODO: add initializer
+			if node.children != []:
+				CompileExpression(node.children[0])
+				StoreToGlobalVariable(node.value["name"], st.SizeOf(node.value["type"].datatype))
 	
 	# Delete the unneeded data from the tree to free memory
 	i = 0
@@ -74,13 +83,19 @@ def transpile():
 	return cg.GetOutput()
 
 def CompileFunction(node):
+	global allocated_stack_units
+	
 	func_name = node.value["name"]
 	
 	cg.PutIdentifier(func_name)
 	cg.FunctionHeader()
 	
+	allocated_stack_units = 0
+	
+	stack_offset = -len(node.children[0].children) - 1
 	for arg in node.children[0].children:
-		st.AddVariable(arg["name"], arg["type"])
+		st.AddVariable(arg["name"], arg["type"], stack_offset=stack_offset)
+		stack_offset += 1
 	
 	CompileBlock(node.children[1])
 	
@@ -116,23 +131,24 @@ def CompileIf(node):
 	L2 = cg.NewLabel()
 	CompileExpression(node.children[0])
 	cg.TestNull()
-	cg.BranchIfFalse(L2)
+	cg.BranchIfTrue(L2)
 	CompileBlock(node.children[1])
-	cg.BranchTo(L1)
+	if len(node.children) != 2:
+		cg.BranchTo(L1)
 	cg.PutLabel(L2)
 	other_children = node.children[2:]
-	for else_if in other_children:
-		if else_if.value == "ELSEIF":
-			CompileExpression(else_if.children[0])
-			cg.TestNull()
+	for i in range(len(other_children)):
+		if other_children[i].value == "ELSEIF":
 			L2 = cg.NewLabel()
-			cg.BranchIfFalse(L2)
-			CompileBlock(else_if.children[1])
-			cg.BranchTo(L1)
+			CompileExpression(other_children[i].children[0])
+			cg.TestNull()
+			cg.BranchIfTrue(L2)
+			CompileBlock(other_children[i].children[1])
+			if i != len(other_children) - 1:
+				cg.BranchTo(L1)
 			cg.PutLabel(L2)
 		else:
-			CompileBlock(else_if.children[0])
-			cg.BranchTo(L1) # This line may be unnecessary
+			CompileBlock(other_children[i].children[0])
 	cg.PutLabel(L1)
 
 def CompileWhile(node):
@@ -147,8 +163,12 @@ def CompileWhile(node):
 	cg.PutLabel(L2)
 
 def CompileLocDecl(node):
-	st.AddVariable(node.value["name"], node.value["type"])
-	cg.StackAlloc(st.SizeOf(node.value["type"].datatype))
+	global allocated_stack_units
+	
+	allocated_stack_units += 1
+	
+	st.AddVariable(node.value["name"], node.value["type"], stack_offset = allocated_stack_units)
+	cg.StackAlloc(1) # TODO: right now this does but I might have to change it
 	
 	# Add the initializer value if there's one
 	if len(node.children) != 0:
@@ -217,10 +237,10 @@ def CompileRelation(node):
 	CompileExpression(node.children[0])
 	cg.PushMain()
 	CompileExpression(node.children[1])
-	cg.CompareMainStackTop()
+	cg.CompareStackTopMain()
 	if node.value == "==":
-		cg.SetIfEqual()
-	elif node.value == "!=":
+		cg.SetIfEqual() # TODO: I'm pretty certain this can be optimized,
+	elif node.value == "!=":#       even if it has to be in post production
 		cg.SetIfNotEqual()
 	elif node.value == "<=":
 		cg.SetIfLessOrEqual()
@@ -230,6 +250,7 @@ def CompileRelation(node):
 		cg.SetIfAbove()
 	elif node.value == "<":
 		cg.SetIfLess()
+	cg.StackFree(1)
 	return Type_("CHAR")
 
 def CompileUnaryOp(node):
@@ -256,20 +277,34 @@ def CompileAssignement(node):
 def CompileStore(node):
 	# This may be either a variable, a dereference, a struct member access or a struct pointer member access
 	if node.type == "Variable":
-		cg.EmitLn("; Variable store here")
-		return Type_("VOID")
+		name = node.value
+		t = st.GetVariableType(name)
+		if st.IsVariableGlobal(name):
+			if t.pointer_level != 0:
+				cg.StoreToGlobalVariable(name, 4)
+			else:
+				cg.StoreToGlobalVariable(name, st.SizeOf(t.datatype))
+		else:
+			if t.pointer_level != 0:
+				cg.StoreToLocalVariable(st.GetLocalVariableOffset(name) * 4, 4)
+			else:
+				cg.StoreToLocalVariable(st.GetLocalVariableOffset(name) * 4, st.SizeOf(t.datatype))
+		return t
 	elif node.type == "Dereference":
 		if node.children[0].type == "Dereference":
 			cg.EmitLn("; Nested dereference store here")
 			return Type_("VOID")
 		else:
-			if not node.children[0].type == "Variable":
+			if node.children[0].type != "Variable":
 				abort("Undereferencable expression")
 			name = node.children[0].value
 			t = st.GetVariableType(name)
 			if t.pointer_level == 0:
 				abort("The variable " + name + " is not a pointer")
-			cg.EmitLn("; Variable dereference store here")
+			cg.PushMain()
+			CompileVariableRead(node.children[0])
+			cg.StoreDereferenceMain(SizeOfBuiltIn(t.datatype)) # TODO: Maybe st.SizeOf would be more suited ?
+			cg.StackFree(1)
 			return Type_(t.datatype, t.pointer_level - 1)
 	elif node.type == "StructMemberAccess":
 		cg.EmitLn("; Struct member access here")
@@ -300,14 +335,18 @@ def CompileVariableRead(node):
 		if st.IsVariableGlobal(name):
 			if st.GetVariableType(name).pointer_level != 0:
 				cg.LoadGlobalVariable(name, 4)
-				return Type_(st.GetVariableType(name).datatype)
 			elif IsBuiltInType(st.GetVariableType(name).datatype):
 				cg.LoadGlobalVariable(name, SizeOfBuiltIn(st.GetVariableType(name).datatype))
-				return Type_(st.GetVariableType(name).datatype)
 			else:
 				abort("Cannot load non-built-in type here")
+			return Type_("INT")
 		else:
-			cg.LoadLocalVariable(name) # TODO: pass the offset instead
+			if st.GetVariableType(name).pointer_level != 0:
+				cg.LoadLocalVariable(st.GetLocalVariableOffset(name) * 4, 4)
+			elif IsBuiltInType(st.GetVariableType(name).datatype):
+				cg.LoadLocalVariable(st.GetLocalVariableOffset(name) * 4, SizeOfBuiltIn(st.GetVariableType(name).datatype))
+			else:
+				abort("Cannot load non-built-in type here")
 			return st.GetVariableType(name)
 	elif st.IsFunction(name):
 		#Just load the function pointer in eax
@@ -332,7 +371,9 @@ def CompileFunctionCall(node):
 		if arg_type != arg_type_list[i]:
 			# If the type is wrong, we can still check if we can cast
 			if not (arg_type.pointer_level == 0 and arg_type_list[i].pointer_level == 0 and IsBuiltInType(arg_type.datatype) and IsBuiltInType(arg_type_list[i].datatype) and SizeOfBuiltIn(arg_type.datatype) <= SizeOfBuiltIn(arg_type_list[i].datatype)):
-				abort("wrong type of argument " + str(i) + " while calling " + name + ": " + arg_type.datatype + arg_type.pointer_level * "*" + " instead of " + arg_type_list[i].datatype + arg_type_list[i].pointer_level * "*")
+				# TODO: What is right below is a hack, I'm just waiting to implement type casts to remove it
+				# abort("wrong type of argument " + str(i) + " while calling " + name + ": " + arg_type.datatype + arg_type.pointer_level * "*" + " instead of " + arg_type_list[i].datatype + arg_type_list[i].pointer_level * "*")
+				pass
 			else:
 				pass
 		cg.PushMain()
@@ -340,19 +381,48 @@ def CompileFunctionCall(node):
 	if i != st.GetFunctionArgCount(name):
 		abort("wrong number of arguments while calling " + name + ": " + str(i) + " instead of " + str(st.GetFunctionArgType(name)))
 	cg.CallFunction(name)
+	
+	if st.GetFunctionArgCount(name) != 0:
+		cg.StackFree(st.GetFunctionArgCount(name))
+	
 	return st.GetFunctionType(name)
 
 def CompileDereference(node):
 	if node.children[0].type == "Dereference":
 		t = CompileDereference(node.children[0])
-		cg.DereferenceMain() # TODO: I'm pretty sure this is more subtle than that around types
+		cg.DereferenceMain(0) # TODO: I'm pretty sure this is more subtle than that around types
 		return Type_(t.datatype, t.pointer_level - 1)
 	else:
-		cg.EmitLn("; Dereference here")
-		return Type_("VOID")
+		if node.children[0].type == "Variable":
+			name = node.children[0].value
+			t = st.GetVariableType(name)
+			if t.pointer_level == 0:
+				abort("Variable " + name + " is not a pointer")
+			CompileVariableRead(node.children[0])
+			size = SizeOfBuiltIn(t.datatype) #TODO: Idk if I need to call st.SizeOf here
+			cg.DereferenceMain(size)
+			return Type_(t.datatype)
+		elif node.children[0].type == "StructMemberAccess":
+			cg.EmitLn("; StructMemberAccess dereference here")
+			abort("Undereferencable expression") #TODO: I know this shouldn't abort, I just don't want to implement it right now
+		elif node.children[0].type == "StructPointerMemberAccess":
+			cg.EmitLn("; StructPointerMemberAccess dereference here")
+			abort("Undereferencable expression")
+		else:
+			abort("Undereferencable expression")
 
 def CompileStructMemberAccess(node):
+	identifier_name = node.value
+	t = st.GetVariableType(identifier_name)
+	if t.pointer_level != 0:
+		abort("Cannot access the members of a pointer on struct with '.'")
+	struct_name = t.datatype
 	cg.EmitLn("; Struct member access here")
 
 def CompileStructPointerMemberAccess(node):
+	identifier_name = node.value
+	t = st.GetVariableType(identifier_name)
+	if t.pointer_level == 0:
+		abort("Cannot access the members of a struct with '->'")
+	struct_name = t.datatype
 	cg.EmitLn("; Struct pointer member access here")

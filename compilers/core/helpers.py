@@ -1,3 +1,10 @@
+"""
+RoverC Compiler
+Written for RoverOs
+Author: JGN1722 (Github)
+Description: A set of helper functions used throughout the compiler
+"""
+
 import os
 
 keyword_list = [
@@ -30,7 +37,13 @@ class Type_:
 		return self.datatype == other.datatype and self.pointer_level == other.pointer_level
 
 def GetSizeQualifier(s):
-	return "DWORD" if s == 4 else "WORD" if s == 2 else "BYTE" if s == 1 else 0
+	return "DWORD" if s == 4 else "WORD" if s == 2 else "BYTE" if s == 1 else ""
+
+def GetRegisterNameBySize(s):
+	return "eax" if s == 4 else "ax" if s == 2 else "al" if s == 1 else ""
+
+def GetSecondaryRegisterNameBySize(s):
+	return "ebx" if s == 4 else "bx" if s == 2 else "bl" if s == 1 else ""
 
 def IsAlpha(c):
 	return ord(c.upper()) >= 65 and ord(c.upper()) <= 90 or c == "_"

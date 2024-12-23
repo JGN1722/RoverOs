@@ -1,3 +1,10 @@
+"""
+RoverC Compiler
+Written for RoverOs
+Author: JGN1722 (Github)
+Description: A file containing the symbol table data structure, and a set of setters and getters functions
+"""
+
 from core.helpers import *
 
 # Data structure
@@ -21,7 +28,7 @@ class IdentifiersSymbolTable:
 		self.elements = [] # An array of Identifier()
 
 class Identifier:
-	def __init__(self, name, type_, args=None, is_global=False, stack_offset=0 is_variable=False, is_function=False):
+	def __init__(self, name, type_, args=None, is_global=False, stack_offset=0, is_variable=False, is_function=False):
 		self.name = name
 		self.is_variable = is_variable
 		self.is_function = is_function
@@ -52,10 +59,10 @@ def AddFunction(name, t, args):
 		abort("name redefinition (" + name + ")")
 	symtable.identifiers.elements.append(Identifier(name, t, args=args, is_function=True))
 
-def AddVariable(name, t, is_global=False):
+def AddVariable(name, t, is_global=False, stack_offset=0):
 	if IsNameTaken(name):
 		abort("name redefinition (" + name + ")")
-	symtable.identifiers.elements.append(Identifier(name, t, is_global=is_global, is_variable=True))
+	symtable.identifiers.elements.append(Identifier(name, t, is_global=is_global, is_variable=True, stack_offset=stack_offset))
 
 def AddStruct(name, members):
 	if IsNameTaken(name):

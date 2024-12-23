@@ -1,3 +1,10 @@
+"""
+RoverC Compiler
+Written for RoverOs
+Author: JGN1722 (Github)
+Description: The third stage of the compiler, that takes a preprocessed stream of tokens and outputs an AST
+"""
+
 import sys
 
 from core.helpers import *
@@ -388,7 +395,6 @@ def AssignementSequence():
 			Previous()
 			return ""
 		Next()
-		print(first_token + "=")
 		return first_token + "="
 	elif token == "<" or token == ">":
 		first_token = token
@@ -403,7 +409,6 @@ def AssignementSequence():
 			Previous()
 			return ""
 		Next()
-		print(first_token + "=")
 		return first_token + "="
 	return ""
 

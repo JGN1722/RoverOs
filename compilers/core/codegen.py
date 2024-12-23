@@ -1,3 +1,10 @@
+"""
+RoverC Compiler
+Written for RoverOs
+Author: JGN1722 (Github)
+Description: A set of code generator functions for use by the transpiler
+"""
+
 from core.helpers import *
 
 # Utilities
@@ -59,7 +66,8 @@ def AddMainStackTop():
 	EmitLn("ADD esp, 4")
 
 def SubMainStackTop():
-	EmitLn("SUB eax, DWORD [esp]")
+	EmitLn("SUB DWORD [esp], eax")
+	EmitLn("MOV eax, DWORD [esp]")
 	EmitLn("ADD esp, 4")
 
 def MulMainStackTop():
@@ -108,11 +116,27 @@ def XorMainStackTop():
 def MainToStackTop():
 	EmitLn("MOV DWORD [esp], eax")
 
-def DereferenceMain():
-	EmitLn("MOV eax, DWORD [eax]")
+def DereferenceMain(size):
+	# I know we said no logic in the code generators, but this one is needed
+	# TODO: Use string manipulation to remove this condition
+	if size == 4:
+		EmitLn("MOV eax, DWORD [eax]")
+	else:
+		EmitLn("MOVZX eax, " + GetSizeQualifier(size) + "[eax]")
+
+def StoreDereferenceMain(size):
+	if size == 4:
+		EmitLn("MOV ebx, DWORD [esp]")
+		EmitLn("MOV DWORD [eax], ebx")
+	else:
+		EmitLn("MOV ebx, DWORD [esp]")
+		EmitLn("MOV " + GetSizeQualifier(size) + " [eax], " + GetSecondaryRegisterNameBySize(size))
 
 def StackAlloc(n):
-	EmitLn("SUB esp, " + str(n))
+	EmitLn("SUB esp, " + str(int(n) * 4))
+
+def StackFree(n):
+	EmitLn("ADD esp, " + str(int(n) * 4))
 
 def LoadNumber(v):
 	EmitLn("MOV eax, " + str(v))
@@ -121,16 +145,28 @@ def LoadLabel(l):
 	EmitLn("MOV eax, " + l)
 
 def LoadGlobalVariable(n, size):
-	EmitLn("MOVZX eax, " + GetSizeQualifier(size) + "[V_" + n + "]")
+	if size == 4:
+		EmitLn("MOV eax, DWORD [V_" + n + "]")
+	else:
+		EmitLn("MOVZX eax, " + GetSizeQualifier(size) + "[V_" + n + "]")
 
-def LoadLocalVariable(o):
-	...
+def StoreToGlobalVariable(n, size):
+	EmitLn("MOV " + GetSizeQualifier(size) + " [V_" + n + "], " + GetRegisterNameBySize(size))
+
+def LoadLocalVariable(o, size):
+	if size == 4:
+		EmitLn("MOV eax, DWORD [ebp - (" + str(o) + ")]")
+	else:
+		EmitLn("MOVZX eax, " + GetSizeQualifier(size) + " [ebp - (" + str(o) + ")]")
+
+def StoreToLocalVariable(o, size):
+	EmitLn("MOV " + GetSizeQualifier(size) + " [ebp - (" + str(o) + ")], " + GetRegisterNameBySize(size))
 
 def LoadFunctionPointer(n):
 	EmitLn("MOV eax, V_" + n)
 
-def CompareMainStackTop():
-	EmitLn("CMP eax, DWORD [esp]")
+def CompareStackTopMain():
+	EmitLn("CMP DWORD [esp], eax")
 
 # Control Structures
 def BranchTo(l):

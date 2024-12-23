@@ -1,5 +1,6 @@
 #include "constants.h"
 #include "..\kernel-c\low_level.c"
+#include "..\kernel-c\print_hex.c"
 
 // Drivers
 #include "..\kernel-c\drivers\vga.c"
@@ -12,6 +13,9 @@
 #include "..\kernel-c\interrupts\irqs.c"
 
 int main() {
+	// Temporary workaround
+	asm("include '..\main_source\constants.inc'");
+	
 	init_vga();
 	printf("Initializing the system...\r\n");
 	
@@ -45,7 +49,9 @@ void keyboard_handler() {
 	printf("Key pressed!\r\n");
 	
 	// For now, read and discard the key scan code
-	inb(0x60);
+	printf("Key code: ");
+	printf(cstrub(inb(0x60)));
+	printf("\r\n");
 	
 	outb(PIC1_COMMAND, PIC_EOI);
 	
