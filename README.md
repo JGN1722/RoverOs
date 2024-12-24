@@ -29,7 +29,7 @@ Because of these added challenges, **RoverOs** is currently under heavy developm
 ## Goals  
 - My plan for RoverOs is to make it an OS one can use in their everyday life, with a CLI, multiple terminals, a text editor, a network stack, multiprocessing, complete power management, and multiple programming languages ported to it. And who knows, maybe one day a web browser ...?   
 - RoverOs is likely to never contain any kind of GUI, as I personally believe CLIs look better, and can provide user interfaces that are just as good.  
-- Create a nice and cozy development environment for everyday programming, without all the bloat of windows or linux.   
+- RoverOs should become a nice and cozy development environment for everyday programming, without all the bloat of windows or linux.   
 
 ## How to Build  
 ### Requirements  
