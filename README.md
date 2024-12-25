@@ -35,17 +35,10 @@ Because of these added challenges, **RoverOs** is currently under heavy developm
 ### Requirements  
 As the compiler is part of the project, all you need is a python interpreter. I'm personnally using python 3.12.1.  
 ### Instructions  
-No build script is provided right now, but an image file can be found in the [image](/image) folder. If you really wish to build it yourself, you can do so on Windows by running the following commands from the root of the repo:  
-+ assemble the boot sector:  
-  ```compilers\FASM.EXE main_source\boot_sect.asm image\boot_sect.bin```
-+ compile the kernel:  
-  ```compilers\roverc.py main_source\kernel.c image\kernel.bin```
-+ build the image file system:  
-  ```main_source\buildfs.py```
-+ create the image file:  
-  ```copy /b image\boot_sect.bin+image\fs.bin image\image.bin```
+To build RoverOs on windows, run the provided build script. If you wish to run the image directly, you can pass it the argument -run:  
+> build.bat -run
 
-you can then run the file image\image.bin with whatever emulator you prefer.
+To do so, you need to have Bochs installed. I have not tested building on Linux, or running with other emulators.  
 
 ## Contribution  
 Contributions are welcome, but due to the early stage of development, the project lacks comprehensive documentation and well-defined workflows, I cannot give pointers to the parts of the code that must be improved
@@ -55,6 +48,6 @@ This project is inspired by various OS development resources, mostly on the [OsD
 
 ---
 
-**Disclaimer:** This project is for educational and experimental purposes. It is not intended for production use.  
+**Disclaimer:** This project is for educational and experimental purposes. It is not intended for production use, and has not been tested on real hardware yet.  
 
 **Stay tuned for updates!**
