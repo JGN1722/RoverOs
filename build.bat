@@ -7,6 +7,8 @@
 :: github.com/JGN1722/RoverOs
 ::
 
+cd /d %~dp0
+
 set RUN=%1
 
 :: create the target directory
