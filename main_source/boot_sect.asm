@@ -1,4 +1,4 @@
-include '..\boot\constants.inc'
+include '..\boot\constants.asm'
 
 ;a simple boot sector
 ;_____________________________________________________________

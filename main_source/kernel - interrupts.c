@@ -14,7 +14,7 @@
 
 int main() {
 	// Temporary workaround
-	asm("include '..\main_source\constants.inc'");
+	asm("include '..\main_source\constants.asm'");
 	
 	init_vga();
 	printf("Initializing the system...\r\n");

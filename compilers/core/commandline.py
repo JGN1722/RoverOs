@@ -29,13 +29,13 @@ def ParseCommandLine():
 	
 	for opt in options:
 		if opt == "h":
-			print("RoverLang Compiler\n" +
+			print("RoverC Compiler\n" +
 			      "Written for RoverOs\n" + 
 			      "Author: JGN1722 (Github)\n\n" +
 			      "Usage: roverlang.py [-h | -v] filename [output_filename]")
 			sys.exit()
 		elif opt == "v":
-			print("RoverLang Compiler\n" +
+			print("RoverC Compiler\n" +
 			      "Written for RoverOs\n" + 
 			      "Author: JGN1722 (Github)\n" +
 			      "Version: 1.0")
@@ -44,12 +44,12 @@ def ParseCommandLine():
 			abort("Unrecognized option: " + opt)
 	
 	if len(arguments) >= 1:
-		source_file = arguments[0]
+		source_file = get_abs_path(arguments[0], os.getcwd())
 	else:
 		source_file = ""
 	
 	if len(arguments) >= 2:
-		output_file = arguments[1]
+		output_file = get_abs_path(arguments[1], os.getcwd())
 	else:
 		output_file = convert_to_bin(get_abs_path(source_file, script_directory))
 	
@@ -58,7 +58,7 @@ def ParseCommandLine():
 # Error functions
 def abort(s):
 	print("Error: " + s, file=sys.stderr)
-	sys.exit()
+	sys.exit(-1)
 
 def Warning(s):
 	print("Warning: " + s)

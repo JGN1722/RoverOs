@@ -24,7 +24,7 @@ character_number = 0
 # Error functions
 def abort(s):
 	print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
-	sys.exit()
+	sys.exit(-1)
 
 def Expected(s):
 	abort("Expected " + s)

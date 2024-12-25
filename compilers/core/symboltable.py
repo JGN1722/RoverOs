@@ -183,6 +183,18 @@ def GetMemberType(struct, name):
 					return m["type"]
 	return None
 
+def GetStructMemberOffset(struct, member):
+	for s in symtable.structs.elements:
+		if s.name == struct:
+			offset = 0
+			for m in s.members:
+				if m["name"] == member:
+					return offset
+				if m["type"].pointer_level != 0:
+					offset += 4
+				else:
+					offset += SizeOf(m["type"].datatype)
+
 
 
 def Dump():

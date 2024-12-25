@@ -1,5 +1,5 @@
 """
-RoverLang Compiler
+RoverC Compiler
 Written for RoverOs
 Author: JGN1722 (Github)
 """
@@ -60,10 +60,8 @@ def dbg():
 	print("token: ", token)
 	print("value: ", value)
 
-#Pretty printing the AST
-tab_number = 0
-
 # A debug routine to dump the AST
+tab_number = 0
 def print_node(node):
 	global tab_number
 	
@@ -108,5 +106,5 @@ if __name__ == "__main__":
 	transpiler.AST = AST
 	asm = transpiler.transpile()
 	
-	# Begin compiling
+	# Assemble the program
 	compile(asm)

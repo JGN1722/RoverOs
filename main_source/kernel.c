@@ -16,14 +16,13 @@
 #include "..\kernel-c\interrupts\irqs.c"
 
 int main() {
-	asm("include '..\boot\constants.inc'"); // This is a temporary solution
+	asm("include '..\main_source\constants.asm'"); // This is a temporary solution
 	
 	init_vga();
 	
 	printf("Initializing the system...\r\n");
 	
 	printf("Setting up memory...\r\n");
-	sort_memory_map();
 	enum_memory_map();
 	fill_bitmap();
 	

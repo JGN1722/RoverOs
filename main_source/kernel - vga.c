@@ -6,7 +6,7 @@
 #include "..\kernel-c\drivers\vga.c"
 
 int main() {
-	asm("include '..\main_source\constants.inc'"); // Just a temporary solution
+	asm("include '..\main_source\constants.asm'"); // Just a temporary solution
 	
 	init_vga();
 	printf("Initializing the system...\r\n");

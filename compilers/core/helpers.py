@@ -6,6 +6,7 @@ Description: A set of helper functions used throughout the compiler
 """
 
 import os
+import sys
 
 keyword_list = [
 	'ASM',
@@ -123,17 +124,17 @@ def FormatString(L, s):
 
 def get_abs_path(path, base_path):
 	if path[:3][1:] == ":\\":
-		abs_path = path
+		return os.path.realpath(path)
 	else:
-		abs_path = base_path + "\\" + path
-	
-	return os.path.realpath(abs_path)
+		return os.path.realpath(base_path + "\\" + path)
 
 def ReadSourceText(path, base_directory):
 	abs_path = get_abs_path(path, base_directory)
 		
 	if not os.path.isfile(abs_path):
 		abort("source file not found (" + abs_path + ")")
+	
+	print(abs_path)
 	
 	file = open(abs_path)
 	source_text = file.read()
@@ -151,3 +152,11 @@ def convert_to_bin(file_path):
 		
 	# If an extension exists, replace it with .bin
 	return base + '.bin'
+
+# Error functions
+def abort(s):
+	print("Error: " + s, file=sys.stderr)
+	sys.exit(-1)
+
+def Warning(s):
+	print("Warning: " + s)

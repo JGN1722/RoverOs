@@ -2,7 +2,7 @@
 RoverC Compiler
 Written for RoverOs
 Author: JGN1722 (Github)
-Description: The fourth stage of the compiler, that takes an AST and outputs assembly code
+Description: The fourth stage of the compiler, that takes an AST and generates assembly code from it
 """
 
 import sys
@@ -21,7 +21,7 @@ def abort(s):
 	# print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
 	# For now, just print it raw
 	print("Error: " + s, file=sys.stderr)
-	sys.exit()
+	sys.exit(-1)
 
 def Expected(s):
 	abort("Expected " + s)
@@ -207,6 +207,7 @@ def CompileExpression(node):
 		return CompileNumber(node)
 
 def CompileBinaryOp(node):
+	# TODO: Fix commutativity issues by compiling in the reverse order and save a few MOVs and XCHGs
 	t1 = CompileExpression(node.children[0])
 	cg.PushMain()
 	t2 = CompileExpression(node.children[1])
@@ -268,10 +269,35 @@ def CompileUnaryOp(node):
 		return t
 
 def CompileAssignement(node):
+	# TODO: Commutativity is a problem here too, even more so because it uses the same code generators
 	if not node.children[0].type in ["Variable", "Dereference", "StructMemberAccess", "StructPointerMemberAccess"]:
 		abort("Cannot assign to something else than a variable")
-	t = CompileExpression(node.children[1])
-	CompileStore(node.children[0])
+	if node.value == "=":
+		t = CompileExpression(node.children[1])
+		CompileStore(node.children[0])
+	else:
+		CompileVariableRead(node.children[0])
+		cg.PushMain()
+		t = CompileExpression(node.children[1])
+		if node.value == "+=":
+			cg.AddMainStackTop()
+		elif node.value == "-=":
+			cg.SubMainStackTop()
+		elif node.value == "*=":
+			cg.MulMainStackTop()
+		elif node.value == "/=":
+			cg.DivMainStackTop()
+		elif node.value == ">>=":
+			cg.ShrMainStackTop()
+		elif node.value == "<<=":
+			cg.ShlMainStackTop()
+		elif node.value == "&=":
+			cg.AndMainStackTop()
+		elif node.value == "|=":
+			cg.OrMainStackTop()
+		elif node.value == "~=":
+			cg.XorMainStackTop()
+		CompileStore(node.children[0])
 	return t
 
 def CompileStore(node):
@@ -418,6 +444,7 @@ def CompileStructMemberAccess(node):
 		abort("Cannot access the members of a pointer on struct with '.'")
 	struct_name = t.datatype
 	cg.EmitLn("; Struct member access here")
+	abort("Structs are not implemented yet")
 
 def CompileStructPointerMemberAccess(node):
 	identifier_name = node.value
@@ -425,4 +452,14 @@ def CompileStructPointerMemberAccess(node):
 	if t.pointer_level == 0:
 		abort("Cannot access the members of a struct with '->'")
 	struct_name = t.datatype
-	cg.EmitLn("; Struct pointer member access here")
+	member_name = node.children[0].value
+	member_t = st.GetMemberType(struct_name, member_name)
+	if not IsBuiltInType(member_t.datatype):
+		abort("not implemented yet")
+	else:
+		CompileVariableRead(node)
+		cg.PushMain()
+		cg.LoadNumber(st.GetStructMemberOffset(struct_name, member_name))
+		cg.AddMainStackTop()
+		cg.DereferenceMain(SizeOfBuiltIn(member_t.datatype))
+		return Type_(member_t.datatype)
