@@ -47,10 +47,8 @@ if not %errorlevel% == 0 (
 echo.
 
 :: create the bochs script
-echo floppya: 1_44=C:\users\comedelfini--thibaud\desktop\RoverOs\image\image.bin, status=inserted > image\bochsrc
+echo floppya: 1_44=%~dp0image\image.bin, status=inserted > image\bochsrc
 echo boot: a >> image\bochsrc
-echo romimage: file=C:\Users\comedelfini--thibaud\Desktop\Bochs-2.8\BIOS-bochs-latest >> image\bochsrc
-echo vgaromimage: file=C:\Users\comedelfini--thibaud\Desktop\Bochs-2.8\VGABIOS-lgpl-latest >> image\bochsrc
 echo.
 
 echo Done !
