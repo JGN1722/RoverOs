@@ -1,4 +1,2 @@
-floppya: 1_44=C:\users\comedelfini--thibaud\desktop\RoverOs\image\image.bin, status=inserted 
+floppya: 1_44=C:\Users\comedelfini--thibaud\Desktop\RoverOs\image\image.bin, status=inserted 
 boot: a 
-romimage: file=C:\Users\comedelfini--thibaud\Desktop\Bochs-2.8\BIOS-bochs-latest 
-vgaromimage: file=C:\Users\comedelfini--thibaud\Desktop\Bochs-2.8\VGABIOS-lgpl-latest 

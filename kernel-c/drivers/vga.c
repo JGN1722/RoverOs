@@ -110,6 +110,24 @@ void putchar(char* ptr, int x, int y, char attr) {
 			new_y--;
 			scroll();
 		}
+		new_x;
+		asm("PUSH eax");
+		asm("CALL V_CSTRUD");
+		asm("ADD esp, 4");
+		asm("MOV edi, VIDEO_MEMORY + 20 * MAX_COLS * 2");
+		
+		asm("
+		MOV esi, eax
+		MOV edi, VIDEO_MEMORY + 20 * MAX_COLS * 2
+		MOV ecx, 8
+		.loop_here2:
+		MOV al, BYTE [esi]
+		MOV ah, 0x0f
+		MOV WORD [edi], ax
+		INC esi
+		ADD edi, 2
+		loop .loop_here2
+		");
 		set_cursor_pos(new_x, new_y);
 	} else {
 		addr = ((MAX_COLS * y + x) << 1) + VIDEO_MEMORY;

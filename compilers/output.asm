@@ -659,6 +659,23 @@ CALL V_SCROLL
 L21:
 L20:
 MOV eax, DWORD [ebp - (12)]
+PUSH eax
+CALL V_CSTRUD
+ADD esp, 4
+MOV edi, VIDEO_MEMORY + 20 * MAX_COLS * 2
+
+		MOV esi, eax
+		MOV edi, VIDEO_MEMORY + 20 * MAX_COLS * 2
+		MOV ecx, 8
+		.loop_here2:
+		MOV al, BYTE [esi]
+		MOV ah, 0x0f
+		MOV WORD [edi], ax
+		INC esi
+		ADD edi, 2
+		loop .loop_here2
+		
+MOV eax, DWORD [ebp - (12)]
 PUSHD eax
 MOV eax, DWORD [ebp - (16)]
 PUSHD eax
