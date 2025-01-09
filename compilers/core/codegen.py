@@ -61,14 +61,16 @@ def DecrementMain():
 def NegateMain():
 	EmitLn("NEG eax")
 
+def NotMain():
+	EmitLn("NOT eax")
+
 def AddMainStackTop():
-	EmitLn("ADD eax, DWORD [esp]")
-	EmitLn("ADD esp, 4")
+	EmitLn("ADD DWORD [esp], eax")
+	EmitLn("POP eax")
 
 def SubMainStackTop():
 	EmitLn("SUB DWORD [esp], eax")
-	EmitLn("MOV eax, DWORD [esp]")
-	EmitLn("ADD esp, 4")
+	EmitLn("POP eax")
 
 def MulMainStackTop():
 	EmitLn("IMUL DWORD [esp]")
@@ -92,26 +94,24 @@ def ModMainStackTop():
 def ShlMainStackTop():
 	EmitLn("MOV cl, al")
 	EmitLn("SHL DWORD [esp], cl")
-	EmitLn("MOV eax, DWORD [esp]")
-	EmitLn("ADD esp, 4")
+	EmitLn("POP eax")
 
 def ShrMainStackTop():
 	EmitLn("MOV cl, al")
 	EmitLn("SHR DWORD [esp], cl")
-	EmitLn("MOV eax, DWORD [esp]")
-	EmitLn("ADD esp, 4")
+	EmitLn("POP eax")
 
 def AndMainStackTop():
-	EmitLn("AND eax, DWORD [esp]")
-	EmitLn("ADD esp, 4")
+	EmitLn("AND DWORD [esp], eax")
+	EmitLn("POP eax")
 
 def OrMainStackTop():
-	EmitLn("OR eax, DWORD [esp]")
-	EmitLn("ADD esp, 4")
+	EmitLn("OR DWORD [esp], eax")
+	EmitLn("POP eax")
 
 def XorMainStackTop():
-	EmitLn("XOR eax, DWORD [esp]")
-	EmitLn("ADD esp, 4")
+	EmitLn("XOR DWORD [esp], eax")
+	EmitLn("POP eax")
 
 def MainToStackTop():
 	EmitLn("MOV DWORD [esp], eax")
