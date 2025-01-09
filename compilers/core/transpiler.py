@@ -257,7 +257,7 @@ def CompileRelation(node):
 def CompileUnaryOp(node):
 	if node.value == "!":
 		t = CompileExpression(node.children[0])
-		cg.NegateMain()
+		cg.NotMain()
 		return t
 	else:
 		t = CompileVariableRead(node.children[0])
