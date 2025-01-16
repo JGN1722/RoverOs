@@ -4,8 +4,6 @@
 
 // Drivers
 #include "..\kernel-c\drivers\vga.c"
-#include "..\kernel-c\drivers\keyboard.c"
-#include "..\kernel-c\drivers\ps2.c"
 
 // Memory
 #include "..\kernel-c\memory\pmm.c"
@@ -22,9 +20,20 @@ int main() {
 	
 	printf("Initializing the system...\r\n");
 	
-	printf("Setting up memory...\r\n");
+	printf("Setting up memory...\r\n"); // Enumerate memory map and initialize bitmap
 	enum_memory_map();
 	fill_bitmap();
+
+	// Example usage
+	void* block = allocate_block();
+	if (block) {
+		printf("Allocated block at: %p\n", block);
+	} else {
+		printf("No free memory blocks available.\n");
+	}
+
+	free_block(block);
+	printf("Block freed: %p\n", block);
 	
 	printf("Setting up interrupts...\r\n");
 	build_idt();

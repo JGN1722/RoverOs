@@ -82,10 +82,7 @@ void generic_interrupt_handler() {
 }
 
 void install_generic_interrupt_handler() {
-	int i = 0;
-	
-	while (i < IDT_ENTRIES) {
+	for (int i = 0; i < IDT_ENTRIES; i++) {
 		install_interrupt_handler(i, generic_interrupt_handler);
-		i++;
 	}
 }

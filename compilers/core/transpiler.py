@@ -32,10 +32,9 @@ def Undefined(n):
 
 def transpile():
 	
-	# Register the global identifiers first
 	for node in AST.children:
-		if node.type == "Function":
-			st.AddFunction(node.value["name"], node.value["type"], node.children[0].children)
+		if node.type == "FunctionDeclaration":
+			st.AddFunction(node.value["name"], node.value["type"], args=node.children[0].children, function_body=False)
 		elif node.type == "StructDecl":
 			st.AddStruct(node.value, node.children)
 		elif node.type == "GlobalDecl":
@@ -44,48 +43,47 @@ def transpile():
 			if node.children != []:
 				CompileExpression(node.children[0])
 				StoreToGlobalVariable(node.value["name"], st.SizeOf(node.value["type"].datatype))
-	
-	# Delete the unneeded data from the tree to free memory
-	i = 0
-	while i < len(AST.children):
-		if AST.children[i].type == "Function":
-			i += 1
 		else:
-			del AST.children[i] # Delete the structs and the global variables
+			# The only option left is it's a function
+			CompileFunction(node)
 	
-	# Put Main at the top
+	# Check if MAIN fullfills it's specification
 	main_func = None
 	for node in AST.children:
-		if node.value["name"] == "MAIN":
+		if node.value["name"] == "main":
 			main_func = node
 	
 	if main_func == None:
 		abort("No main function")
-	if st.GetFunctionArgCount("MAIN") != 0:
+	if st.GetFunctionArgCount("main") != 0:
 		abort("The main function should take no arguments")
-	if st.GetFunctionType("MAIN") != Type_("INT", pointer_level=0):
+	if st.GetFunctionType("main") != Type_("int", pointer_level=0):
 		abort("The main function should only return an int")
-	
-	# Compile main function
-	CompileFunction(main_func)
-	
-	# Delete it from the stream so it's not compiled two times
-	for i in range(len(AST.children)):
-		if AST.children[i].value["name"] == "MAIN":
-			del AST.children[i]
-			break
-	
-	for node in AST.children:
-		# Compile the function we found
-		CompileFunction(node)
-	
-	# print(cg.GetOutput())
-	return cg.GetOutput()
+
+def GetFormattedOutput(fmt):
+	return cg.GetFreestandingOutput() if fmt == "f" else cg.GetWindowsOutput()
 
 def CompileFunction(node):
 	global allocated_stack_units
 	
+	# First of all, add it to the symbol table for later references
+	
 	func_name = node.value["name"]
+	
+	# If it's already in there, check if the declaration matches the implementation
+	if st.IsFunction(func_name):
+		if st.IsFunctionBodyDefined(func_name):
+			abort("function redefinition (" + func_name + ")")
+		
+		if node.children[0].children != st.GetFunctionArgList(func_name):
+			abort("the argument list of " + func_name + " does not match its definition")
+		
+		if node.value["type"] != st.GetFunctionType(func_name):
+			abort("the type of " + func_name + " does not match its definition")
+		
+		st.SetFunctionBodyAsDefined(func_name)
+	else:
+		st.AddFunction(node.value["name"], node.value["type"], args=node.children[0].children)
 	
 	cg.PutIdentifier(func_name)
 	cg.FunctionHeader()
@@ -114,6 +112,8 @@ def CompileBlock(node):
 			CompileIf(statement)
 		elif statement.value == "WHILE":
 			CompileWhile(statement)
+		elif statement.value == "FOR":
+			CompileFor(statement)
 		elif statement.value == "RETURN":
 			CompileReturn(statement)
 		elif statement.value == "Block":
@@ -159,6 +159,22 @@ def CompileWhile(node):
 	cg.TestNull()
 	cg.BranchIfTrue(L2)
 	CompileBlock(node.children[1])
+	cg.BranchTo(L1)
+	cg.PutLabel(L2)
+
+def CompileFor(node):
+	L1 = cg.NewLabel()
+	L2 = cg.NewLabel()
+	if node.children[0].type == "LocDecl":
+		CompileLocDecl(node.children[0])
+	else:
+		CompileExpression(node.children[0])
+	cg.PutLabel(L1)
+	CompileExpression(node.children[1])
+	cg.TestNull()
+	cg.BranchIfTrue(L2)
+	CompileBlock(node.children[3])
+	CompileExpression(node.children[2])
 	cg.BranchTo(L1)
 	cg.PutLabel(L2)
 
@@ -231,7 +247,7 @@ def CompileBinaryOp(node):
 		cg.OrMainStackTop()
 	elif node.value == "~":
 		cg.XorMainStackTop()
-	return Type_("VOID") # TODO: calculate the returned type
+	return Type_("void") # TODO: calculate the returned type
 
 # Only unsigned comparisons are supported right now
 def CompileRelation(node):
@@ -252,7 +268,7 @@ def CompileRelation(node):
 	elif node.value == "<":
 		cg.SetIfLess()
 	cg.StackFree(1)
-	return Type_("CHAR")
+	return Type_("char")
 
 def CompileUnaryOp(node):
 	if node.value == "!":
@@ -319,7 +335,7 @@ def CompileStore(node):
 	elif node.type == "Dereference":
 		if node.children[0].type == "Dereference":
 			cg.EmitLn("; Nested dereference store here")
-			return Type_("VOID")
+			return Type_("void")
 		else:
 			if node.children[0].type != "Variable":
 				abort("Undereferencable expression")
@@ -334,18 +350,18 @@ def CompileStore(node):
 			return Type_(t.datatype, t.pointer_level - 1)
 	elif node.type == "StructMemberAccess":
 		cg.EmitLn("; Struct member access here")
-		return Type_("VOID")
+		return Type_("void")
 	elif node.type == "StructPointerMemberAccess":
 		cg.EmitLn("; Struct pointer member access here")
-		return Type_("VOID")
+		return Type_("void")
 
 def CompileNumber(node):
 	cg.LoadNumber(node.value)
 	if node.value <= 0xff:
-		return Type_("CHAR")
+		return Type_("char")
 	elif node.value <= 0xffff:
-		return Type_("WORD")
-	return Type_("INT")
+		return Type_("word")
+	return Type_("int")
 
 def CompileString(node):
 	L = cg.NewLabel()
@@ -383,7 +399,7 @@ def CompileVariableRead(node):
 
 def CompileFunctionCall(node):
 	name = node.value
-	if name == "MAIN":
+	if name == "main":
 		abort("cannot call function Main manually")
 	if not st.IsFunction(name):
 		if IsKeyword(name):

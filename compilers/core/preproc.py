@@ -18,6 +18,8 @@ file_name = ""
 line_number = 0
 character_number = 0
 
+defined_macros = {}
+
 # Error functions
 def abort(s):
 	print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
@@ -29,10 +31,13 @@ def Expected(s):
 # Parsing unit
 def Next():
 	global token_stream, streampos, token, value, file_name, line_number, character_number
-	
+
 	streampos += 1
 	
-	new_token = token_stream[streampos]
+	if streampos >= len(token_stream):
+		new_token = token_stream[-1]
+	else:
+		new_token = token_stream[streampos]
 	token, value, file_name, line_number, character_number = new_token
 
 def Previous():
@@ -43,6 +48,16 @@ def Previous():
 	new_token = token_stream[streampos]
 	token, value, file_name, line_number, character_number = new_token
 
+def RemoveToken():
+	global token_stream, streampos, token, value, file_name, line_number, character_number
+	
+	if streampos >= len(token_stream) - 1:
+		new_token = token_stream[-1]
+	else:
+		del token_stream[streampos]
+		new_token = token_stream[streampos]
+	token, value, file_name, line_number, character_number = new_token
+
 def MatchString(t):
 	if value == t:
 		Next()
@@ -50,25 +65,10 @@ def MatchString(t):
 		Expected(t)
 
 def GetMacroValue():
-	# It's gonna remain kinda shit until I decide to refactor it
 	token_array = []
 	
-	# Basically, an expression can be one of two things
-	# Either it's a name or a string or idk what, and it's an immediate token
-	# Or it's a number, and in that case I have some parsing to do (but not too much,
-	# I'm just sticking to shitcode for now. I pinky promise I'll refactor it)
-	if token == "0":
-		token_array.append(token_stream[streampos])
-		Next()
-		while token in ["+","-","*","/"]:
-			token_array.append(token_stream[streampos])
-			Next()
-			if not token == "0":
-				Expected("Numeric expression")
-			token_array.append(token_stream[streampos])
-			Next()
-	
-	else:
+	# I'll get every token until I encounter a newline
+	while not token in [chr(10), chr(13), '\0']:
 		token_array.append(token_stream[streampos])
 		Next()
 	
@@ -78,23 +78,14 @@ def DefineDirective():
 	global token_stream
 	
 	MatchString("#")
-	MatchString("DEFINE")
+	MatchString("define")
 	macro_name = value
 	Next()
 	
 	macro_value = GetMacroValue()
 	
-	# Replace all macro_name occurences by macro_value
-	i = streampos
-	while i < len(token_stream):
-		if token_stream[i][0] == "x" and token_stream[i][1] == macro_name:
-			v1, v2, v3 = token_stream[i][2], token_stream[i][3], token_stream[i][4]
-			del token_stream[i]
-			for j in range(len(macro_value)):
-				token_stream.insert(i + j, (macro_value[j][0], macro_value[j][1], v1, v2, v3))
-			i += len(macro_value)
-			continue
-		i += 1
+	# Store the macro in a table
+	defined_macros[macro_name] = macro_value
 	
 	# Go back and erase the directive from the token stream
 	Previous() # Point back to the macro value end
@@ -127,7 +118,7 @@ def IncludeFile(new_source_file_token, new_source_file_name):
 
 def IncludeDirective():
 	MatchString("#")
-	MatchString("INCLUDE")
+	MatchString("include")
 	file = value
 	file_token = token
 	
@@ -144,31 +135,6 @@ def IncludeDirective():
 	
 	Previous()
 
-def PreprocessorDirective():
-	MatchString("#")
-	if not token == "x":
-		Expected("Preprocessor directive (instead of " + value + ")")
-	directive = value
-	Previous()
-	
-	if directive == "DEFINE":
-		DefineDirective()
-	else:
-		abort("Unrecognized preprocessor directive (" + directive + ")")
-
-def CheckIncludeDirective():
-	MatchString("#")
-	if not token == "x":
-		Expected("Preprocessor directive (instead of " + value + ")")
-	directive = value
-	Previous()
-	
-	if directive == "INCLUDE":
-		IncludeDirective()
-	else:
-		pass # We only treat include directives here
-
-# In order to run this routine, this module must have received a token_stream
 def Preprocess():
 	global streampos, token, value
 	
@@ -176,20 +142,42 @@ def Preprocess():
 	token = ""
 	value = ""
 	
-	# Only process includes right now
-	while streampos < len(token_stream) - 1:
-		Next()
-		if token == "#":
-			CheckIncludeDirective()
+	directive = ""
 	
-	# Iterate once more now that all the code has been read
-	streampos = -1
-	token = ""
-	value = ""
+	Next()
 	
-	while streampos < len(token_stream) - 1:
+	while not token == "\0":
+		
+		# Loop until we encounter a directive or a null token
+		while token != "#":
+			
+			if token == "\0":
+				break
+			
+			# We need to operate a bit on the token before going to the next:
+			# There can be macros to expand, and newlines to remove
+			if token == "\n":
+				RemoveToken()
+			elif value in defined_macros.keys():
+				# Replace all macro_name occurences by macro_value
+				macro_value = defined_macros[value]
+				
+				for j in range(len(macro_value)):
+					token_stream.insert(streampos + j + 1, (macro_value[j][0], macro_value[j][1], file_name, line_number, character_number))
+				RemoveToken()
+			else:
+				Next()
+		
 		Next()
-		if token == "#":
-			PreprocessorDirective()
+		directive = value
+		Previous()
+		
+		if not token == "\0":
+			if directive == "include":
+				IncludeDirective()
+			elif directive == "define":
+				DefineDirective()
+			
+			Next()
 	
 	return token_stream

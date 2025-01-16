@@ -81,6 +81,7 @@ def MatchString(t):
 		Expected(t)
 
 
+
 def ProduceAST():
 	# Generate the AST for an expression
 	global AST
@@ -88,7 +89,7 @@ def ProduceAST():
 	AST = ASTNode(type_="Program",children=[])
 	
 	while token != "\0":
-		if value == "STRUCT":
+		if value == "struct":
 			AST.children.append(StructDecl())
 		else:
 			AST.children.append(GlobalIdentifier())
@@ -97,7 +98,7 @@ def ProduceAST():
 	return AST
 
 def StructDecl():
-	MatchString("STRUCT")
+	MatchString("struct")
 	name = value
 	node = ASTNode(type_="StructDecl", value=name, children=[])
 	Next()
@@ -149,7 +150,12 @@ def Function():
 	function_type = ParseType()
 	function_name = value
 	Next()
-	node = ASTNode(type_="Function",value={"name":function_name,"type":function_type},children=[ArgumentList(),Block()])
+	arg_list = ArgumentList()
+	if token == ";":
+		node = ASTNode(type_="FunctionDeclaration",value={"name":function_name,"type":function_type},children=[arg_list])
+		MatchString(";")
+	else:
+		node = ASTNode(type_="Function",value={"name":function_name,"type":function_type},children=[arg_list,Block()])
 	
 	return node
 
@@ -178,7 +184,7 @@ def Argument():
 def ParseType():
 	pointer_level = 0
 	
-	if value == "STRUCT":
+	if value == "struct":
 		Next()
 	t = value
 	Next()
@@ -194,22 +200,26 @@ def Block():
 	node = ASTNode(type_="Block")
 
 	while not token == "}":
-		if value == "IF":
+		if token == ";":
+			MatchString(";")
+		elif value == "if":
 			node.children.append(If())
-		elif value == "WHILE":
+		elif value == "while":
 			node.children.append(While())
+		elif value == "for":
+			node.children.append(For())
 		elif token == "{":
 			node.children.append(Block())
-		elif value == "RETURN":
+		elif value == "return":
 			node.children.append(Return())
 			MatchString(";")
-		elif value == "ASM":
+		elif value == "asm":
 			node.children.append(Asm())
 			MatchString(";")
-		elif value == "BREAK":
+		elif value == "break":
 			node.children.append(Break())
 			MatchString(";")
-		elif value == "STRUCT" or IsBuiltInType(value):
+		elif value == "struct" or IsBuiltInType(value):
 			node.children.extend(LocDecl())
 			MatchString(";")
 		else:
@@ -223,19 +233,19 @@ def Block():
 
 def If():
 	node = ASTNode(type_="ControlStructure",value="IF",children=[])
-	MatchString("IF")
+	MatchString("if")
 	MatchString("(")
 	node.children.append(Expression())
 	MatchString(")")
 	node.children.append(Block())
-	while value == "ELSEIF":
+	while value == "elseif":
 		Next()
 		MatchString("(")
 		elseif_node = ASTNode(type_="ControlStructure",value="ELSEIF",children=[Expression()])
 		MatchString(")")
 		elseif_node.children.append(Block())
 		node.children.append(elseif_node)
-	if value == "ELSE":
+	if value == "else":
 		Next()
 		else_node = ASTNode(type_="ControlStructure",value="ELSE",children=[Block()])
 		node.children.append(else_node)
@@ -243,29 +253,54 @@ def If():
 
 def While():
 	node = ASTNode(type_="ControlStructure",value="WHILE",children=[])
-	MatchString("WHILE")
+	MatchString("while")
 	MatchString("(")
 	node.children.append(Expression())
 	MatchString(")")
 	node.children.append(Block())
 	return node
 
+def For():
+	node = ASTNode(type_="ControlStructure",value="FOR",children=[])
+	MatchString("for")
+	MatchString("(")
+	if token == ";":
+		node.children.append(ASTNode(type_="Number", value="1"))
+	else:
+		if value == "struct" or IsBuiltInType(value):
+			node.children.extend(LocDecl())
+		else:
+			node.children.append(Expression())
+	MatchString(";")
+	if token == ";":
+		node.children.append(ASTNode(type_="Number", value="1"))
+	else:
+		node.children.append(Expression())
+	MatchString(";")
+	if token == ")":
+		node.children.append(ASTNode(type_="Number", value="0"))
+	else:
+		node.children.append(Expression())
+	MatchString(")")
+	node.children.append(Block())
+	return node
+
 def Return():
 	node = ASTNode(type_="ControlStructure",value="RETURN",children=[])
-	MatchString("RETURN")
+	MatchString("return")
 	node.children.append(Expression())
 	return node
 
 def Asm():
 	node = ASTNode(type_="ControlStructure",value="ASM",children=[])
-	MatchString("ASM")
+	MatchString("asm")
 	MatchString("(")
 	node.children.append(Expression())
 	MatchString(")")
 	return node
 
 def Break():
-	MatchString("BREAK")
+	MatchString("break")
 	return ASTNode(type_="ControlStructure",value="BREAK")
 
 
@@ -293,8 +328,53 @@ def LocDecl():
 	
 	return node_array
 
-
 def Expression():
+	return AssignExpression()
+
+def AssignementSequence():
+	if token == "=":
+		Next()
+		if token == "=": # Backtrack, we're in a relation
+			Previous()
+			return ""
+		return "="
+	elif token in ["-","+","/","%","*","|","~","&"]:
+		first_token = token
+		Next()
+		if token != "=":
+			Previous()
+			return ""
+		Next()
+		return first_token + "="
+	elif token == "<" or token == ">":
+		first_token = token
+		Next()
+		if token != first_token:
+			Previous()
+			return ""
+		first_token += token
+		Next()
+		if token != "=":
+			Previous()
+			Previous()
+			return ""
+		Next()
+		return first_token + "="
+	return ""
+
+def AssignExpression():
+	node = BoolTerm()
+	
+	assign_operator = AssignementSequence()
+	while assign_operator != "":
+		right = BoolTerm()
+		node = ASTNode(type_="Assignement", children=[node, right], value=assign_operator)
+		
+		assign_operator = AssignementSequence()
+	
+	return node
+
+def BoolTerm():
 	node = AndTerm()
 	
 	while IsOrop(value):
@@ -370,57 +450,14 @@ def RelationSequence():
 	return ""
 
 def Relation():
-	node = AssignExpression()
+	node = NumericExpression()
 	
 	relation_operator = RelationSequence()
 	while relation_operator != "":
-		right = AssignExpression()
+		right = NumericExpression()
 		node = ASTNode(type_="Relation", children=[node, right], value=relation_operator)
 		
 		relation_operator = RelationSequence()
-	
-	return node
-
-def AssignementSequence():
-	if token == "=":
-		Next()
-		if token == "=": # Backtrack, we're in a relation
-			Previous()
-			return ""
-		return "="
-	elif token in ["-","+","/","%","*","|","~","&"]:
-		first_token = token
-		Next()
-		if token != "=":
-			Previous()
-			return ""
-		Next()
-		return first_token + "="
-	elif token == "<" or token == ">":
-		first_token = token
-		Next()
-		if token != first_token:
-			Previous()
-			return ""
-		first_token += token
-		Next()
-		if token != "=":
-			Previous()
-			Previous()
-			return ""
-		Next()
-		return first_token + "="
-	return ""
-
-def AssignExpression():
-	node = NumericExpression()
-	
-	assign_operator = AssignementSequence()
-	while assign_operator != "":
-		right = NumericExpression()
-		node = ASTNode(type_="Assignement", children=[node, right], value=assign_operator)
-		
-		assign_operator = AssignementSequence()
 	
 	return node
 

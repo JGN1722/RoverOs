@@ -4,8 +4,6 @@
 
 // Drivers
 #include "..\kernel-c\drivers\vga.c"
-#include "..\kernel-c\drivers\keyboard.c"
-#include "..\kernel-c\drivers\ps2.c"
 
 // Interrupts
 #include "..\kernel-c\interrupts\interrupts.c"
@@ -42,23 +40,4 @@ int main() {
 	}
 	
 	return 0;
-}
-
-void keyboard_handler() {
-	asm("pushad");
-	printf("Key pressed!\r\n");
-	
-	// For now, read and discard the key scan code
-	printf("Key code: ");
-	printf(cstrub(inb(0x60)));
-	printf("\r\n");
-	
-	outb(PIC1_COMMAND, PIC_EOI);
-	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }

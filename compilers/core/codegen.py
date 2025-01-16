@@ -9,9 +9,6 @@ from core.helpers import *
 
 # Utilities
 output = ""
-output += "use32\n"
-output += "org " + str(0x7c00 + 512 + 512) + "\n"
-
 output_data = ""
 
 def Emit(s):
@@ -27,7 +24,21 @@ def EmitLnData(s):
 	
 	output_data += s + "\n"
 
-def GetOutput():
+def GetFreestandingOutput():
+	global output
+	
+	output = "use32\n" + "org " + str(0x7c00 + 512 + 512) + "\n" + "JMP V_main\n" +	output
+	
+	return output + output_data # Return the raw code
+
+def GetWindowsOutput():
+	global output, output_data
+	
+	output = "format PE console\n" + "entry V_main\n" + "section '.text' code readable writeable executable\n" + output
+	
+	if output_data != "":
+		output_data = "section '.data' data readable writeable\n" + output_data
+	
 	return output + output_data
 
 

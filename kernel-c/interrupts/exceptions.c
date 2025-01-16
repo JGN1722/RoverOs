@@ -103,12 +103,9 @@ void except_float() {
 }
 
 void install_exception_interrupts() {
-	int i = 0;
-	
 	// First, install the default handler everywhere
-	while (i < IDT_ERR_ENTRIES) {
+	for (int i = 0; i < IDT_ERR_ENTRIES; i++) {
 		install_interrupt_handler(i, except_default);
-		i++;
 	}
 	
 	// Then, install the specific handlers

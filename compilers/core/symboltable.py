@@ -2,7 +2,7 @@
 RoverC Compiler
 Written for RoverOs
 Author: JGN1722 (Github)
-Description: A file containing the symbol table data structure, and a set of setters and getters functions
+Description: A file containing the symbol table data structure, and a set of setter and getter functions
 """
 
 from core.helpers import *
@@ -28,12 +28,13 @@ class IdentifiersSymbolTable:
 		self.elements = [] # An array of Identifier()
 
 class Identifier:
-	def __init__(self, name, type_, args=None, is_global=False, stack_offset=0, is_variable=False, is_function=False):
+	def __init__(self, name, type_, args=None, function_body=True, is_global=False, stack_offset=0, is_variable=False, is_function=False):
 		self.name = name
 		self.is_variable = is_variable
 		self.is_function = is_function
 		self.type = type_
 		self.arguments = args
+		self.is_function_body_defined = function_body
 		self.is_global = is_global
 		self.stack_offset = stack_offset
 
@@ -54,10 +55,17 @@ def IsNameTaken(name):
 
 
 # Setters
-def AddFunction(name, t, args):
+def AddFunction(name, t, args, function_body=False):
 	if IsNameTaken(name):
 		abort("name redefinition (" + name + ")")
-	symtable.identifiers.elements.append(Identifier(name, t, args=args, is_function=True))
+	symtable.identifiers.elements.append(Identifier(name, t, args=args, is_function=True, function_body=function_body))
+
+def SetFunctionBodyAsDefined(name):
+	for n in symtable.identifiers.elements:
+		if not n.is_function:
+			continue
+		if n.name == name:
+			n.is_function_body_defined = True
 
 def AddVariable(name, t, is_global=False, stack_offset=0):
 	if IsNameTaken(name):
@@ -124,6 +132,13 @@ def GetFunctionType(name):
 			return n.type
 	return None
 
+def IsFunctionBodyDefined(name):
+	for n in symtable.identifiers.elements:
+		if not n.is_function:
+			continue
+		if n.name == name:
+			return n.is_function_body_defined
+
 def GetFunctionArgCount(name):
 	for n in symtable.identifiers.elements:
 		if not n.is_function:
@@ -141,6 +156,14 @@ def GetFunctionArgType(name):
 			for a in n.arguments:
 				type_list.append(a["type"])
 			return type_list
+	return []
+
+def GetFunctionArgList(name):
+	for n in symtable.identifiers.elements:
+		if not n.is_function:
+			continue
+		if n.name == name:
+			return n.arguments
 	return []
 
 def GetVariableType(name):

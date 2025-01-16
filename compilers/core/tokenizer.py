@@ -46,22 +46,21 @@ def GetChar():
 			character_number = 1
 
 def SkipWhite():
-	global lookahead, last_whitespace_call_got_newline
+	global lookahead
 	
-	last_whitespace_call_got_newline = False
-	while lookahead in [" ", "	", chr(10), chr(13)]:
+	while lookahead in [" ", "	"]:
 		GetChar()
 
 def GetName():
 	global lookahead, token, value
 	
 	SkipWhite()
-	if not IsAlpha(lookahead.upper()):
+	if not IsAlpha(lookahead):
 		Expected("Name")
 	token = "x"
 	value = ""
 	while IsAlnum(lookahead):
-		value += lookahead.upper()
+		value += lookahead
 		GetChar()
 
 def GetNum():

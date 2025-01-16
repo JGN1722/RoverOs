@@ -11,14 +11,21 @@ from core.helpers import *
 
 script_directory = ""
 
+help_message = "RoverC Compiler\n" + "Written for RoverOs\n" + "Author: JGN1722 (Github)\n\n" + "Usage: roverlang.py [--help | --version] [--freestanding] filename [output_filename]"
+version_message = "RoverC Compiler\n" + "Written for RoverOs\n" + "Author: JGN1722 (Github)\n" + "Version: 1.0"
+
 def ParseCommandLine():
 	global source_file, output_file, debug_mode
 	
 	options = []
 	arguments = []
 	
+	format = "w" # Compilation for running under windows is the default
+	
 	for arg in sys.argv[1:]:
-		if arg[0] == "-":
+		if len(arg) >= 2 and arg[0] + arg[1] == "--":
+			options.append(arg[2:])
+		elif arg[0] == "-":
 			for c in arg[1:]:
 				if not IsAlpha(c):
 					abort("Invalid option character: " + c)
@@ -28,18 +35,14 @@ def ParseCommandLine():
 			arguments.append(arg)
 	
 	for opt in options:
-		if opt == "h":
-			print("RoverC Compiler\n" +
-			      "Written for RoverOs\n" + 
-			      "Author: JGN1722 (Github)\n\n" +
-			      "Usage: roverlang.py [-h | -v] filename [output_filename]")
+		if opt == "h" or opt == "help":
+			print(help_message)
 			sys.exit()
-		elif opt == "v":
-			print("RoverC Compiler\n" +
-			      "Written for RoverOs\n" + 
-			      "Author: JGN1722 (Github)\n" +
-			      "Version: 1.0")
+		elif opt == "v" or opt == "version":
+			print(version_message)
 			sys.exit()
+		elif opt == "f" or opt == "freestanding":
+			format = "f" # If this is specified, the format is "freestanding", for running on bare metal
 		else:
 			abort("Unrecognized option: " + opt)
 	
@@ -50,10 +53,12 @@ def ParseCommandLine():
 	
 	if len(arguments) >= 2:
 		output_file = get_abs_path(arguments[1], os.getcwd())
-	else:
-		output_file = convert_to_bin(get_abs_path(source_file, script_directory))
+	elif format == "w":
+		output_file = convert_to_ext(get_abs_path(source_file, script_directory), 'exe')
+	elif format == "f":
+		output_file = convert_to_ext(get_abs_path(source_file, script_directory), 'bin')
 	
-	return source_file, output_file
+	return source_file, output_file, format
 
 # Error functions
 def abort(s):

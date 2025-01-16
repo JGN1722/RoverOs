@@ -80,7 +80,7 @@ def print_node(node):
 # Main code
 if __name__ == "__main__":
 	# Check the command line arguments and options
-	source_file, output_file = commandline.ParseCommandLine()
+	source_file, output_file, format = commandline.ParseCommandLine()
 	
 	# Read the source
 	if source_file == "":
@@ -104,7 +104,8 @@ if __name__ == "__main__":
 	
 	# Generate the assembly from the AST
 	transpiler.AST = AST
-	asm = transpiler.transpile()
+	transpiler.transpile()
+	asm = transpiler.GetFormattedOutput(format)
 	
 	# Assemble the program
 	compile(asm)

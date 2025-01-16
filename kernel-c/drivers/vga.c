@@ -1,3 +1,5 @@
+#include "vga.h"
+
 char terminal_color;
 
 void init_vga() {
@@ -69,6 +71,7 @@ void scroll() {
 void putchar(char* ptr, int x, int y, char attr) {
 	word* addr;
 	int linear_pos, new_x, new_y;
+	int temp1, temp2, temp3;
 	
 	if (attr == 0) {
 		attr = terminal_color;
@@ -87,9 +90,7 @@ void putchar(char* ptr, int x, int y, char attr) {
 			new_x = x;
 			new_y = y + 1;
 		} elseif (*ptr == 9) {	// "\t"
-			asm("; TAB =============================================================================================");
 			new_x = ((x + 8) && !(8 - 1));
-			asm(";==================================================================================================");
 			new_y = y;
 			if (x > 79) {
 				new_x = 0;
@@ -110,24 +111,7 @@ void putchar(char* ptr, int x, int y, char attr) {
 			new_y--;
 			scroll();
 		}
-		new_x;
-		asm("PUSH eax");
-		asm("CALL V_CSTRUD");
-		asm("ADD esp, 4");
-		asm("MOV edi, VIDEO_MEMORY + 20 * MAX_COLS * 2");
 		
-		asm("
-		MOV esi, eax
-		MOV edi, VIDEO_MEMORY + 20 * MAX_COLS * 2
-		MOV ecx, 8
-		.loop_here2:
-		MOV al, BYTE [esi]
-		MOV ah, 0x0f
-		MOV WORD [edi], ax
-		INC esi
-		ADD edi, 2
-		loop .loop_here2
-		");
 		set_cursor_pos(new_x, new_y);
 	} else {
 		addr = ((MAX_COLS * y + x) << 1) + VIDEO_MEMORY;
@@ -144,9 +128,8 @@ void printf(char* str) {
 }
 
 void sleep() {
-	int i = 0;
-	while (i < 0x2FFFFF) {
-		i++;
+	for (int i = 0; i < 0x2FFFFF; i++) {
+		;
 	}
 }
 

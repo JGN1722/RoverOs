@@ -9,21 +9,24 @@ import os
 import sys
 
 keyword_list = [
-	'ASM',
-	'IF',
-	'WHILE',
-	'STRUCT',
-	'FOR',
-	'RETURN',
-	'BREAK',
-	'CONTINUE'
+	'asm',
+	'if',
+	'while',
+	'struct',
+	'for',
+	'return',
+	'break',
+	'continue'
 ]
 
 built_in_types = [
-	'CHAR',
-	'WORD',
-	'INT',
-	'VOID'
+	'char',
+	'word',
+	'int',
+	'void',
+	'uint8_t',
+	'uint16_t',
+	'uint32_t',
 ]
 
 class Type_:
@@ -77,13 +80,19 @@ def IsBuiltInType(t):
 	return t in built_in_types
 
 def SizeOfBuiltIn(t):
-	if t == "VOID":
+	if t == "void":
 		return 0
-	elif t == "CHAR":
+	elif t == "char":
 		return 1
-	elif t == "WORD":
+	elif t == "word":
 		return 2
-	elif t == "INT":
+	elif t == "int":
+		return 4
+	elif t == "uint8_t":
+		return 1
+	elif t == "uint16_t":
+		return 2
+	elif t == "uint32_t":
 		return 4
 
 def IsKeyword(t):
@@ -134,24 +143,22 @@ def ReadSourceText(path, base_directory):
 	if not os.path.isfile(abs_path):
 		abort("source file not found (" + abs_path + ")")
 	
-	print(abs_path)
-	
 	file = open(abs_path)
 	source_text = file.read()
 	file.close()
 	
 	return source_text
 
-def convert_to_bin(file_path):
+def convert_to_ext(file_path, new_ext):
 	# Split the file path into base and extension
 	base, ext = os.path.splitext(file_path)
 	
-	# If there's no extension, just append .bin
+	# If there's no extension, just append the extension
 	if ext == '':
-		return file_path + '.bin'
+		return file_path + '.' + new_ext
 		
-	# If an extension exists, replace it with .bin
-	return base + '.bin'
+	# If an extension exists, replace it with the new extension
+	return base + '.' + new_ext
 
 # Error functions
 def abort(s):
