@@ -28,15 +28,20 @@ class IdentifiersSymbolTable:
 		self.elements = [] # An array of Identifier()
 
 class Identifier:
-	def __init__(self, name, type_, args=None, function_body=True, is_global=False, stack_offset=0, is_variable=False, is_function=False):
+	def __init__(self, name, type_, args=None, function_body=True, is_global=False, stack_offset=0, is_variable=False, is_function=False, is_array=False, array_length=0):
 		self.name = name
-		self.is_variable = is_variable
-		self.is_function = is_function
 		self.type = type_
+		
+		self.is_function = is_function
 		self.arguments = args
 		self.is_function_body_defined = function_body
+		
+		self.is_variable = is_variable
 		self.is_global = is_global
 		self.stack_offset = stack_offset
+		
+		self.is_array = is_array
+		self.array_length = array_length
 
 
 # Helpers
@@ -71,6 +76,11 @@ def AddVariable(name, t, is_global=False, stack_offset=0):
 	if IsNameTaken(name):
 		abort("name redefinition (" + name + ")")
 	symtable.identifiers.elements.append(Identifier(name, t, is_global=is_global, is_variable=True, stack_offset=stack_offset))
+
+def AddArray(name, t, is_global=False, stack_offset=0, array_length=0):
+	if IsNameTaken(name):
+		abort("name redefinition (" + name + ")")
+	symtable.identifiers.elements.append(Identifier(name, t, is_global=is_global, is_array=True, stack_offset=stack_offset, array_length=array_length))
 
 def AddStruct(name, members):
 	if IsNameTaken(name):

@@ -10,6 +10,8 @@
 #include "..\kernel-c\interrupts\exceptions.c"
 #include "..\kernel-c\interrupts\irqs.c"
 
+#define max(A,B) ((A) > (B) : (A) ? (B))
+
 int main() {
 	// Temporary workaround
 	asm("include '..\main_source\constants.asm'");
@@ -35,6 +37,11 @@ int main() {
 	printf("This shouldn't\r\n");
 	
 	printf("all done, hanging\r\n");
+	
+	printf("here is the max between 2 and 4: ");
+	printf(cstrub(max(1 + 1, 2 + 2)));
+	printf("\r\n");
+	
 	while (1) {
 		asm("hlt");
 	}

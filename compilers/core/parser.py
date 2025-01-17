@@ -38,7 +38,10 @@ class ASTNode:
 		self.value = value
 
 	def __repr__(self):
-		return f"ASTNode(type={self.type}, value={self.value}, children={self.children})"
+		return f"ASTNode(type='{self.type}', value='{self.value}', children={self.children})"
+	
+	def __eq__(self, other):
+		return type(self) == type(other) and self.type == other.type and self.children == other.children and self.value == other.value
 
 
 def Next():
@@ -219,6 +222,9 @@ def Block():
 		elif value == "break":
 			node.children.append(Break())
 			MatchString(";")
+		elif value == "continue":
+			node.children.append(Continue())
+			MatchString(";")
 		elif value == "struct" or IsBuiltInType(value):
 			node.children.extend(LocDecl())
 			MatchString(";")
@@ -230,7 +236,6 @@ def Block():
 	
 	return node
 
-
 def If():
 	node = ASTNode(type_="ControlStructure",value="IF",children=[])
 	MatchString("if")
@@ -238,7 +243,11 @@ def If():
 	node.children.append(Expression())
 	MatchString(")")
 	node.children.append(Block())
-	while value == "elseif":
+	while value == "else":
+		Next()
+		if value != "if":
+			Previous()
+			break
 		Next()
 		MatchString("(")
 		elseif_node = ASTNode(type_="ControlStructure",value="ELSEIF",children=[Expression()])
@@ -303,6 +312,9 @@ def Break():
 	MatchString("break")
 	return ASTNode(type_="ControlStructure",value="BREAK")
 
+def Continue():
+	MatchString("continue")
+	return ASTNode(type_="ControlStructure",value="CONTINUE")
 
 def LocDecl():
 	t = ParseType()
@@ -331,6 +343,35 @@ def LocDecl():
 def Expression():
 	return AssignExpression()
 
+def ExpressionLevel(successor, node_type="BinaryOp", token_set=None, token_getter=None, next_token_predicate=None):
+	node = successor()
+	
+	if token_set:
+		while token in token_set:
+			op = token
+			Next()
+			
+			if next_token_predicate and not next_token_predicate(op,token):
+				Previous()
+				break
+			
+			right = successor()
+			node = ASTNode(type_=node_type,children=[node,right],value=op)
+	else:
+		op_sequence = token_getter()
+		while op_sequence != "":
+			
+			if next_token_predicate and not next_token_predicate(op_sequence,token):
+				for i in range(len(op_sequence)):
+					Previous() # these are operators, not words or digits
+				break
+			
+			right = successor()
+			node = ASTNode(type_=node_type,children=[node,right],value=op_sequence)
+			
+			op_sequence = token_getter()
+	return node
+
 def AssignementSequence():
 	if token == "=":
 		Next()
@@ -338,7 +379,7 @@ def AssignementSequence():
 			Previous()
 			return ""
 		return "="
-	elif token in ["-","+","/","%","*","|","~","&"]:
+	elif token in ["-","+","/","%","*","|","^","&"]:
 		first_token = token
 		Next()
 		if token != "=":
@@ -363,62 +404,54 @@ def AssignementSequence():
 	return ""
 
 def AssignExpression():
+	return ExpressionLevel(TernaryOp, node_type="Assignement", token_getter=AssignementSequence)
+
+def TernaryOp():
 	node = BoolTerm()
-	
-	assign_operator = AssignementSequence()
-	while assign_operator != "":
-		right = BoolTerm()
-		node = ASTNode(type_="Assignement", children=[node, right], value=assign_operator)
-		
-		assign_operator = AssignementSequence()
-	
+	if token == ":":
+		MatchString(":")
+		result1 = BoolTerm()
+		MatchString("?")
+		result2 = BoolTerm()
+		node = ASTNode(type_="TernaryOp",children=[node,result1,result2])
 	return node
+
+def LogicalOrSequence():
+	if token == "|":
+		Next()
+		if token == "|":
+			Next()
+			return "||"
+		Previous()
+	return ""
 
 def BoolTerm():
-	node = AndTerm()
-	
-	while IsOrop(value):
-		op = value
+	return ExpressionLevel(AndTerm, token_getter=LogicalOrSequence)
+
+def LogicalAndSequence():
+	if token == "&":
 		Next()
-		
-		if token == "=": # That's actually a compound assignement, backtrack then
-			Previous()
-			break
-		
-		if op == "|":
-			MatchString("|") # Ask for || instead of |
-			op = "||"
-		
-		right = AndTerm()
-		node = ASTNode(type_="BinaryOp", children=[node, right], value=op)
-	
-	return node
+		if token == "&":
+			Next()
+			return "&&"
+		Previous()
+	return ""
 
 def AndTerm():
-	node = NotTerm()
-	
-	while IsAndop(value):
-		op = value
-		Next()
-		
-		if token == "=": # That's actually a compound assignement, backtrack then
-			Previous()
-			break
-		
-		if op == "&":
-			MatchString("&") # Ask for && instead of &
-			op = "&&"
-		
-		right = NotTerm()
-		node = ASTNode(type_="BinaryOp", children=[node, right], value=op)
-	
-	return node
+	return ExpressionLevel(BitwiseOr, token_getter=LogicalAndSequence)
 
-def NotTerm():
-	if token == "!":
-		Next()
-		return ASTNode(type_="UnaryOp", value="!", children=[Relation()])
-	return Relation()
+def BitwiseOr():
+	def next_token_predicate(op,token):
+		return token != "|"
+	return ExpressionLevel(BitwiseXor, token_set={"|"},next_token_predicate=next_token_predicate)
+
+def BitwiseXor():
+	return ExpressionLevel(BitwiseAnd, token_set={"^"})
+
+def BitwiseAnd():
+	def next_token_predicate(op,token):
+		return token != "&"
+	return ExpressionLevel(Relation, token_set={"&"},next_token_predicate=next_token_predicate)
 
 def RelationSequence():
 	if token == "=":
@@ -450,76 +483,59 @@ def RelationSequence():
 	return ""
 
 def Relation():
-	node = NumericExpression()
-	
-	relation_operator = RelationSequence()
-	while relation_operator != "":
-		right = NumericExpression()
-		node = ASTNode(type_="Relation", children=[node, right], value=relation_operator)
-		
-		relation_operator = RelationSequence()
-	
-	return node
+	return ExpressionLevel(NumericExpression, node_type="Relation", token_getter=RelationSequence)
 
 def NumericExpression():
-	# Parse a term and look for "+" or "-" operators
-	node = Term()
-	while IsAddop(token):
-		op = token
-		Next()
-		if token == "=" or token == op: # That's actually a compound assignement, backtrack then
-			Previous()
-			break
-		right = Term()
-		node = ASTNode(type_="BinaryOp", children=[node, right], value=op)
-	
-	return node
-
+	def next_token_predicate(op, token):
+		return token != "=" and token != op
+	return ExpressionLevel(Term, token_set={"+","-"},next_token_predicate=next_token_predicate)
 
 def Term():
-	# Parse a bitwise factor and look for "*", "/", or "%" operators
-	node = BitwiseFactor()
-	while IsMulop(token):
-		op = token
-		Next()
-		if token == "=": # That's actually a compound assignement, backtrack then
-			Previous()
-			break
-		right = BitwiseFactor()
-		node = ASTNode(type_="BinaryOp", children=[node, right], value=op)
-	return node
+	def next_token_predicate(op, token):
+		return token != "="
+	return ExpressionLevel(BitwiseFactor, token_set={"*","/","%"},next_token_predicate=next_token_predicate)
 
+def ShiftSequence():
+	if token == ">":
+		Next()
+		if token == ">":
+			Next()
+			return ">>"
+		Previous()
+	elif token == "<":
+		Next()
+		if token == "<":
+			Next()
+			return "<<"
+		Previous()
+	return ""
 
 def BitwiseFactor():
-	# Parse a factor and look for "<<" or ">>" operators
-	node = UnaryFactor()
-	Next()
-	next_token = token
-	Previous()
-	while (token == ">" and next_token == ">") or (token == "<" and next_token == "<"):
-		op = token + next_token
+	def next_token_predicate(op, token):
+		return token != "="
+	return ExpressionLevel(UnaryFactor,token_getter=ShiftSequence,next_token_predicate=next_token_predicate)
+
+def IncSequence():
+	if token == "+":
 		Next()
+		if token == "+":
+			Next()
+			return "++"
+		Previous()
+	elif token == "-":
 		Next()
-		if token == "=": # That's actually a compound assignement, backtrack then
-			Previous()
-			Previous()
-			break
-		right = UnaryFactor()
-		node = ASTNode(type_="BinaryOp", children=[node, right], value=op)
-	return node
+		if token == "-":
+			Next()
+			return "--"
+		Previous()
+	return ""
 
 def UnaryFactor():
 	node = Factor()
 	
-	if IsAddop(token):
-		op = token
-		Next()
-		if token != op:
-			Previous()
-			return node
-		op += op
-		Next()
-		return ASTNode(type_="UnaryOp", value=op, children=[node])
+	inc_sequence = IncSequence()
+	if inc_sequence != "":
+		return ASTNode(type_="UnaryOp",value=inc_sequence,children=[node])
 	return node
 
 def ArgumentListCall():
@@ -549,6 +565,9 @@ def Factor():
 			int_val = int(value)
 		node = ASTNode(type_="Number", value=int_val)
 		Next()
+	elif token == "!":
+		MatchString("!")
+		return ASTNode(type_="UnaryOp", value="!", children=[Expression()])
 	elif token == "x":
 		name = value
 		Next()
@@ -583,4 +602,3 @@ def Factor():
 		Expected("factor")
 	
 	return node
-

@@ -45,16 +45,9 @@ def GetChar():
 			line_number += 1
 			character_number = 1
 
-def SkipWhite():
-	global lookahead
-	
-	while lookahead in [" ", "	"]:
-		GetChar()
-
 def GetName():
 	global lookahead, token, value
 	
-	SkipWhite()
 	if not IsAlpha(lookahead):
 		Expected("Name")
 	token = "x"
@@ -66,7 +59,6 @@ def GetName():
 def GetNum():
 	global lookahead, token, value
 	
-	SkipWhite()
 	if not IsDigit(lookahead):
 		Expected("Number")
 	token = "0"
@@ -105,34 +97,6 @@ def GetOp():
 	value = lookahead
 	GetChar()
 
-def GetString():
-	global lookahead, token, value
-	
-	if not lookahead == chr(34):
-		Expected("String")
-	GetChar()
-	token = "s"
-	value = ""
-	while not lookahead == chr(34):
-		if lookahead == "\0":
-			abort("unfinished string literal")
-		value += lookahead
-		GetChar()
-	GetChar()
-
-def GetAsciiCode():
-	global lookahead, token, value
-	
-	if not lookahead == "'":
-		Expected("Ascii literal")
-	token = "0"
-	GetChar()
-	value = str(ord(lookahead))
-	GetChar()
-	if not lookahead == "'":
-		abort("more than one character in ascii literal")
-	GetChar()
-
 def next_token_comment():
 	global lookahead
 	
@@ -169,15 +133,10 @@ def SkipPrologueComment(main_comment=True):
 def next_token():
 	global lookahead, token_stream
 	
-	SkipWhite()
 	if IsDigit(lookahead):
 		GetNum()
 	elif IsAlpha(lookahead):
 		GetName()
-	elif lookahead == chr(34):
-		GetString()
-	elif lookahead == "'":
-		GetAsciiCode()
 	else:
 		GetOp()
 		if token == "/":

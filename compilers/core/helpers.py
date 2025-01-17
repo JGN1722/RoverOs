@@ -19,15 +19,15 @@ keyword_list = [
 	'continue'
 ]
 
-built_in_types = [
-	'char',
-	'word',
-	'int',
-	'void',
-	'uint8_t',
-	'uint16_t',
-	'uint32_t',
-]
+built_in_types = {
+	'char' : 1,
+	'word' : 2,
+	'int' : 4,
+	'void' : 0,
+	'uint8_t' : 1,
+	'uint16_t' : 2,
+	'uint32_t' : 4,
+}
 
 class Type_:
 	def __init__(self, DataType, pointer_level=0):
@@ -58,42 +58,26 @@ def IsDigit(c):
 def IsHexDigit(c):
 	return (ord(c) >= 48 and ord(c) <= 57) or (ord(c.upper()) >= ord("A") and ord(c.upper()) <= ord("F"))
 
+def IsBlank(c):
+	return c in [" ","	","\n"]
+
+def IsBlankNotNewline(c):
+	return c in [" ","	"]
+
 def IsAlnum(c):
 	return IsAlpha(c) or IsDigit(c)
 
 def IsAddop(c):
 	return c == "+" or c == "-"
 
-def IsMulop(c):
-	return c == "*" or c == "/" or c == "%"
-
-def IsRelop(c):
-	return c == "<" or c == ">" or c == "=" or c == "!"
-
-def IsOrop(c):
-	return c == "|" or c == "~"
-
-def IsAndop(c):
-	return c == "&"
-
 def IsBuiltInType(t):
-	return t in built_in_types
+	return t in built_in_types.keys()
 
 def SizeOfBuiltIn(t):
-	if t == "void":
+	if t in built_in_types.keys():
+		return built_in_types[t]
+	else:
 		return 0
-	elif t == "char":
-		return 1
-	elif t == "word":
-		return 2
-	elif t == "int":
-		return 4
-	elif t == "uint8_t":
-		return 1
-	elif t == "uint16_t":
-		return 2
-	elif t == "uint32_t":
-		return 4
 
 def IsKeyword(t):
 	return t in keyword_list or t in built_in_types

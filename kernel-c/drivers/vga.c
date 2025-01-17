@@ -14,15 +14,14 @@ void set_terminal_color(char col) {
 
 void set_blinking(int b) {
 	if (b == 0) {
-		set_terminal_color(terminal_color && 0x7f);
+		set_terminal_color(terminal_color & 0x7f);
 	} else {
-		set_terminal_color((terminal_color && 0x7f) + 0x80);
+		set_terminal_color((terminal_color & 0x7f) + 0x80);
 	}
 }
 
 void set_cursor_pos(int x, int y) {
-	word linear_position;
-	linear_position = MAX_COLS * y + x;
+	word linear_position = MAX_COLS * y + x;
 	
 	outb(REG_SCREEN_CTRL, 0x0E);
 	outb(REG_SCREEN_DATA, linear_position >> 8);
@@ -86,11 +85,11 @@ void putchar(char* ptr, int x, int y, char attr) {
 		if (*ptr == 13) {	// "\r"
 			new_x = 0;
 			new_y = y;
-		} elseif (*ptr == 10) {	// "\n"
+		} else if (*ptr == 10) {// "\n"
 			new_x = x;
 			new_y = y + 1;
-		} elseif (*ptr == 9) {	// "\t"
-			new_x = ((x + 8) && !(8 - 1));
+		} else if (*ptr == 9) {	// "\t"
+			new_x = (x + 8) & !(8 - 1);
 			new_y = y;
 			if (x > 79) {
 				new_x = 0;

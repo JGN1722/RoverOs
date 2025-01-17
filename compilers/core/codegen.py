@@ -88,15 +88,13 @@ def MulMainStackTop():
 	EmitLn("ADD esp, 4")
 
 def DivMainStackTop():
-	EmitLn("MOV ebx, DWORD [esp]")
-	EmitLn("ADD esp, 4")
+	EmitLn("POP ebx")
 	EmitLn("XCHG eax, ebx")
 	EmitLn("XOR edx, edx")
 	EmitLn("IDIV ebx")
 
 def ModMainStackTop():
-	EmitLn("MOV ebx, DWORD [esp]")
-	EmitLn("ADD esp, 4")
+	EmitLn("POP ebx")
 	EmitLn("XCHG eax, ebx")
 	EmitLn("XOR edx, edx")
 	EmitLn("IDIV ebx")
@@ -129,7 +127,6 @@ def MainToStackTop():
 
 def DereferenceMain(size):
 	# I know we said no logic in the code generators, but this one is needed
-	# TODO: Use string manipulation to remove this condition
 	if size == 4:
 		EmitLn("MOV eax, DWORD [eax]")
 	else:

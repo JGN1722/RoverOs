@@ -75,15 +75,15 @@ MOV ebp, esp
 	mov eax, DWORD [ebp + 8]
 	shl ecx, 2
 	shr eax, cl
-	and eax, 0xf
+	and eax, 0fh
 	pop ecx		;ecx has been modified and won't be again, so restore it
 	
-	cmp al, 0xa	;convert to character
+	cmp al, 0ah	;convert to character
 	jae .letter
 	add al, '0'
 	jmp .poke
 	.letter:
-	sub al,0xa
+	sub al,0ah
 	add al,'A'
 	
 	.poke:
@@ -128,15 +128,15 @@ MOV ebp, esp
 	mov eax, DWORD [ebp + 8]
 	shl ecx, 2
 	shr eax, cl
-	and eax, 0xf
+	and eax, 0fh
 	pop ecx		;ecx has been modified and won't be again, so restore it
 	
-	cmp al, 0xa	;convert to character
+	cmp al, 0ah	;convert to character
 	jae .letter
 	add al, '0'
 	jmp .poke
 	.letter:
-	sub al,0xa
+	sub al,0ah
 	add al,'A'
 	
 	.poke:
@@ -181,15 +181,15 @@ MOV ebp, esp
 	mov eax, DWORD [ebp + 8]
 	shl ecx, 2
 	shr eax, cl
-	and eax, 0xf
+	and eax, 0fh
 	pop ecx		;ecx has been modified and won't be again, so restore it
 	
-	cmp al, 0xa	;convert to character
+	cmp al, 0ah	;convert to character
 	jae .letter
 	add al, '0'
 	jmp .poke
 	.letter:
-	sub al,0xa
+	sub al,0ah
 	add al,'A'
 	
 	.poke:
@@ -288,7 +288,6 @@ RET
 V_set_cursor_pos:
 PUSH ebp
 MOV ebp, esp
-SUB esp, 4
 MOV eax, 80
 PUSHD eax
 MOV eax, DWORD [ebp - (-8)]
@@ -298,7 +297,7 @@ PUSHD eax
 MOV eax, DWORD [ebp - (-12)]
 ADD DWORD [esp], eax
 POP eax
-MOV WORD [ebp - (4)], ax
+PUSHD eax
 MOV eax, 980
 PUSHD eax
 MOV eax, 14
@@ -474,8 +473,7 @@ MOV DWORD [ebp - (8)], eax
 MOV eax, DWORD [ebp - (8)]
 PUSHD eax
 MOV eax, 80
-MOV ebx, DWORD [esp]
-ADD esp, 4
+POP ebx
 XCHG eax, ebx
 XOR edx, edx
 IDIV ebx
@@ -488,8 +486,7 @@ SUB DWORD [esp], eax
 POP eax
 PUSHD eax
 MOV eax, 80
-MOV ebx, DWORD [esp]
-ADD esp, 4
+POP ebx
 XCHG eax, ebx
 XOR edx, edx
 IDIV ebx
@@ -738,9 +735,8 @@ RET
 V_sleep:
 PUSH ebp
 MOV ebp, esp
-SUB esp, 4
 MOV eax, 0
-MOV DWORD [esp], eax
+PUSHD eax
 L18:
 MOV eax, DWORD [ebp - (4)]
 PUSHD eax
@@ -791,10 +787,10 @@ MOV ebp, esp
 	mov WORD [edi], ax               ; Store the lower 16 bits of the handler address in the IDT entry for interrupt 49
 	
 	add edi, 2
-	mov WORD [edi], 0x08             ; Store the code segment selector (needed for transitioning to code)
+	mov WORD [edi], 008h             ; Store the code segment selector (needed for transitioning to code)
 	
 	add edi, 2
-	mov WORD [edi], 0x8E00           ; Set up the interrupt gate descriptor (0x8E00 means present, privilege level 0, interrupt gate)
+	mov WORD [edi], 08E00h           ; Set up the interrupt gate descriptor (08E00h means present, privilege level 0, interrupt gate)
 	
 	add edi, 2
 	shr eax, 16                      ; Shift the high 16 bits of the handler address into AX
@@ -931,9 +927,8 @@ RET
 V_install_generic_interrupt_handler:
 PUSH ebp
 MOV ebp, esp
-SUB esp, 4
 MOV eax, 0
-MOV DWORD [esp], eax
+PUSHD eax
 L21:
 MOV eax, DWORD [ebp - (4)]
 PUSHD eax
@@ -1106,9 +1101,8 @@ RET
 V_install_exception_interrupts:
 PUSH ebp
 MOV ebp, esp
-SUB esp, 4
 MOV eax, 0
-MOV DWORD [esp], eax
+PUSHD eax
 L31:
 MOV eax, DWORD [ebp - (4)]
 PUSHD eax
@@ -1275,9 +1269,8 @@ RET
 V_install_irq_interrupts:
 PUSH ebp
 MOV ebp, esp
-SUB esp, 4
 MOV eax, 32
-MOV DWORD [esp], eax
+PUSHD eax
 L38:
 MOV eax, DWORD [ebp - (4)]
 PUSHD eax
@@ -1398,13 +1391,57 @@ MOV eax, L46
 PUSHD eax
 CALL V_printf
 ADD esp, 4
-L47:
+MOV eax, L47
+PUSHD eax
+CALL V_printf
+ADD esp, 4
+MOV eax, 1
+PUSHD eax
+MOV eax, 1
+ADD DWORD [esp], eax
+POP eax
+PUSHD eax
+MOV eax, 2
+PUSHD eax
+MOV eax, 2
+ADD DWORD [esp], eax
+POP eax
+CMP DWORD [esp], eax
+MOV eax, 0
+SETA al
+ADD esp, 4
+CMP eax, 0
+JE L49
+MOV eax, 1
+PUSHD eax
+MOV eax, 1
+ADD DWORD [esp], eax
+POP eax
+JMP L48
+L49:
+MOV eax, 2
+PUSHD eax
+MOV eax, 2
+ADD DWORD [esp], eax
+POP eax
+L48:
+PUSHD eax
+CALL V_cstrub
+ADD esp, 4
+PUSHD eax
+CALL V_printf
+ADD esp, 4
+MOV eax, L50
+PUSHD eax
+CALL V_printf
+ADD esp, 4
+L51:
 MOV eax, 1
 CMP eax, 0
-JE L48
+JE L52
 hlt
-JMP L47
-L48:
+JMP L51
+L52:
 MOV eax, 0
 JMP @f
 @@:
@@ -1431,3 +1468,5 @@ L43 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 105, 110, 116, 101, 1
 L44 db 84, 104, 105, 115, 32, 115, 104, 111, 117, 108, 100, 32, 98, 108, 105, 110, 107, 13, 10, 0
 L45 db 84, 104, 105, 115, 32, 115, 104, 111, 117, 108, 100, 110, 39, 116, 13, 10, 0
 L46 db 97, 108, 108, 32, 100, 111, 110, 101, 44, 32, 104, 97, 110, 103, 105, 110, 103, 13, 10, 0
+L47 db 104, 101, 114, 101, 32, 105, 115, 32, 116, 104, 101, 32, 109, 97, 120, 32, 98, 101, 116, 119, 101, 101, 110, 32, 50, 32, 97, 110, 100, 32, 52, 58, 32, 0
+L50 db 13, 10, 0

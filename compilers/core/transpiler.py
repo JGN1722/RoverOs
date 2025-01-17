@@ -120,6 +120,8 @@ def CompileBlock(node):
 			CompileBlock(statement)
 		elif statement.value == "BREAK":
 			CompileBreak(statement)
+		elif statement.value == "CONTINUE":
+			CompileContinue(statement)
 		else:
 			CompileExpression(statement)
 
@@ -184,25 +186,33 @@ def CompileLocDecl(node):
 	allocated_stack_units += 1
 	
 	st.AddVariable(node.value["name"], node.value["type"], stack_offset = allocated_stack_units)
-	cg.StackAlloc(1) # TODO: right now this does but I might have to change it
 	
 	# Add the initializer value if there's one
 	if len(node.children) != 0:
 		CompileExpression(node.children[0])
-		cg.MainToStackTop()
+		cg.PushMain()
+	else:
+		cg.StackAlloc(1) # TODO: right now this does but I might have to change it
 
 def CompileReturn(node):
 	CompileExpression(node.children[0])
 	cg.BranchToAnonymous()
 
 def CompileBreak(node):
+	abort("break not implemented")
 	cg.EmitLn("; Break here")
+
+def CompileContinue(node):
+	abort("continue not implemented")
+	cg.EmitLn("; Continue here")
 
 def CompileExpression(node):
 	if node.type == "BinaryOp":
 		return CompileBinaryOp(node)
 	elif node.type == "Relation":
 		return CompileRelation(node)
+	elif node.type == "TernaryOp":
+		return CompileTernaryOp(node)
 	elif node.type == "UnaryOp":
 		return CompileUnaryOp(node)
 	elif node.type == "Assignement":
@@ -222,8 +232,21 @@ def CompileExpression(node):
 	elif node.type == "Number":
 		return CompileNumber(node)
 
+def CompileTernaryOp(node):
+	L1 = cg.NewLabel()
+	L2 = cg.NewLabel()
+	CompileExpression(node.children[0])
+	cg.TestNull()
+	cg.BranchIfTrue(L2)
+	CompileExpression(node.children[1])
+	cg.BranchTo(L1)
+	cg.PutLabel(L2)
+	CompileExpression(node.children[2])
+	cg.PutLabel(L1)
+	
+	return Type_("void")
+
 def CompileBinaryOp(node):
-	# TODO: Fix commutativity issues by compiling in the reverse order and save a few MOVs and XCHGs
 	t1 = CompileExpression(node.children[0])
 	cg.PushMain()
 	t2 = CompileExpression(node.children[1])
@@ -242,10 +265,16 @@ def CompileBinaryOp(node):
 	elif node.value == ">>":
 		cg.ShrMainStackTop()
 	elif node.value == "&&":
+		cg.AndMainStackTop() # TODO: make it lazy
+	elif node.value == "&":
 		cg.AndMainStackTop()
 	elif node.value == "||":
+		cg.OrMainStackTop() # TODO: make it lazy
+	elif node.value == "|":
 		cg.OrMainStackTop()
 	elif node.value == "~":
+		cg.NotMainStackTop()
+	elif node.value == "^":
 		cg.XorMainStackTop()
 	return Type_("void") # TODO: calculate the returned type
 
@@ -285,7 +314,6 @@ def CompileUnaryOp(node):
 		return t
 
 def CompileAssignement(node):
-	# TODO: Commutativity is a problem here too, even more so because it uses the same code generators
 	if not node.children[0].type in ["Variable", "Dereference", "StructMemberAccess", "StructPointerMemberAccess"]:
 		abort("Cannot assign to something else than a variable")
 	if node.value == "=":
@@ -311,7 +339,7 @@ def CompileAssignement(node):
 			cg.AndMainStackTop()
 		elif node.value == "|=":
 			cg.OrMainStackTop()
-		elif node.value == "~=":
+		elif node.value == "^=":
 			cg.XorMainStackTop()
 		CompileStore(node.children[0])
 	return t
