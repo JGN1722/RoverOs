@@ -24,7 +24,7 @@ echo.
 
 :: build the kernel
 echo ======= KERNEL =======
-compilers\roverc.py main_source\kernel.c image\kernel.bin
+compilers\roverc.py --freestanding main_source\kernel.c image\kernel.bin
 if not %errorlevel% == 0 (
 	goto _l_end
 )
