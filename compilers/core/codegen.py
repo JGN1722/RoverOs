@@ -46,14 +46,25 @@ def GetWindowsOutput():
 
 
 # Functions
-def FunctionHeader():
+def OpenStackFrame():
 	EmitLn("PUSH ebp")
 	EmitLn("MOV ebp, esp")
 
-def FunctionFooter():
+def CloseStackFrame():
 	EmitLn("MOV esp, ebp")
 	EmitLn("POP ebp")
-	EmitLn("RET")
+
+def StandardReturn(stack_clean=0):
+	EmitLn("RET " + str(stack_clean))
+
+def InterruptReturn():
+	EmitLn("IRET")
+
+def PushAll():
+	EmitLn("PUSHAD")
+
+def PopAll():
+	EmitLn("POPAD")
 
 def CallFunction(n):
 	EmitLn("CALL V_" + n)
@@ -74,6 +85,12 @@ def NegateMain():
 
 def NotMain():
 	EmitLn("NOT eax")
+
+def PrimaryToSecondary():
+	EmitLn("MOV ebx, eax")
+
+def SecondaryToPrimary():
+	EmitLn("MOV eax, ebx")
 
 def AddMainStackTop():
 	EmitLn("ADD DWORD [esp], eax")
@@ -177,6 +194,10 @@ def CompareStackTopMain():
 	EmitLn("CMP DWORD [esp], eax")
 
 # Control Structures
+def Switch(c, l):
+	EmitLn("CMP eax, " + str(c))
+	EmitLn("JE " + l)
+
 def BranchTo(l):
 	EmitLn("JMP " + l)
 

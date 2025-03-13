@@ -5,9 +5,25 @@ Author: JGN1722 (Github)
 Description: The first stage of the compiler, that breaks up the source into an array of tokens
 """
 
+TEST_MODE = False
+last_err = ''
+
 import sys
 
 from core.helpers import *
+
+"""
+The approach I took there is taken from the book I first used to start writing compilers:
+Jack Crenshaw's How To Build A Compiler
+
+token is the symbol of the token currently being examined: 0 for a number, x for an identifier, and the value in any other case
+value is the actual value of the token, so it's only different if the token is a number or an identifier
+
+streampos is the index in the text
+lookahead is the next character to be considered
+
+this approach with global variables feels simpler and cleaner to me, so it's also taken in the other parts of the code
+"""
 
 source_text = ""
 lookahead = ""
@@ -24,12 +40,19 @@ character_number = 1
 
 # Error functions
 def abort(s):
+	global last_err
+	
+	if TEST_MODE:
+		last_err = s
+		raise TestModeError
+	
 	print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
 	sys.exit(-1)
 
 def Expected(s):
 	abort("Expected " + s)
 
+# The backbone of the tokenizer: fetches the next character, gives null if the text is finished, and advances streampos
 def GetChar():
 	global streampos, lookahead, character_number, line_number
 	
@@ -65,6 +88,7 @@ def GetNum():
 	value = lookahead
 	GetChar()
 	
+	# We handle different bases as early as we can, to avoid complexity later on
 	if value == "0":
 		if lookahead.upper() == "X":
 			base = 16
@@ -90,6 +114,7 @@ def GetNum():
 	elif base == 2:
 		value += "b"
 
+# What we consider to be an 'operator' is literally anything other than a number or identifier
 def GetOp():
 	global lookahead, token, value
 	
@@ -97,6 +122,9 @@ def GetOp():
 	value = lookahead
 	GetChar()
 
+# To avoid the headache later on, we get rid of comments as soon as possible
+# How it's done is if we detect a potential comment, then we switch to a different next_token
+# this allows to determine if we're in a comment without the mess of global flags
 def next_token_comment():
 	global lookahead
 	
@@ -107,6 +135,7 @@ def next_token_comment():
 	else:
 		GetOp()
 
+# Where the comment removing magic happens
 def SkipInlineComment():
 	next_token_comment() # Skip the first '/' of the comment symbol
 	next_token_comment() # Skip the second '/' of the comment symbol
@@ -130,6 +159,7 @@ def SkipPrologueComment(main_comment=True):
 	if main_comment:
 		next_token() # Prepare the terrain for the return to normal lexing
 
+# The heart of the logic of this module: gets the tokens one by one, and looks for comments to skip
 def next_token():
 	global lookahead, token_stream
 	

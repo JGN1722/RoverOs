@@ -1,51 +1,30 @@
-void master_irq_default() {
-	asm("pushad");
-	
+[[roverc::interrupt]] void master_irq_default() {
 	printf("Unhandled IRQ received\r\n");
 	
 	outb(PIC1_COMMAND, PIC_EOI);
 	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }
 
-void slave_irq_default() {
-	asm("pushad");
-	
+[[roverc::interrupt]] void slave_irq_default() {
 	printf("Unhandled IRQ received\r\n");
 	
 	outb(PIC2_COMMAND, PIC_EOI);
 	outb(PIC1_COMMAND, PIC_EOI);
-	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }
 
-void keyboard_handler() {
-	asm("pushad");
+// [[roverc::interrupt]] void keyboard_handler() {
+void keyboard_handler() __attribute__((roverc::interrupt)) {
+	uint8_t key_code = inb(0x60);
+	
+	set_terminal_color(key_code);
 	printf("Key pressed!\r\n");
 	
 	// For now, read and discard the key scan code
 	printf("Key code: ");
-	printf(cstrub(inb(0x60)));
+	printf(cstrub(key_code));
 	printf("\r\n");
 	
 	outb(PIC1_COMMAND, PIC_EOI);
-	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }
 
 void install_irq_interrupts() {

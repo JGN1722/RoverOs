@@ -3,18 +3,25 @@ RoverC Compiler
 Written for RoverOs
 Author: JGN1722 (Github)
 Description: The second stage of the compiler, that takes a stream of tokens and expands the preprocessor directives
+It implements a limited yet working preprocessor, with #include, #define, #undef, #ifdef, #ifndef, #error and #warning
 """
+
+TEST_MODE = False
+last_err = ''
 
 import sys
 
 from core.helpers import *
 import core.tokenizer as tokenizer
 
+script_directory = ''
+include_directory = ''
+
 token_stream = []
 streampos = -1
-token = ""
-value = ""
-file_name = ""
+token = ''
+value = ''
+file_name = ''
 line_number = 0
 character_number = 0
 
@@ -25,17 +32,18 @@ defined_macros = {
 
 # Error functions
 def abort(s):
-	print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
+	global last_err
+	
+	if TEST_MODE:
+		last_err = s
+		raise TestModeError
+	
+	print('Error:', s, '(file', file_name, 'line', line_number, 'character', character_number, ')', file=sys.stderr)
 	sys.exit(-1)
 
 def Expected(s):
-	abort("Expected " + s)
+	abort('Expected ' + s)
 
-def DumpStream():
-	res = ""
-	for t in token_stream:
-		res += t[1] + " "
-	print(res)
 
 # Parsing unit
 def Next():
@@ -111,6 +119,9 @@ def DefineDirective():
 	macro_name = value
 	RemoveToken()
 	
+	if macro_name in defined_macros:
+		abort('Macro redefinition: ' + macro_name)
+	
 	macro_params = []
 	
 	# Maybe the macro has parameters
@@ -143,11 +154,9 @@ def DefineDirective():
 	# Store the macro in a table
 	defined_macros[macro_name] = [macro_value,macro_params]
 
-def IncludeFile(new_source_file_token, new_source_file_name):
+def IncludeFile(new_source_file_name):
 	global lookahead, file_name, line_number, character_number, token, value
 	
-	if not new_source_file_token == "s":
-		Expected("name of file to include (not " + new_source_file_name + ")")
 	if new_source_file_name == "":
 		abort("source file not specified")
 	
@@ -166,12 +175,20 @@ def IncludeDirective():
 	if not IsBlankNotNewline(value):
 		Expected("Space")
 	RemoveToken()
-	BuildString()
+	
+	if not token in ['"', '<']:
+		Expected('Quoted string or include path')
+	
+	is_std_file = token != '"'
+	BuildString() if token == '"' else BuildIncludeString()
+	
+	if token != "s":
+		Expected("name of file to include (not " + value + ")")
+	
 	file = value
-	file_token = token
 	RemoveToken()
 	
-	new_stream = IncludeFile(file_token, file)
+	new_stream = IncludeFile(include_directory + file if is_std_file else file)
 	
 	for i in range(len(new_stream)):
 		token_stream.insert(streampos + i, new_stream[i])
@@ -189,8 +206,8 @@ def UndefDirective():
 	macro_to_remove = value
 	RemoveToken()
 	
-	if macro_to_check in defined_macros.keys():
-		del define_macros[macro_to_check]
+	if macro_to_remove in defined_macros.keys():
+		del defined_macros[macro_to_remove]
 
 def SkipToNextEndif():
 	while token != "\0":
@@ -253,7 +270,7 @@ def ErrorDirective():
 		error_string += value
 		RemoveToken()
 	
-	abort(error_string)
+	abort(error_string.lstrip())
 
 def WarningDirective():
 	warning_string = ""
@@ -280,9 +297,21 @@ def BuildString():
 	
 	Reload()
 
+def BuildIncludeString():
+	l,c = line_number, character_number
+	MatchRemoveToken('<')
+	string_value = ""
+	while token != '>':
+		if token == "\0":
+			abort("Unterminated string literal at line " + str(l) + ", character " + str(c))
+		string_value += value
+		RemoveToken()
+	MatchRemoveToken('>')
+	token_stream.insert(streampos, ("s", string_value, file_name, l, c))
+	
+	Reload()
+
 def ExtendMacro(macro_name):
-	#print("=======================================================")
-	#print("the macro is at index",streampos)
 	macro_value = defined_macros[macro_name][0]
 	macro_params = defined_macros[macro_name][1]
 	macro_args = []
@@ -323,11 +352,9 @@ def ExtendMacro(macro_name):
 				index = i
 		
 		if index == -1:
-			#print("(no arg) adding at ",streampos + j + k + 1)
 			token_stream.insert(streampos + j + k + 1, (macro_value[j][0], macro_value[j][1], file_name, line_number, character_number))
 		else:
 			for l in range(len(macro_args[index])):
-				#print("(arg   ) adding at ",streampos + j + k + l + 1)
 				token_stream.insert(streampos + j + k + l + 1, (macro_args[index][l][0], macro_args[index][l][1], file_name, line_number, character_number))
 			k += len(macro_args[index]) - 1
 	
@@ -348,7 +375,7 @@ def PreprocessTokenBlock(root_level=True):
 			# There can be macros to expand, and newlines to remove
 			if IsBlank(token):
 				RemoveToken()
-			elif value in defined_macros.keys():
+			elif value in defined_macros:
 				ExtendMacro(value)
 			elif token == chr(34):
 				BuildString()
@@ -377,6 +404,8 @@ def PreprocessTokenBlock(root_level=True):
 				IfdefDirective()
 			elif directive == "ifndef":
 				IfndefDirective()
+			else:
+				abort('Unknown directive: ' + directive)
 
 def Preprocess():
 	global streampos, token, value

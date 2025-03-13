@@ -1,3 +1,6 @@
+#ifndef _CONSTANTS_H
+#define _CONSTANTS_H
+
 #define KERNEL_ADDRESS 0x7c00 + 512 + 512
 #define STACK_ADDRESS 0x7c00 - 1
 #define IDT_ADDRESS 0x0
@@ -27,3 +30,5 @@
 #define ICW1_ICW4 0x01
 #define PIC_EOI 0x20
 #define ICW4_8086 0x01
+
+#endif

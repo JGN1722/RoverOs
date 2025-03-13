@@ -1,6 +1,6 @@
 #include "vga.h"
 
-char terminal_color;
+uint8_t terminal_color;
 
 void init_vga() {
 	clear_screen();
@@ -20,8 +20,8 @@ void set_blinking(int b) {
 	}
 }
 
-void set_cursor_pos(int x, int y) {
-	word linear_position = MAX_COLS * y + x;
+void set_cursor_pos(uint32_t x, uint32_t y) {
+	uint16_t linear_position = MAX_COLS * y + x;
 	
 	outb(REG_SCREEN_CTRL, 0x0E);
 	outb(REG_SCREEN_DATA, linear_position >> 8);
@@ -30,8 +30,8 @@ void set_cursor_pos(int x, int y) {
 	outb(REG_SCREEN_DATA, linear_position);
 }
 
-int get_cursor_pos() {
-	char high, low;
+uint32_t get_cursor_pos() {
+	uint8_t high, low;
 	
 	outb(REG_SCREEN_CTRL, 0x0E);
 	high = inb(REG_SCREEN_DATA);
@@ -39,7 +39,7 @@ int get_cursor_pos() {
 	outb(REG_SCREEN_CTRL, 0x0F);
 	low = inb(REG_SCREEN_DATA);
 	
-	return high << 8 + low;
+	return (high << 8) + low;
 }
 
 void clear_screen() {
@@ -67,10 +67,10 @@ void scroll() {
 	");
 }
 
-void putchar(char* ptr, int x, int y, char attr) {
-	word* addr;
-	int linear_pos, new_x, new_y;
-	int temp1, temp2, temp3;
+void putchar(char* ptr, uint32_t x, uint32_t y, uint8_t attr) {
+	uint16_t* addr;
+	uint32_t linear_pos, new_x, new_y;
+	uint32_t temp1, temp2, temp3;
 	
 	if (attr == 0) {
 		attr = terminal_color;
@@ -97,7 +97,7 @@ void putchar(char* ptr, int x, int y, char attr) {
 			}
 		} else {
 			addr = ((MAX_COLS * y + x) << 1) + VIDEO_MEMORY;
-			*addr = attr << 8 + *ptr;
+			*addr = (attr << 8) + *ptr;
 			if (x < 79) {
 				new_x = x + 1;
 				new_y = y;
@@ -115,7 +115,7 @@ void putchar(char* ptr, int x, int y, char attr) {
 	} else {
 		addr = ((MAX_COLS * y + x) << 1) + VIDEO_MEMORY;
 		
-		*addr = attr << 8 + *ptr;
+		*addr = (attr << 8) + *ptr;
 	}
 }
 

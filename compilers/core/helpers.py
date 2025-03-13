@@ -20,14 +20,18 @@ keyword_list = [
 ]
 
 built_in_types = {
-	'char' : 1,
-	'word' : 2,
-	'int' : 4,
 	'void' : 0,
 	'uint8_t' : 1,
+	'char' : 1,
 	'uint16_t' : 2,
 	'uint32_t' : 4,
+	'int' : 4
 }
+
+calling_conventions = [
+	'__cdecl',
+	'__stdcall'
+]
 
 class Type_:
 	def __init__(self, DataType, pointer_level=0):
@@ -35,10 +39,25 @@ class Type_:
 		self.pointer_level = pointer_level
 	
 	def __repr__(self):
-		return f"Type(DataType={self.datatype}, pointer_level={self.pointer_level})"
+		return f"Type(datatype={self.datatype}, pointer_level={self.pointer_level})"
 	
 	def __eq__(self, other):
 		return self.datatype == other.datatype and self.pointer_level == other.pointer_level
+
+class Attribute:
+	def __init__(self, vendor="", name="", arguments=[]):
+		self.vendor = vendor
+		self.name = name
+		self.arguments = arguments
+	
+	def __repr__(self):
+		return f"Attribute(vendor='{self.vendor}', name='{self.name}', args='{self.arguments}')"
+	
+	def __eq__(self, other):
+		return self.vendor == other.vendor and self.name == other.name and self.arguments == other.arguments
+
+class TestModeError(Exception):
+	pass
 
 def GetSizeQualifier(s):
 	return "DWORD" if s == 4 else "WORD" if s == 2 else "BYTE" if s == 1 else ""

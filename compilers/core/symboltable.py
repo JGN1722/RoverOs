@@ -28,13 +28,14 @@ class IdentifiersSymbolTable:
 		self.elements = [] # An array of Identifier()
 
 class Identifier:
-	def __init__(self, name, type_, args=None, function_body=True, is_global=False, stack_offset=0, is_variable=False, is_function=False, is_array=False, array_length=0):
+	def __init__(self, name, type_, args=None, function_body=True, function_attributes=[], is_global=False, stack_offset=0, is_variable=False, is_function=False, is_array=False, array_length=0):
 		self.name = name
 		self.type = type_
 		
 		self.is_function = is_function
 		self.arguments = args
 		self.is_function_body_defined = function_body
+		self.function_attributes = function_attributes
 		
 		self.is_variable = is_variable
 		self.is_global = is_global
@@ -60,10 +61,10 @@ def IsNameTaken(name):
 
 
 # Setters
-def AddFunction(name, t, args, function_body=False):
+def AddFunction(name, t, args, function_body=False, attributes=None):
 	if IsNameTaken(name):
 		abort("name redefinition (" + name + ")")
-	symtable.identifiers.elements.append(Identifier(name, t, args=args, is_function=True, function_body=function_body))
+	symtable.identifiers.elements.append(Identifier(name, t, args=args, is_function=True, function_body=function_body, function_attributes=attributes))
 
 def SetFunctionBodyAsDefined(name):
 	for n in symtable.identifiers.elements:
@@ -71,6 +72,13 @@ def SetFunctionBodyAsDefined(name):
 			continue
 		if n.name == name:
 			n.is_function_body_defined = True
+
+def AddAttribute(func_name, vendor, attr_name, arguments):
+	for n in symtable.identifiers.elements:
+		if not n.is_function:
+			continue
+		if n.name == func_name:
+			n.function_attributes.append(Attribute(vendor=vendor,name=attr_name,arguments=arguments))
 
 def AddVariable(name, t, is_global=False, stack_offset=0):
 	if IsNameTaken(name):
@@ -176,6 +184,14 @@ def GetFunctionArgList(name):
 			return n.arguments
 	return []
 
+def GetFunctionAttributes(name):
+	for n in symtable.identifiers.elements:
+		if not n.is_function:
+			continue
+		if n.name == name:
+			return n.function_attributes
+	return []
+
 def GetVariableType(name):
 	for n in symtable.identifiers.elements:
 		if not n.is_variable:
@@ -228,6 +244,13 @@ def GetStructMemberOffset(struct, member):
 				else:
 					offset += SizeOf(m["type"].datatype)
 
+def FunctionHasAttr(func_name, attribute):
+	for n in symtable.identifiers.elements:
+		if not n.is_function:
+			continue
+		if n.name == func_name:
+			return attribute in n.function_attributes
+
 
 
 def Dump():
@@ -246,7 +269,7 @@ def Dump():
 			continue
 		print("New variable: ",v.name)
 		print("  type:       ",v.type)
-		print("  scope:      ",v.scope)
+		print("  stck offset:",v.stack_offset)
 	print("\n==========================================")
 	print("FUNCTIONS\n")
 	for v in symtable.identifiers.elements:

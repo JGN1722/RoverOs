@@ -1,105 +1,33 @@
-void except_default() {
-	asm("pushad");
-	
+[[roverc::interrupt]] void except_default() {
 	printf("Unhandled exception\r\n");
-	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }
 
-void except_null_div() {
-	asm("pushad");
-	
+[[roverc::interrupt]] void except_null_div() {
 	printf("Division by 0\r\n");
-	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }
 
-void except_overflow() {
-	asm("pushad");
-	
+[[roverc::interrupt]] void except_overflow() {
 	printf("Overflow\r\n");
-	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }
 
-void except_double_fault() {
-	asm("pushad");
-	
+[[roverc::interrupt]] void except_double_fault() {
 	printf("Double fault\r\n");
-	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }
 
-void except_ss_fault() {
-	asm("pushad");
-	
+[[roverc::interrupt]] void except_ss_fault() {
 	printf("Stack segment fault\r\n");
-	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }
 
-void except_gpf() {
-	asm("pushad");
-	
+[[roverc::interrupt]] void except_gpf() {
 	printf("General protection fault\r\n");
-	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }
 
-void except_page_fault() {
-	asm("pushad");
-	
+[[roverc::interrupt]] void except_page_fault() {
 	printf("Page fault\r\n");
-	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }
 
-void except_float() {
-	asm("pushad");
-	
+[[roverc::interrupt]] void except_float() {
 	printf("Floating point exception\r\n");
-	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }
 
 void install_exception_interrupts() {

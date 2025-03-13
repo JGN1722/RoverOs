@@ -5,6 +5,9 @@ Author: JGN1722 (Github)
 Description: The fourth stage of the compiler, that takes an AST and generates assembly code from it
 """
 
+TEST_MODE = False
+last_err = ''
+
 import sys
 
 from core.helpers import *
@@ -17,11 +20,20 @@ allocated_stack_units = 0 # Number of local variables on the stack
 
 # Error functions
 def abort(s):
+	global last_err
+	
+	if TEST_MODE:
+		last_err = s
+		raise TestModeError
+	
 	# I'm still yet to find how to use file_name, line_number and character_number here
 	# print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
 	# For now, just print it raw
 	print("Error: " + s, file=sys.stderr)
 	sys.exit(-1)
+
+def warning(s):
+	print("Warning: " + s)
 
 def Expected(s):
 	abort("Expected " + s)
@@ -29,12 +41,49 @@ def Expected(s):
 def Undefined(n):
 	abort("Undefined variable (" + n + ")")
 
+def GetResultingType(t1,t2): # TODO: I have no idea what I'm doing
+	if t1.pointer_level != 0:
+		t1 = Type_("uint32_t",pointer_level=0)
+	if t2.pointer_level != 0:
+		t2 = Type_("uint32_t",pointer_level=0)
+	
+	table = {
+	(Type_("uint8_t"),Type_("uint8_t")): Type_("uint8_t"),
+	(Type_("uint8_t"),Type_("uint16_t")): Type_("uint16_t"),
+	(Type_("uint8_t"),Type_("uint32_t")): Type_("uint32_t"),
+	(Type_("uint16_t"),Type_("uint16_t")): Type_("uint16_t"),
+	(Type_("uint16_t"),Type_("uint32_t")): Type_("uint32_t"),
+	(Type_("uint32_t"),Type_("uint32_t")): Type_("uint32_t"),
+	(Type_("char"),Type_("char")): Type_("char"),
+	(Type_("int"),Type_("int")): Type_("int"),
+	(Type_("int"),Type_("char")): Type_("int"),
+	}
+	
+	return table[(t1,t2)]
+
+# A debug routine to dump the AST
+tab_number = 0
+def print_node(node):
+	global tab_number
+	
+	print("\t" * tab_number,"Node",node.type,"with value",node.value)
+	if node.children != []:
+		tab_number += 1
+		
+		for child in node.children:
+			try:
+				print_node(child)
+			except:
+				print("\t" * tab_number,child)
+		
+		tab_number -= 1
+
 
 def transpile():
 	
 	for node in AST.children:
 		if node.type == "FunctionDeclaration":
-			st.AddFunction(node.value["name"], node.value["type"], args=node.children[0].children, function_body=False)
+			st.AddFunction(node.value["name"], node.value["type"], attributes=node.children[0], args=node.children[1].children, function_body=False)
 		elif node.type == "StructDecl":
 			st.AddStruct(node.value, node.children)
 		elif node.type == "GlobalDecl":
@@ -47,7 +96,7 @@ def transpile():
 			# The only option left is it's a function
 			CompileFunction(node)
 	
-	# Check if MAIN fullfills it's specification
+	# After compiling everything, check if MAIN fullfills it's specification
 	main_func = None
 	for node in AST.children:
 		if node.value["name"] == "main":
@@ -72,69 +121,112 @@ def CompileFunction(node):
 	
 	# If it's already in there, check if the declaration matches the implementation
 	if st.IsFunction(func_name):
-		if st.IsFunctionBodyDefined(func_name):
-			abort("function redefinition (" + func_name + ")")
-		
-		if node.children[0].children != st.GetFunctionArgList(func_name):
-			abort("the argument list of " + func_name + " does not match its definition")
-		
-		if node.value["type"] != st.GetFunctionType(func_name):
-			abort("the type of " + func_name + " does not match its definition")
-		
-		st.SetFunctionBodyAsDefined(func_name)
+		CheckRedefinition(node)
 	else:
-		st.AddFunction(node.value["name"], node.value["type"], args=node.children[0].children)
+		st.AddFunction(node.value["name"], node.value["type"], attributes=node.children[0], args=node.children[1].children)
 	
 	cg.PutIdentifier(func_name)
-	cg.FunctionHeader()
+	
+	CompileStackFrameBegin(node)
 	
 	allocated_stack_units = 0
 	
-	stack_offset = -len(node.children[0].children) - 1
-	for arg in node.children[0].children:
+	stack_offset = -len(node.children[1].children) - 1
+	node.children[1].children.reverse()
+	
+	for arg in node.children[1].children:
 		st.AddVariable(arg["name"], arg["type"], stack_offset=stack_offset)
 		stack_offset += 1
 	
-	CompileBlock(node.children[1])
+	node.children[1].children.reverse()
+	
+	CompileBlock(node.children[2])
 	
 	cg.PutAnonymousLabel()
 	
-	cg.FunctionFooter()
+	CompileStackFrameEnd(node)
+	CompileEpilog(node)
+	
 	st.DeleteLocalVariables()
 
-def CompileBlock(node):
+def CheckRedefinition(node):
+	func_name = node.value["name"]
+	
+	if st.IsFunctionBodyDefined(func_name):
+		abort("function redefinition (" + func_name + ")")
+	
+	if node.children[1].children != st.GetFunctionArgList(func_name):
+		abort("the argument list of " + func_name + " does not match its definition")
+	
+	if node.value["type"] != st.GetFunctionType(func_name):
+		abort("the type of " + func_name + " does not match its definition")
+	
+	if st.GetFunctionAttributes(func_name) != node.children[0]:
+		abort("the attributes in the definition of " + func_name + " do not match the definition") # TODO: This shouldn't abort
+	
+	st.SetFunctionBodyAsDefined(func_name)
+
+def CompileStackFrameBegin(node):
+	func_name = node.value["name"]
+	
+	if st.FunctionHasAttr(func_name, Attribute(vendor="roverc",name="interrupt")):
+		cg.PushAll()
+	if not st.FunctionHasAttr(func_name, Attribute(vendor="roverc",name="naked")):
+		cg.OpenStackFrame()
+
+def CompileStackFrameEnd(node):
+	func_name = node.value["name"]
+	
+	if not st.FunctionHasAttr(func_name, Attribute(vendor="roverc",name="naked")):
+		cg.CloseStackFrame()
+	if st.FunctionHasAttr(func_name, Attribute(vendor="roverc",name="interrupt")):
+		cg.PopAll()
+
+def CompileEpilog(node):
+	func_name = node.value["name"]
+	
+	if st.FunctionHasAttr(func_name, Attribute(vendor="roverc",name="interrupt")):
+		if st.FunctionHasAttr(func_name, Attribute(name='__stdcall')):
+			abort('interrupts cannot use conventions with callee stack cleaning (Ex: stdcall)')
+		cg.InterruptReturn()
+	else:
+		cg.StandardReturn(len(node.children[1].children) * 4 if st.FunctionHasAttr(func_name, Attribute(name='__stdcall')) else 0)
+
+def CompileBlock(node, can_break=False, can_continue=False, break_label='', continue_label=''):
 	for statement in node.children:
 		if statement.type == "LocDecl":
 			CompileLocDecl(statement)
 		elif statement.value == "ASM":
 			CompileAsm(statement)
 		elif statement.value == "IF":
-			CompileIf(statement)
+			CompileIf(statement, can_break, can_continue, break_label, continue_label)
 		elif statement.value == "WHILE":
 			CompileWhile(statement)
 		elif statement.value == "FOR":
 			CompileFor(statement)
+		elif statement.value == "SWITCH":
+			CompileSwitch(statement)
 		elif statement.value == "RETURN":
 			CompileReturn(statement)
 		elif statement.value == "Block":
-			CompileBlock(statement)
+			CompileBlock(statement, can_break, can_continue, break_label, continue_label)
 		elif statement.value == "BREAK":
-			CompileBreak(statement)
+			CompileBreak(statement, can_break, break_label)
 		elif statement.value == "CONTINUE":
-			CompileContinue(statement)
+			CompileContinue(statement, can_continue, continue_label)
 		else:
 			CompileExpression(statement)
 
 def CompileAsm(node):
 	cg.EmitLn(node.children[0].value)
 
-def CompileIf(node):
+def CompileIf(node, can_break=False, can_continue=False, break_label='', continue_label=''):
 	L1 = cg.NewLabel()
 	L2 = cg.NewLabel()
 	CompileExpression(node.children[0])
 	cg.TestNull()
 	cg.BranchIfTrue(L2)
-	CompileBlock(node.children[1])
+	CompileBlock(node.children[1], can_break, can_continue, break_label, continue_label)
 	if len(node.children) != 2:
 		cg.BranchTo(L1)
 	cg.PutLabel(L2)
@@ -145,28 +237,26 @@ def CompileIf(node):
 			CompileExpression(other_children[i].children[0])
 			cg.TestNull()
 			cg.BranchIfTrue(L2)
-			CompileBlock(other_children[i].children[1])
+			CompileBlock(other_children[i].children[1], can_break, can_continue, break_label, continue_label)
 			if i != len(other_children) - 1:
 				cg.BranchTo(L1)
 			cg.PutLabel(L2)
 		else:
-			CompileBlock(other_children[i].children[0])
+			CompileBlock(other_children[i].children[0], can_break, can_continue, break_label, continue_label)
 	cg.PutLabel(L1)
 
 def CompileWhile(node):
-	L1 = cg.NewLabel()
-	L2 = cg.NewLabel()
+	L1, L2 = cg.NewLabel(), cg.NewLabel()
 	cg.PutLabel(L1)
 	CompileExpression(node.children[0])
 	cg.TestNull()
 	cg.BranchIfTrue(L2)
-	CompileBlock(node.children[1])
+	CompileBlock(node.children[1], can_break=True, can_continue=True, break_label=L2, continue_label=L1)
 	cg.BranchTo(L1)
 	cg.PutLabel(L2)
 
 def CompileFor(node):
-	L1 = cg.NewLabel()
-	L2 = cg.NewLabel()
+	L1, L2, L3 = cg.NewLabel(), cg.NewLabel(), cg.NewLabel()
 	if node.children[0].type == "LocDecl":
 		CompileLocDecl(node.children[0])
 	else:
@@ -175,10 +265,30 @@ def CompileFor(node):
 	CompileExpression(node.children[1])
 	cg.TestNull()
 	cg.BranchIfTrue(L2)
-	CompileBlock(node.children[3])
+	CompileBlock(node.children[3], can_break=True, can_continue=True, break_label=L2, continue_label=L3)
+	cg.PutLabel(L3)
 	CompileExpression(node.children[2])
 	cg.BranchTo(L1)
 	cg.PutLabel(L2)
+
+def CompileSwitch(node):
+	CompileExpression(node.children[0])
+	labels = []
+	L1 = cg.NewLabel()
+	for c in node.children[1]:
+		if c:
+			L = cg.NewLabel()
+			cg.Switch(c.value, L)
+			labels.append(L)
+	if node.children[1][-1] == None:
+		CompileBlock(node.children[-1], can_break=True, break_label=L1)
+		cg.BranchTo(L1)
+	
+	for i in range(len(labels)):
+		cg.PutLabel(labels[i])
+		CompileBlock(node.children[i + 2], can_break=True, break_label=L1)
+	
+	cg.PutLabel(L1)
 
 def CompileLocDecl(node):
 	global allocated_stack_units
@@ -198,13 +308,15 @@ def CompileReturn(node):
 	CompileExpression(node.children[0])
 	cg.BranchToAnonymous()
 
-def CompileBreak(node):
-	abort("break not implemented")
-	cg.EmitLn("; Break here")
+def CompileBreak(node, can_break, break_label):
+	if not can_break:
+		abort("break is misplaced")
+	cg.BranchTo(break_label)
 
-def CompileContinue(node):
-	abort("continue not implemented")
-	cg.EmitLn("; Continue here")
+def CompileContinue(node, can_continue, continue_label):
+	if not can_continue:
+		abort("continue is misplaced")
+	cg.BranchTo(continue_label)
 
 def CompileExpression(node):
 	if node.type == "BinaryOp":
@@ -213,8 +325,10 @@ def CompileExpression(node):
 		return CompileRelation(node)
 	elif node.type == "TernaryOp":
 		return CompileTernaryOp(node)
-	elif node.type == "UnaryOp":
-		return CompileUnaryOp(node)
+	elif node.type == "PrefixUnaryOp":
+		return CompilePrefixUnaryOp(node)
+	elif node.type == "PostfixUnaryOp":
+		return CompilePostfixUnaryOp(node)
 	elif node.type == "Assignement":
 		return CompileAssignement(node)
 	elif node.type == "FunctionCall":
@@ -299,7 +413,7 @@ def CompileRelation(node):
 	cg.StackFree(1)
 	return Type_("char")
 
-def CompileUnaryOp(node):
+def CompilePrefixUnaryOp(node):
 	if node.value == "!":
 		t = CompileExpression(node.children[0])
 		cg.NotMain()
@@ -312,6 +426,17 @@ def CompileUnaryOp(node):
 			cg.DecrementMain()
 		CompileStore(node.children[0])
 		return t
+
+def CompilePostfixUnaryOp(node):
+	t = CompileVariableRead(node.children[0])
+	cg.PrimaryToSecondary()
+	if node.value == "++":
+		cg.IncrementMain()
+	elif node.value == "--":
+		cg.DecrementMain()
+	CompileStore(node.children[0])
+	cg.SecondaryToPrimary()
+	return t
 
 def CompileAssignement(node):
 	if not node.children[0].type in ["Variable", "Dereference", "StructMemberAccess", "StructPointerMemberAccess"]:
@@ -434,25 +559,32 @@ def CompileFunctionCall(node):
 			abort(name + " is misplaced")
 		else:
 			Undefined(name)
+	
 	i = 0
 	arg_type_list = st.GetFunctionArgType(name)
+	node.children[0].children.reverse() # We use cdecl, so arguments are pushed in reverse
+	
 	for child in node.children[0].children:
 		arg_type = CompileExpression(child)
 		if arg_type != arg_type_list[i]:
 			# If the type is wrong, we can still check if we can cast
-			if not (arg_type.pointer_level == 0 and arg_type_list[i].pointer_level == 0 and IsBuiltInType(arg_type.datatype) and IsBuiltInType(arg_type_list[i].datatype) and SizeOfBuiltIn(arg_type.datatype) <= SizeOfBuiltIn(arg_type_list[i].datatype)):
+			if not (arg_type.pointer_level == 0 and arg_type_list[i].pointer_level == 0 and IsBuiltInType(arg_type.datatype)
+			and IsBuiltInType(arg_type_list[i].datatype) and SizeOfBuiltIn(arg_type.datatype) <= SizeOfBuiltIn(arg_type_list[i].datatype)):
 				# TODO: What is right below is a hack, I'm just waiting to implement type casts to remove it
-				# abort("wrong type of argument " + str(i) + " while calling " + name + ": " + arg_type.datatype + arg_type.pointer_level * "*" + " instead of " + arg_type_list[i].datatype + arg_type_list[i].pointer_level * "*")
+				# abort(f"wrong type of argument {i} while calling {name}: {arg_type.datatype + arg_type.pointer_level * '*'} instead of {arg_type_list[i].datatype + arg_type_list[i].pointer_level * '*'}")
 				pass
 			else:
 				pass
 		cg.PushMain()
 		i += 1
+	
+	node.children[0].children.reverse() # Re-reverse so we can re-use the values, though idk if we ever do that
+	
 	if i != st.GetFunctionArgCount(name):
 		abort("wrong number of arguments while calling " + name + ": " + str(i) + " instead of " + str(st.GetFunctionArgType(name)))
 	cg.CallFunction(name)
 	
-	if st.GetFunctionArgCount(name) != 0:
+	if st.GetFunctionArgCount(name) != 0 and st.FunctionHasAttr(name, Attribute(name='__cdecl')):
 		cg.StackFree(st.GetFunctionArgCount(name))
 	
 	return st.GetFunctionType(name)
@@ -471,13 +603,13 @@ def CompileDereference(node):
 			CompileVariableRead(node.children[0])
 			size = SizeOfBuiltIn(t.datatype) #TODO: Idk if I need to call st.SizeOf here
 			cg.DereferenceMain(size)
-			return Type_(t.datatype)
+			return Type_(t.datatype, t.pointer_level - 1)
 		elif node.children[0].type == "StructMemberAccess":
 			cg.EmitLn("; StructMemberAccess dereference here")
-			abort("Undereferencable expression") #TODO: I know this shouldn't abort, I just don't want to implement it right now
+			abort("Not implemented") #TODO: I know this shouldn't abort, I just don't want to implement it right now
 		elif node.children[0].type == "StructPointerMemberAccess":
 			cg.EmitLn("; StructPointerMemberAccess dereference here")
-			abort("Undereferencable expression")
+			abort("Not implemented")
 		else:
 			abort("Undereferencable expression")
 

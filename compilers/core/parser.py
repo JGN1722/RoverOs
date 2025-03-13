@@ -5,6 +5,9 @@ Author: JGN1722 (Github)
 Description: The third stage of the compiler, that takes a preprocessed stream of tokens and outputs an AST
 """
 
+TEST_MODE = False
+last_err = ''
+
 import sys
 
 from core.helpers import *
@@ -23,6 +26,12 @@ character_number = 0
 
 # Error functions
 def abort(s):
+	global last_err
+	
+	if TEST_MODE:
+		last_err = s
+		raise TestModeError
+	
 	print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
 	sys.exit(-1)
 
@@ -86,8 +95,8 @@ def MatchString(t):
 
 
 def ProduceAST():
-	# Generate the AST for an expression
 	global AST
+	
 	Next()
 	AST = ASTNode(type_="Program",children=[])
 	
@@ -126,7 +135,9 @@ def GlobalIdentifier():
 	global streampos
 	
 	old_streampos = streampos
+	ParseC23Attributes() if token == "[" else ()
 	ParseType()
+	ParseCallingConvention() if value in calling_conventions else ()
 	Next()
 	if token == "(":
 		streampos = old_streampos
@@ -150,15 +161,34 @@ def GlobalVariable():
 	return node
 
 def Function():
+	# Attributes (C23)
+	c23_function_attributes = ParseC23Attributes() if token == "[" else []
+	
+	# Type (standard)
 	function_type = ParseType()
+	
+	# Calling convention (MSVC)
+	msvc_function_attributes = ParseCallingConvention() if value in calling_conventions else [Attribute(name='__cdecl')] # Functions use cdecl by default
+	
+	# Name (standard)
 	function_name = value
+	
+	# Attributes (GCC)
+	function_attributes = []
 	Next()
 	arg_list = ArgumentList()
+	gcc_function_attributes = ParseGccAttributes() if value == "__attribute__" else []
+	
+	function_attributes.extend(c23_function_attributes)
+	function_attributes.extend(gcc_function_attributes)
+	function_attributes.extend(msvc_function_attributes)
+	
+	# Function body (standard)
 	if token == ";":
-		node = ASTNode(type_="FunctionDeclaration",value={"name":function_name,"type":function_type},children=[arg_list])
+		node = ASTNode(type_="FunctionDeclaration",value={"name":function_name,"type":function_type},children=[function_attributes,arg_list])
 		MatchString(";")
 	else:
-		node = ASTNode(type_="Function",value={"name":function_name,"type":function_type},children=[arg_list,Block()])
+		node = ASTNode(type_="Function",value={"name":function_name,"type":function_type},children=[function_attributes,arg_list,Block()])
 	
 	return node
 
@@ -166,7 +196,9 @@ def ArgumentList():
 	MatchString("(")
 	node = ASTNode(type_="ArgumentList",children=[])
 	
-	if token != ")":
+	if value == "void":
+		Next()
+	elif token != ")":
 		node.children.append(Argument())
 		
 		while token == ",":
@@ -198,43 +230,116 @@ def ParseType():
 	
 	return Type_(t,pointer_level)
 
+def ParseAttribute():
+	attr_name = value
+	vendor = ""
+	arguments = []
+	Next()
+	if token == ":":
+		vendor = attr_name
+		MatchString(":")
+		MatchString(":")
+		attr_name = value
+		Next()
+	
+	if token == "(":
+		abort("attribute arguments aren't implemented yet")
+	
+	return Attribute(vendor=vendor, name=attr_name, arguments=arguments)
+
+def ParseC23Attributes():
+	
+	attributes = []
+	
+	while token == "[":
+		MatchString("[")
+		MatchString("[")
+		
+		if token != "]":
+			attributes.append(ParseAttribute())
+		
+		while token == ",":
+			MatchString(",")
+			attributes.append(ParseAttribute())
+		
+		MatchString("]")
+		MatchString("]")
+	
+	return attributes
+
+def ParseGccAttributes():
+	attributes = []
+	
+	while value == "__attribute__":
+		MatchString("__attribute__")
+		MatchString("(")
+		MatchString("(")
+		
+		if token != ")":
+			attributes.append(ParseAttribute())
+		
+		while token == ",":
+			MatchString(",")
+			attributes.append(ParseAttribute())
+		
+		MatchString(")")
+		MatchString(")")
+	
+	return attributes
+
+def ParseCallingConvention():
+	if not value in calling_conventions:
+		Expected('Calling convention name (Ex: __cdecl)')
+	name = value
+	Next()
+	return [Attribute(name=name)]
+
 def Block():
 	MatchString("{")
 	node = ASTNode(type_="Block")
-
-	while not token == "}":
-		if token == ";":
-			MatchString(";")
-		elif value == "if":
-			node.children.append(If())
-		elif value == "while":
-			node.children.append(While())
-		elif value == "for":
-			node.children.append(For())
-		elif token == "{":
-			node.children.append(Block())
-		elif value == "return":
-			node.children.append(Return())
-			MatchString(";")
-		elif value == "asm":
-			node.children.append(Asm())
-			MatchString(";")
-		elif value == "break":
-			node.children.append(Break())
-			MatchString(";")
-		elif value == "continue":
-			node.children.append(Continue())
-			MatchString(";")
-		elif value == "struct" or IsBuiltInType(value):
-			node.children.extend(LocDecl())
-			MatchString(";")
-		else:
-			node.children.append(Expression())
-			MatchString(";")
+	while token != "}":
+		Statement(node)
 	
 	MatchString("}")
-	
 	return node
+
+def Case():
+	node = ASTNode(type_="Block")
+	while token != "}" and value != "case" and value != "default":
+		Statement(node)
+	return node
+
+def Statement(node):
+	if token == ";":
+		MatchString(";")
+	elif value == "if":
+		node.children.append(If())
+	elif value == "while":
+		node.children.append(While())
+	elif value == "for":
+		node.children.append(For())
+	elif value == "switch":
+		node.children.append(Switch())
+	elif token == "{":
+		node.children.append(Block())
+	elif value == "return":
+		node.children.append(Return())
+		MatchString(";")
+	elif value == "asm":
+		node.children.append(Asm())
+		MatchString(";")
+	elif value == "break":
+		node.children.append(Break())
+		MatchString(";")
+	elif value == "continue":
+		node.children.append(Continue())
+		MatchString(";")
+	elif value == "struct" or IsBuiltInType(value):
+		node.children.extend(LocDecl())
+		MatchString(";")
+	else:
+		node.children.append(Expression())
+		MatchString(";")
 
 def If():
 	node = ASTNode(type_="ControlStructure",value="IF",children=[])
@@ -273,25 +378,41 @@ def For():
 	node = ASTNode(type_="ControlStructure",value="FOR",children=[])
 	MatchString("for")
 	MatchString("(")
-	if token == ";":
-		node.children.append(ASTNode(type_="Number", value="1"))
-	else:
-		if value == "struct" or IsBuiltInType(value):
-			node.children.extend(LocDecl())
-		else:
-			node.children.append(Expression())
+	node.children.append(ASTNode(type_="Number", value="1")) if token == ";" else node.children.extend(LocDecl()) if value == "struct" or IsBuiltInType(value) else node.children.append(Expression())
 	MatchString(";")
-	if token == ";":
-		node.children.append(ASTNode(type_="Number", value="1"))
-	else:
-		node.children.append(Expression())
+	node.children.append(ASTNode(type_="Number", value="1")) if token == ";" else node.children.append(Expression())
 	MatchString(";")
-	if token == ")":
-		node.children.append(ASTNode(type_="Number", value="0"))
-	else:
-		node.children.append(Expression())
+	node.children.append(ASTNode(type_="Number", value="0")) if token == ")" else node.children.append(Expression())
 	MatchString(")")
 	node.children.append(Block())
+	return node
+
+def Switch():
+	node = ASTNode(type_="ControlStructure", value="SWITCH", children=[])
+	MatchString("switch")
+	MatchString("(")
+	node.children.append(Expression())
+	node.children.append([])
+	MatchString(")")
+	MatchString("{")
+	while value == "case":
+		MatchString("case")
+		
+		if token != '0':
+			Expected('numeric litteral')
+		node.children[1].append(Factor())
+		
+		MatchString(":")
+		
+		node.children.append(Case())
+	if value == "default":
+		MatchString("default")
+		MatchString(":")
+		
+		node.children[1].append(None)
+		node.children.append(Case())
+	MatchString("}")
+	
 	return node
 
 def Return():
@@ -483,17 +604,7 @@ def RelationSequence():
 	return ""
 
 def Relation():
-	return ExpressionLevel(NumericExpression, node_type="Relation", token_getter=RelationSequence)
-
-def NumericExpression():
-	def next_token_predicate(op, token):
-		return token != "=" and token != op
-	return ExpressionLevel(Term, token_set={"+","-"},next_token_predicate=next_token_predicate)
-
-def Term():
-	def next_token_predicate(op, token):
-		return token != "="
-	return ExpressionLevel(BitwiseFactor, token_set={"*","/","%"},next_token_predicate=next_token_predicate)
+	return ExpressionLevel(BitwiseFactor, node_type="Relation", token_getter=RelationSequence)
 
 def ShiftSequence():
 	if token == ">":
@@ -513,7 +624,17 @@ def ShiftSequence():
 def BitwiseFactor():
 	def next_token_predicate(op, token):
 		return token != "="
-	return ExpressionLevel(UnaryFactor,token_getter=ShiftSequence,next_token_predicate=next_token_predicate)
+	return ExpressionLevel(NumericExpression,token_getter=ShiftSequence,next_token_predicate=next_token_predicate)
+
+def NumericExpression():
+	def next_token_predicate(op, token):
+		return token != "=" and token != op
+	return ExpressionLevel(Term, token_set={"+","-"},next_token_predicate=next_token_predicate)
+
+def Term():
+	def next_token_predicate(op, token):
+		return token != "="
+	return ExpressionLevel(UnaryFactor, token_set={"*","/","%"},next_token_predicate=next_token_predicate)
 
 def IncSequence():
 	if token == "+":
@@ -531,11 +652,15 @@ def IncSequence():
 	return ""
 
 def UnaryFactor():
-	node = Factor()
+	inc_sequence = IncSequence()
+	if inc_sequence != "":
+		node = ASTNode(type_="PrefixUnaryOp",value=inc_sequence,children=[Factor()])
+	else:
+		node = Factor()
 	
 	inc_sequence = IncSequence()
 	if inc_sequence != "":
-		return ASTNode(type_="UnaryOp",value=inc_sequence,children=[node])
+		return ASTNode(type_="PostfixUnaryOp",value=inc_sequence,children=[node])
 	return node
 
 def ArgumentListCall():
@@ -567,7 +692,7 @@ def Factor():
 		Next()
 	elif token == "!":
 		MatchString("!")
-		return ASTNode(type_="UnaryOp", value="!", children=[Expression()])
+		return ASTNode(type_="PrefixUnaryOp", value="!", children=[Expression()])
 	elif token == "x":
 		name = value
 		Next()

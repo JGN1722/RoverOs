@@ -14,12 +14,12 @@ void build_idt() {
 	");
 }
 
-void install_interrupt_handler(int i, int* ptr) {
+void install_interrupt_handler(uint32_t i, int* ptr) {
 	asm("
-	mov edi, DWORD [ebp + 12]
+	mov edi, DWORD [ebp + 8]
 	shl edi, 3
 	add edi, IDT_ADDRESS
-	mov eax, DWORD [ebp + 8]         ; Load the address of the interrupt handler into EAX
+	mov eax, DWORD [ebp + 12]         ; Load the address of the interrupt handler into EAX
 	mov WORD [edi], ax               ; Store the lower 16 bits of the handler address in the IDT entry for interrupt 49
 	
 	add edi, 2
@@ -34,16 +34,16 @@ void install_interrupt_handler(int i, int* ptr) {
 	");
 }
 
-void PIC_remap(int offset1, int offset2) {
-	char mask1, mask2;
+void PIC_remap(uint32_t offset1, uint32_t offset2) {
+	uint8_t mask1, mask2;
 	
 	// Save masks
 	mask1 = inb(PIC1_DATA);
 	mask2 = inb(PIC2_DATA);
 	
 	// Start cascade initialisation
-	outb(PIC1_COMMAND, ICW1_INIT || ICW1_ICW4);
-	outb(PIC2_COMMAND, ICW1_INIT || ICW1_ICW4);
+	outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);
+	outb(PIC2_COMMAND, ICW1_INIT | ICW1_ICW4);
 	
 	// Set PICs vector offset
 	outb(PIC1_DATA, offset1);
@@ -63,22 +63,13 @@ void PIC_remap(int offset1, int offset2) {
 	outb(PIC2_DATA, mask2);
 }
 
-void PIC_mask(char mask1, char mask2) {
+void PIC_mask(uint8_t mask1, uint8_t mask2) {
 	outb(PIC1_DATA, mask1);
 	outb(PIC2_DATA, mask2);
 }
 
-void generic_interrupt_handler() {
-	asm("pushad");
-	
+[[roverc::interrupt]] void generic_interrupt_handler() {
 	printf("Unhandled interrupt received\r\n");
-	
-	asm("
-	popad
-	mov esp, ebp
-	pop ebp
-	iret
-	");
 }
 
 void install_generic_interrupt_handler() {

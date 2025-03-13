@@ -1,4 +1,4 @@
-char* cstrud(int num) {
+char* cstrud(uint32_t num) {
 	asm("
 	mov ecx, 0
 	
@@ -49,7 +49,7 @@ char* cstrud(int num) {
 }
 
 // This one is only use for compiler debugging so as not to clog the output buffer
-char* cstrudx(int num) {
+char* cstrudx(uint32_t num) {
 	asm("
 	mov ecx, 0
 	
@@ -99,7 +99,7 @@ char* cstrudx(int num) {
 	");
 }
 
-char* cstrub(int num) {
+char* cstrub(uint32_t num) {
 	asm("
 	mov ecx, 0
 	
