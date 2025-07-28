@@ -40,7 +40,7 @@ uint32_t get_cursor_pos() {
 
 void clear_screen() {
 	for (uint16_t *ptr = VIDEO_MEMORY; ptr < VIDEO_MEMORY + 2 * MAX_ROWS * MAX_COLS; ptr += 2) {
-		*ptr = (COLOR(WHITE, BLACK) << 8) + 0x20;
+		*ptr = (COLOR(WHITE, BLACK) << 8) + ' ';
 	}
 	set_cursor_pos(0,0);
 }
@@ -51,7 +51,7 @@ void scroll() { // TODO: should update cursor pos
 		*ptr = *((uint16_t *)(ptr + 2 * MAX_COLS));
 	}
 	for (; ptr < VIDEO_MEMORY + 2 * MAX_ROWS * MAX_COLS; ptr += 2) {
-		*ptr = (COLOR(WHITE, BLACK) << 8) + 0x20;
+		*ptr = (COLOR(WHITE, BLACK) << 8) + ' ';
 	}
 }
 
@@ -68,13 +68,13 @@ void putchar(char* ptr, uint32_t x, uint32_t y, uint8_t attr) {
 		x = linear_pos % MAX_COLS;
 		y = (linear_pos - x) / MAX_COLS;
 		
-		if (*ptr == 13) {	// '\r'
+		if (*ptr == '\r') {
 			new_x = 0;
 			new_y = y;
-		} else if (*ptr == 10) {// '\n'
+		} else if (*ptr == '\n') {
 			new_x = x;
 			new_y = y + 1;
-		} else if (*ptr == 9) {	// '\t'
+		} else if (*ptr == '	') {
 			new_x = (x + 8) & !(8 - 1);
 			new_y = y;
 			if (x > 79) {
@@ -108,13 +108,13 @@ void putchar(char* ptr, uint32_t x, uint32_t y, uint8_t attr) {
 void printf(char* fmt, ...) {
 	int i = 1;
 	while (*fmt != 0) {
-		if (*fmt == 37) { // '%'
+		if (*fmt == '%') {
 			fmt++;
-			if (*fmt == 100) { // 'd'
+			if (*fmt == 'd') {
 				printf(cstrud(VA_ARG(fmt, i, int)));
-			} else if (*fmt == 99) { // 'c'
+			} else if (*fmt == 'c') {
 				printf(cstrub(VA_ARG(fmt, i, char)));
-			} else if (*fmt == 115) { // 's'
+			} else if (*fmt == 's') {
 				printf(VA_ARG(fmt, i, char *));
 			} else {
 				putchar(fmt - 1, -1, -1, 0);
