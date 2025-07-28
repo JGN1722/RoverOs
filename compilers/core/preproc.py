@@ -300,16 +300,45 @@ def BuildString():
 def BuildIncludeString():
 	l,c = line_number, character_number
 	MatchRemoveToken('<')
-	string_value = ""
+	string_value = ''
 	while token != '>':
-		if token == "\0":
+		if token == '\0':
 			abort("Unterminated string literal at line " + str(l) + ", character " + str(c))
 		string_value += value
 		RemoveToken()
 	MatchRemoveToken('>')
-	token_stream.insert(streampos, ("s", string_value, file_name, l, c))
+	token_stream.insert(streampos, ('s', string_value, file_name, l, c))
 	
 	Reload()
+
+def BuildChar():
+	l, c = line_number, character_number
+	MatchRemoveToken("'")
+	if token == '\\':
+		RemoveToken()
+		if len(value) != 1:
+			Expected('single character')
+		if value == 'n':
+			char_value = '13'
+		elif value == 't':
+			char_value = '9'
+		elif value == '\\':
+			char_value = str(ord('\\'))
+		elif value == '"':
+			char_value = '34'
+		elif value == 'r':
+			char_value = '10'
+		elif value == '0':
+			char_value = '0'
+		else:
+			Expected('valid escape sequence')
+	else:
+		if len(value) != 1:
+			Expected('single character')
+		char_value = str(ord(value))
+	RemoveToken()
+	MatchRemoveToken("'")
+	token_stream.insert(streampos, ('0', char_value, file_name, l, c))
 
 def ExtendMacro(macro_name):
 	macro_value = defined_macros[macro_name][0]
@@ -377,8 +406,10 @@ def PreprocessTokenBlock(root_level=True):
 				RemoveToken()
 			elif value in defined_macros:
 				ExtendMacro(value)
-			elif token == chr(34):
+			elif token == '"':
 				BuildString()
+			elif token == "'":
+				BuildChar()
 			else:
 				Next()
 		
