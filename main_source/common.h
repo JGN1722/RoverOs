@@ -2,7 +2,7 @@
 #define _COMMON_H
 
 // Useful constants
-#define KERNEL_ADDRESS 0x7c00 + 512 + 512
+#define KERNEL_ADDRESS 0x100000
 #define STACK_ADDRESS 0x7c00 - 1
 
 // Some types

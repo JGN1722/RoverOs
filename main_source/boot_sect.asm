@@ -27,7 +27,7 @@ int	10h			; to be sure
 				; load the kernel inode
 				; it is at address 1024 + 512 + 64 (bootloader + superblock + root inode)
 mov	al, 1			; how many sectors to read
-mov	bx, KERNEL_ADDRESS - 512; load the inode right behind the kernel
+mov	bx, 0x7c00 + 512	; load the inode there
 mov	ch, 0			; cylinder 0, head 0
 mov	dh, 0
 mov	cl, 4			; start reading from 512 + 1024 = 3 * 512

@@ -16,13 +16,13 @@ void bitmap_set(uint32_t block_index, uint8_t value) {
 	if (value) {
 		memory_bitmap[byte_index] |= bit;
 	} else {
-		memory_bitmap[byte_index] &= !bit;
+		memory_bitmap[byte_index] &= ~bit;
 	}
 }
 
 void *palloc() { // can be sped up with uint32_t comparisons
 	for (uint32_t i = 0; i < MAX_BLOCK_NUMBER; i++) {
-		if (bitmap_get(i) == false) {
+		if (!bitmap_get(i)) {
 			bitmap_set(i, true);
 			return (void *)(i * PMM_BLOCK_SIZE);
 		}

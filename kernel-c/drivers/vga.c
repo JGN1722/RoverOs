@@ -1,6 +1,6 @@
 #include "vga.h"
 
-uint8_t terminal_color;
+uint8_t terminal_color = COLOR(WHITE, BLACK);
 
 void init_vga() {
 	clear_screen();
@@ -68,29 +68,33 @@ void putchar(char* ptr, uint32_t x, uint32_t y, uint8_t attr) {
 		x = linear_pos % MAX_COLS;
 		y = (linear_pos - x) / MAX_COLS;
 		
-		if (*ptr == '\r') {
-			new_x = 0;
-			new_y = y;
-		} else if (*ptr == '\n') {
-			new_x = x;
-			new_y = y + 1;
-		} else if (*ptr == '	') {
-			new_x = (x + 8) & !(8 - 1);
-			new_y = y;
-			if (x > 79) {
+		switch(*ptr) {
+			case '\r':
 				new_x = 0;
-				new_y++;
-			}
-		} else {
-			addr = ((MAX_COLS * y + x) << 1) + VIDEO_MEMORY;
-			*addr = (attr << 8) + *ptr;
-			if (x < 79) {
-				new_x = x + 1;
 				new_y = y;
-			} else {
-				new_x = 0;
+				break;
+			case '\n':
+				new_x = x;
 				new_y = y + 1;
-			}
+				break;
+			case '	':
+				new_x = (x + 8) & ~(8 - 1);
+				new_y = y;
+				if (x > 79) {
+					new_x = 0;
+					new_y++;
+				}
+				break;
+			default:
+				addr = ((MAX_COLS * y + x) << 1) + VIDEO_MEMORY;
+				*addr = (attr << 8) + *ptr;
+				if (x < 79) {
+					new_x = x + 1;
+					new_y = y;
+				} else {
+					new_x = 0;
+					new_y = y + 1;
+				}
 		}
 		if (new_y >= MAX_ROWS) {
 			new_y--;
@@ -110,16 +114,20 @@ void printf(char* fmt, ...) {
 	while (*fmt != 0) {
 		if (*fmt == '%') {
 			fmt++;
-			if (*fmt == 'd') {
-				printf(cstrud(VA_ARG(fmt, i, int)));
-			} else if (*fmt == 'c') {
-				printf(cstrub(VA_ARG(fmt, i, char)));
-			} else if (*fmt == 's') {
-				printf(VA_ARG(fmt, i, char *));
-			} else {
-				putchar(fmt - 1, -1, -1, 0);
-				putchar(fmt, -1, -1, 0);
-				i--; // better than i++ everywhere else
+			switch (*fmt) {
+				case 'd':
+					printf(cstrud(VA_ARG(fmt, i, int)));
+					break;
+				case 'c':
+					printf(cstrub(VA_ARG(fmt, i, char)));
+					break;
+				case 's':
+					printf(VA_ARG(fmt, i, char *));
+					break;
+				default:
+					putchar(fmt - 1, -1, -1, 0);
+					putchar(fmt, -1, -1, 0);
+					i--; // better than i++ everywhere else
 			}
 			i++;
 		} else {
