@@ -99,18 +99,29 @@ def ProduceAST():
 
 def ParseAttribute():
 	attr_name = value
-	vendor = ""
+	vendor = ''
 	arguments = []
 	Next()
-	if token == ":":
+	if token == ':':
 		vendor = attr_name
-		MatchString(":")
-		MatchString(":")
+		MatchString(':')
+		MatchString(':')
 		attr_name = value
 		Next()
 	
-	if token == "(":
-		abort("attribute arguments aren't implemented yet") # TODO: fix that
+	if token == '(':
+		MatchString('(')
+		
+		while token != ')':
+			if token != 'x' and token != '0' and token != 's':
+				Expected('symbol, number or string')
+			arguments.append(value)
+			Next()
+			
+			if token != ')':
+				MatchString(',')
+		
+		MatchString(')')
 	
 	return Attribute(vendor=vendor, name=attr_name, arguments=arguments)
 
@@ -276,9 +287,11 @@ def Switch():
 	while value == "case":
 		MatchString("case")
 		
-		if token != '0':
-			Expected('numeric litteral')
-		node.children[1].append(Factor())
+		c = Factor()
+		c = opt.FoldConstants(c)
+		if not c.type == 'Number':
+			Expected('constant numeric expression')
+		node.children[1].append(c)
 		
 		MatchString(":")
 		
@@ -325,7 +338,7 @@ def Continue():
 	MatchString("continue")
 	return ASTNode(type_="ControlStructure",value="CONTINUE")
 
-def Decl(): # TODO: MSVC attributes
+def Decl():
 	node_array = []
 	
 	c23_attributes = ParseC23Attributes() if token == '[' else []
@@ -341,7 +354,7 @@ def Decl(): # TODO: MSVC attributes
 	
 	base_type = ParseBaseType()
 	
-	if isinstance(base_type, ctypes.StructType) and token == '{': # TODO: move to ParseBaseType() where it belongs. Or does it ?
+	if isinstance(base_type, ctypes.StructType) and token == '{':
 		node_array.append(StructDecl(base_type))
 		if token == ';':
 			MatchString(';')
@@ -361,7 +374,9 @@ def Decl(): # TODO: MSVC attributes
 	
 	elif isinstance(d['type'], ctypes.FunctionType):
 		if isinstance(d['type'].ret, ctypes.ArrayType):
-			abort('A function can\'t return an array') # TODO: check if it's true
+			abort('A function can\'t return an array')
+		if isinstance(d['type'].ret, ctypes.StructType):
+			abort('A function can\'t return a struct')
 		if token == '{':
 			node.children.append(Block())
 		else:
@@ -392,7 +407,7 @@ def Decl(): # TODO: MSVC attributes
 def DoesTypeFollow():
 	return value in base_types + type_modifiers or value == 'struct' or value == 'typedef' or ST.symbol_exists(value)
 
-def ParseModifiers(): # TODO: expand to more modifiers
+def ParseModifiers():
 	modifiers = []
 	while value in type_modifiers:
 		if value in modifiers:
@@ -470,7 +485,7 @@ def DeclPart(t, abstract=False):
 		else:
 			Expected('name')
 	
-	if token == '(': # TODO: forbid passing structs or arrays to functions. The programmer shall pass pointers
+	if token == '(':
 		MatchString('(')
 		
 		args = []
@@ -495,6 +510,10 @@ def DeclPart(t, abstract=False):
 						abort('Function with \'void\' parameter must not take other parameters')
 					break
 				
+				if isinstance(arg['type'], ctypes.StructType):
+					abort('A function can\'t have an argument with type struct')
+				if isinstance(arg['type'], ctypes.ArrayType):
+					abort('A function can\'t have an argument with type array')
 				args.append(arg)
 				
 				if token == ')':
@@ -515,7 +534,6 @@ def DeclPart(t, abstract=False):
 		index = Expression()
 		index = opt.FoldConstants(index)
 		if not index.type == 'Number':
-			print(index)
 			Expected('constant numeric expression')
 		l = int(index.value)
 		
@@ -760,6 +778,9 @@ def Factor():
 	elif token == '!':
 		MatchString('!')
 		return ASTNode(type_='PrefixUnaryOp', value='!', children=[Expression()])
+	elif token == '~':
+		MatchString('~')
+		return ASTNode(type_='PrefixUnaryOp', value='~', children=[Expression()])
 	elif token == 'x':
 		name = value
 		Next()
@@ -795,7 +816,7 @@ def Factor():
 		Next()
 	elif token == '(':
 		Next()
-		if DoesTypeFollow(): # TODO: change TypeCast precedence
+		if DoesTypeFollow():
 			base_t = ParseBaseType()
 			new_t = DeclPart(base_t, abstract=True)['type']
 			MatchString(')')

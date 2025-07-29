@@ -49,6 +49,11 @@ class IdentSymbolTable(SymbolTable):
 				return self.scopes[i][name]['body']
 		return None
 	
+	def set_symbol_body(self, name, val):
+		for i in range(len(self.scopes) - 1, -1, -1):
+			if name in self.scopes[i]:
+				self.scopes[i][name]['body'] = val
+	
 	def get_symbol_offset(self, name):
 		for i in range(len(self.scopes) - 1, -1, -1):
 			if name in self.scopes[i]:

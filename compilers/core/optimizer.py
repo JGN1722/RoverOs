@@ -37,7 +37,7 @@ def Peephole(asm):
 	asm = remove_jmp_anonymous(asm)
 	asm = remove_mov_push(asm)
 	asm = remove_pop_push(asm)
-	asm = remove_mov_cmp(asm)
+	# asm = remove_mov_cmp(asm) # Doesn't work with Switch()
 	return asm
 
 def FoldConstants(AST):

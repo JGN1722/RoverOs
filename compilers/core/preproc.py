@@ -324,8 +324,8 @@ def BuildChar():
 			char_value = '9'
 		elif value == '\\':
 			char_value = str(ord('\\'))
-		elif value == '"':
-			char_value = '34'
+		elif value == "'":
+			char_value = str(ord("'"))
 		elif value == 'r':
 			char_value = '10'
 		elif value == '0':

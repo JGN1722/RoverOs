@@ -5,6 +5,8 @@ Author: JGN1722 (Github)
 Description: The fourth stage of the compiler, that takes an AST and generates assembly code from it
 """
 
+# There are 10 TODOs
+
 TEST_MODE = False
 last_err = ''
 
@@ -42,7 +44,10 @@ def Expected(s):
 	abort("Expected " + s)
 
 def Undefined(n):
-	abort("Undefined variable (" + n + ")")
+	if IsKeyword(name):
+		abort(name + ' is misplaced')
+	else:
+		abort("Undefined variable (" + n + ")")
 
 # A debug routine to dump the AST
 tab_number = 0
@@ -101,6 +106,13 @@ def transpile():
 	)
 	if main['type'] != valid_type_1 and main['type'] != valid_type_2:
 		abort('Main function should take either no arguments or an int and a char**, and return int')
+	
+	for s in ident_ST.scopes:
+		for i in s.values():
+			if not isinstance(i['value']['type'], ctypes.FunctionType):
+				continue
+			if not i['body']:
+				abort('Function ' + i['value']['name'] + ' was declared but never defined')
 
 def GetFormattedOutput(fmt):
 	return cg.GetFreestandingOutput() if fmt == "f" else cg.GetWindowsOutput()
@@ -116,13 +128,16 @@ def CompileGlobalDecl(node):
 	if ident_ST.symbol_exists(name):
 		abort('Name redefinition (' + name + ')')
 	ident_ST.add_symbol(name, node.value)
-	size = GetTypeSize(node.value['type'])
-	cg.AllocateGlobalVariable(name, size if size != 0 else abort('Unknown storage size of ' + name))
-	if node.children != []: # TODO: Gotta find a way to execute global initializers
-		abort('Global initializers cannot be executed')
-	#	CompileExpression(node.children[0])
-	#	size = GetTypeSize(node.value['type'])
-	#	cg.StoreToGlobalVariable(name, size if size != 0 else abort('Unknown storage size of ' + name))
+	t = node.value['type']
+	size = GetTypeSize(t)
+	if node.children != []:
+		if not isinstance(t, ctypes.NumberType):
+			abort('Cannot initialize a non-number variable')
+		if node.children[0].type != 'Number':
+			abort('Initializer element is not constant')
+		cg.AllocateInitGlobalVariable(name, size if size != 0 else abort('Unknown storage size of ' + name), node.children[0].value)
+	else:
+		cg.AllocateGlobalVariable(name, size if size != 0 else abort('Unknown storage size of ' + name))
 
 def CompileFunction(node):
 	global allocated_stack_units
@@ -133,12 +148,12 @@ def CompileFunction(node):
 	t = node.value['type']
 	
 	# If it's already in there, check if the declaration matches the implementation
-	if node.children == []: # TODO: I think this logic allows different redefinitions
-		ident_ST.add_symbol(func_name, node.value, function_body=False)
-		return
-	elif ident_ST.symbol_exists(func_name):
+	if ident_ST.symbol_exists(func_name):
 		CheckRedefinition(node)
 	else:
+		if node.children == []:
+			ident_ST.add_symbol(func_name, node.value, function_body=False)
+			return
 		ident_ST.add_symbol(func_name, node.value)
 	
 	cg.PutIdentifier(func_name)
@@ -175,7 +190,7 @@ def CheckRedefinition(node):
 	if node.value != ident_ST.get_symbol_value(func_name):
 		abort('the type of ' + func_name + ' does not match the definition')
 	
-	ident_ST.add_symbol(func_name, node.value, function_body=True)
+	ident_ST.set_symbol_body(func_name, True)
 
 def CompileStackFrameBegin(node):
 	func_name = node.value['name']
@@ -292,7 +307,7 @@ def CompileFor(node):
 	
 	BlockEpilog()
 
-def CompileSwitch(node): # TODO: Fix semantics
+def CompileSwitch(node):
 	CompileExpression(node.children[0])
 	labels = []
 	L1 = cg.NewLabel()
@@ -302,7 +317,10 @@ def CompileSwitch(node): # TODO: Fix semantics
 			cg.Switch(c.value, L)
 			labels.append(L)
 	if node.children[1][-1] == None:
-		CompileBlock(node.children[-1], can_break=True, break_label=L1)
+		L = cg.NewLabel()
+		cg.BranchTo(L)
+		labels.append(L)
+	else:
 		cg.BranchTo(L1)
 	
 	for i in range(len(labels)):
@@ -334,7 +352,7 @@ def CompileLocDecl(node):
 		size = GetTypeSize(node.value['type'])
 		if size == 0:
 			abort('storage size of ' + node.value['name'] + ' unknown')
-		cg.StackAlloc(size) # TODO: change. note to self: I can't fucking remember why this must change
+		cg.StackAlloc(size)
 
 def CompileReturn(node):
 	CompileExpression(node.children[0])
@@ -493,8 +511,6 @@ def CompileBinaryOp(node):
 		return CompileOr(node)
 	elif node.value == '|':
 		return CompileBitwiseOr(node)
-	elif node.value == '~': # TODO: I don't think it's recognized by the parser, also why is it in binaryop ?
-		return CompileNot(node)
 	elif node.value == '^':
 		return CompileXor(node)
 
@@ -603,8 +619,6 @@ def CompileBinaryOpX(node):
 		cg.OrMainStackTop() # TODO: make it lazy
 	elif node.value == "|":
 		cg.OrMainStackTop()
-	elif node.value == "~": # TODO: figure out why this is in BinaryOp when it's clearly unary
-		cg.NotMainStackTop()
 	elif node.value == "^":
 		cg.XorMainStackTop()
 	return ctypes.NumberType(size=4)
@@ -662,6 +676,10 @@ def CompileSingleRelation(node):
 def CompilePrefixUnaryOp(node):
 	if node.value == '!':
 		t = CompileExpression(node.children[0])
+		cg.LogicalNotMain()
+		return t
+	elif node.value == '~':
+		t = CompileExpression(node.children[0])
 		cg.NotMain()
 		return t
 	else:
@@ -686,6 +704,10 @@ def CompilePostfixUnaryOp(node):
 
 def CompileStatementPrefixUnaryOp(node): # TODO: Get better codegen to optimize this
 	if node.value == '!':
+		t = CompileExpression(node.children[0])
+		cg.LogicalNotMain()
+		return t
+	elif node.value == '~':
 		t = CompileExpression(node.children[0])
 		cg.NotMain()
 		return t
@@ -768,7 +790,7 @@ def CompileStore(node):
 		cg.StoreDereferenceMain(t.arg.size)
 		return t.arg
 	elif node.type == 'StructMemberAccess':
-		abort('aaaaaaaaaaa (Maybe use a struct pointer ?)')
+		abort('not implemented yet (Maybe use a struct pointer ?)') # TODO: do
 	elif node.type == 'StructPointerMemberAccess':
 		cg.PushMain()
 		
@@ -872,10 +894,10 @@ def CompileFunctionCall(node):
 	name = node.value
 	d = ident_ST.get_symbol_value(name)
 	if d == None:
-		if IsKeyword(name):
-			abort(name + ' is misplaced')
-		else:
-			Undefined(name)
+		Undefined(name)
+	for a in d['attributes']:
+		if not a.vendor and a.name == 'deprecated':
+			warning(f'Function {name} is deprecated for the reason: {a.arguments[0]}')
 	t = d['type']
 	
 	if isinstance(t, ctypes.FunctionType):
@@ -892,7 +914,7 @@ def CompileFunctionCall(node):
 			cg.PushMain()
 			i -= 1
 		
-		call_args.reverse() # Re-reverse so we can re-use the values, though idk if we ever do that
+		call_args.reverse() # Re-reverse so we can re-use the values, though idk if we ever do that. Stupid in-place function.
 		
 		if len(call_args) != len(t.args) and not Attribute(vendor='roverc', name='varargs') in d['attributes']:
 			abort("wrong number of arguments while calling " + name + ": " + str(len(call_args)) + " instead of " + str(len(t.args)))
@@ -953,7 +975,7 @@ def CompileStructMemberAccess(node):
 	if not isinstance(t, ctypes.PointerType):
 		abort("Cannot access the members of a pointer on struct with '.'")
 	struct_name = t.arg
-	abort("not implemented yet")
+	abort("not implemented yet") # TODO: do
 
 def CompileStructPointerMemberAccess(node):
 	name = node.value
@@ -980,7 +1002,7 @@ def CompileStructPointerMemberAccess(node):
 		abort('struct ' + struct_name + " doesn't have a member " + member_name)
 	
 	if isinstance(member_t, ctypes.StructType):
-		abort("not implemented yet")
+		abort("not implemented yet") # TODO: do
 	else:
 		CompileVariableRead(node)
 		cg.AddMainVal(o)

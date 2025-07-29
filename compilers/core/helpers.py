@@ -103,7 +103,7 @@ def IsAddop(c):
 def IsKeyword(t):
 	return t in keyword_list
 
-def FormatString(L, s):
+def FormatString(L, s): # If the list of escape sequences is changed, also change it in BuildChar(), in preproc.py
 	# Define a dictionary to map C-style escape sequences to their ASCII equivalents
 	escape_sequences = {
 		r'\n': '\n',  # newline

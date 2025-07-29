@@ -27,9 +27,7 @@ def EmitLnData(s):
 def GetFreestandingOutput():
 	global output
 	
-	output = "use32\n" + "org " + str(0x7c00 + 512 + 512) + "\n" + "JMP V_main\n" +	output
-	
-	return output + output_data # Return the raw code
+	return "use32\n" + "org " + str(0x7c00 + 512 + 512) + "\n" + "JMP V_main\n" + output + output_data # Return the raw code
 
 def GetWindowsOutput():
 	global output, output_data
@@ -85,6 +83,11 @@ def NegateMain():
 
 def NotMain():
 	EmitLn("NOT	eax")
+
+def LogicalNotMain():
+	EmitLn("test	eax, eax")
+	EmitLn("setz	al")
+	EmitLn("and	eax, 0xff")
 
 def PrimaryToSecondary():
 	EmitLn("MOV	ebx, eax")
@@ -335,3 +338,9 @@ def PutAnonymousLabel():
 
 def AllocateGlobalVariable(n, size):
 	EmitLnData("V_" + n + " rb " + str(size))
+
+def AllocateInitGlobalVariable(n, size, val):
+	if size == 1:	d = ' db '
+	elif size == 2:	d = ' dw '
+	elif size == 4:	d = ' dd '
+	EmitLnData("V_" + n + d + str(val))
