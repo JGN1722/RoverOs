@@ -94,7 +94,8 @@ class ArrayType(Type_):
 		super().__init__()
 		self.arg = arg
 		self.len = len
-		self.size = arg.size * int(len)
+		if not isinstance(arg, StructType):
+			self.size = arg.size * int(len)
 	
 	def compatible(self, other):
 		return other.is_array() and self.arg.compatible(other.arg) and (self.n is None or other.n is None or self.n == other.n)

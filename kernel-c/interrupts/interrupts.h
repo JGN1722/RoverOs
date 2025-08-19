@@ -1,11 +1,20 @@
 #ifndef _INTERRUPTS_H
 #define _INTERRUPTS_H
 
-struct IDTR {
-	uint16_t entry_number;
-	uint32_t start_addr;
+struct idtr_t {
+	uint16_t limit;
+	uint32_t base;
 };
-typedef struct IDTR IDTR;
+typedef struct idtr_t idtr_t;
+
+struct idt_entry_t {
+	uint16_t isr_low;
+	uint16_t kernel_cs;
+	uint8_t  reserved;
+	uint8_t  attributes;
+	uint16_t isr_high;
+};
+typedef struct idt_entry_t idt_entry_t;
 
 #define IDT_ADDRESS 0x0
 #define IDT_ENTRIES 256

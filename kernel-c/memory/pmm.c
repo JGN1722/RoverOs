@@ -3,15 +3,15 @@
 uint8_t memory_bitmap[BITMAP_SIZE];
 
 uint8_t bitmap_get(uint32_t block_index) {
-	uint32_t byte_index = block_index / 8;
-	uint8_t bit_index = block_index % 8;
+	uint32_t byte_index = block_index >> 3;
+	uint8_t bit_index = block_index & 3;
 	
 	return (memory_bitmap[byte_index] & (1 << bit_index)) != 0;
 }
 
 void bitmap_set(uint32_t block_index, uint8_t value) {
-	uint32_t byte_index = block_index / 8;
-	uint8_t bit = (1 << (block_index % 8));
+	uint32_t byte_index = block_index >> 3;
+	uint8_t bit = (1 << (block_index & 3));
 	
 	if (value) {
 		memory_bitmap[byte_index] |= bit;

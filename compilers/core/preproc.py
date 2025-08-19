@@ -339,6 +339,8 @@ def BuildChar():
 	RemoveToken()
 	MatchRemoveToken("'")
 	token_stream.insert(streampos, ('0', char_value, file_name, l, c))
+	
+	Reload()
 
 def ExtendMacro(macro_name):
 	macro_value = defined_macros[macro_name][0]

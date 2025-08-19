@@ -3,28 +3,25 @@
 #include "exceptions.c"
 #include "irqs.c"
 
+idt_entry_t idt[IDT_ENTRIES];
+idtr_t idtr;
+
 void build_idt() {
-	// Build IDT
-	for (uint8_t *ptr = IDT_ADDRESS; ptr < IDT_ENTRIES; ptr++) {
-		*ptr = 0;
-	}
+	idtr.limit = (IDT_ENTRIES << 3) - 1;
+	idtr.base = (uint32_t)&idt;
 	
-	// Build IDTR
-	IDTR *idtr = IDTR_ADDRESS;
-	idtr->entry_number = (IDT_ENTRIES * 8) - 1;
-	idtr->start_addr = IDT_ADDRESS;
-	
-	IDTR_ADDRESS;
+	&idtr;
 	asm("lidt [eax]");
 }
 
 void install_interrupt_handler(uint32_t i, void (*fptr)()) {
-	uint16_t *ptr = (i << 3) + IDT_ADDRESS;
+	idt_entry_t *ptr = &idt[i];
 	
-	*ptr = (uint16_t)fptr; // lower 16 bits
-	*((uint16_t *)(ptr += 2)) = 0x08;
-	*((uint16_t *)(ptr += 2)) = 0x8E00; // Set up the interrupt gate descriptor (0x8E00 means present, privilege level 0, interrupt gate)
-	*((uint16_t *)(ptr += 2)) = fptr >> 16; // upper 16 bits
+	ptr->isr_low = fptr & 0xffff; // lower 16 bits
+	ptr->kernel_cs = 0x08;
+	ptr->attributes = 0x8E;
+	ptr->isr_high = fptr >> 16; // upper 16 bits
+	ptr->reserved = 0;
 }
 
 void PIC_remap(uint32_t offset1, uint32_t offset2) {

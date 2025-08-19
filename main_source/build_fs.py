@@ -10,8 +10,9 @@ INODE_COUNT = 128
 TOTAL_SIZE = SUPERBLOCK_SIZE + INODE_SIZE * INODE_COUNT
 
 # File paths
-FS_BIN = r'C:\Users\comedelfini--thibaud\Desktop\RoverOs\image\fs.bin'
-KERNEL_BIN = r'C:\Users\comedelfini--thibaud\Desktop\RoverOs\image\kernel.bin'
+script_dir = os.path.dirname(os.path.abspath(__file__)) + '\\'
+FS_BIN = script_dir + '..\\image\\fs.bin'
+KERNEL_BIN = script_dir + '..\\image\\kernel.bin'
 
 # Helper function to pad data to the nearest block size
 def pad_to_block_size(data, block_size=BLOCK_SIZE):
