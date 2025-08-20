@@ -100,21 +100,24 @@ def AddMainStackTop():
 	EmitLn("POP	eax")
 
 def AddMainVal(n):
-	EmitLn("ADD	eax, " + str(n))
+	if n != 0:
+		EmitLn("ADD	eax, " + str(n))
 
 def SubMainStackTop():
 	EmitLn("SUB	DWORD [esp], eax")
 	EmitLn("POP	eax")
 
 def SubMainVal(n):
-	EmitLn("SUB	eax, " + str(n))
+	if n != 0:
+		EmitLn("SUB	eax, " + str(n))
 
 def MulMainStackTop():
 	EmitLn("IMUL	DWORD [esp]")
 	EmitLn("ADD	esp, 4")
 
 def MulMainVal(n):
-	EmitLn("IMUL	eax, " + str(n))
+	if n != 1:
+		EmitLn("IMUL	eax, " + str(n))
 
 def DivMainStackTop():
 	EmitLn("POP	ebx")
@@ -123,9 +126,10 @@ def DivMainStackTop():
 	EmitLn("IDIV	ebx")
 
 def DivMainVal(n):
-	EmitLn("MOV	ebx, " + str(n))
-	EmitLn("XOR	edx, edx")
-	EmitLn("IDIV	ebx")
+	if n != 1:
+		EmitLn("MOV	ebx, " + str(n))
+		EmitLn("XOR	edx, edx")
+		EmitLn("IDIV	ebx")
 
 def DivValMain(n):
 	EmitLn("MOV	ebx, " + str(n))
@@ -190,7 +194,6 @@ def CallMain():
 	EmitLn("CALL	eax")
 
 def DereferenceMain(size):
-	# I know we said no logic in the code generators, but this one is needed
 	if size == 4:
 		EmitLn("MOV	eax, DWORD [eax]")
 	else:
@@ -217,18 +220,14 @@ def LoadNumber(v):
 def LoadLabel(l):
 	EmitLn("MOV	eax, " + l)
 
-def LoadGlobalIdentifierAddress(n):
-	EmitLn("MOV	eax, V_" + n)
-
-def LoadLocalIdentifierAddress(o):
-	EmitLn("MOV	eax, ebp")
-	EmitLn("SUB	eax, " + str(o))
-
 def LoadGlobalVariable(n, size):
 	if size == 4:
 		EmitLn("MOV	eax, DWORD [V_" + n + "]")
 	else:
 		EmitLn("MOVZX	eax, " + GetSizeQualifier(size) + "[V_" + n + "]")
+
+def LoadGlobalIdentifierAddress(n):
+	EmitLn("MOV	eax, V_" + n)
 
 def StoreToGlobalVariable(n, size):
 	EmitLn("MOV	" + GetSizeQualifier(size) + " [V_" + n + "], " + GetRegisterNameBySize(size))
@@ -239,7 +238,7 @@ def LoadLocalVariable(o, size):
 	else:
 		EmitLn("MOVZX	eax, " + GetSizeQualifier(size) + " [ebp - (" + str(o) + ")]")
 
-def LoadLocalVariableAddress(o):
+def LoadLocalIdentifierAddress(o):
 	EmitLn("MOV	eax, ebp")
 	EmitLn("SUB eax, " + str(o))
 

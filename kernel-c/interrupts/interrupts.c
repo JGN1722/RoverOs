@@ -15,7 +15,7 @@ void build_idt() {
 }
 
 void install_interrupt_handler(uint32_t i, void (*fptr)()) {
-	idt_entry_t *ptr = &idt[i];
+	idt_entry_t *ptr = &(idt[i]);
 	
 	ptr->isr_low = fptr & 0xffff; // lower 16 bits
 	ptr->kernel_cs = 0x08;

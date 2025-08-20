@@ -341,8 +341,10 @@ def Continue():
 def Decl():
 	node_array = []
 	
-	c23_attributes = ParseC23Attributes() if token == '[' else []
-	gcc_attributes = ParseGccAttributes() if value == '__attribute__' else []
+	c23_attributes, gcc_attributes = [], []
+	while token == '[' or value == '__attribute__':
+		if token == '[':		c23_attributes += ParseC23Attributes()
+		if value == '__attribute__':	gcc_attributes += ParseGccAttributes()
 	
 	if not DoesTypeFollow():
 		Expected('type')
@@ -739,13 +741,40 @@ def IncSequence():
 def UnaryFactor():
 	inc_sequence = IncSequence()
 	if inc_sequence != "":
-		node = ASTNode(type_="PrefixUnaryOp",value=inc_sequence,children=[Factor()])
+		node = ASTNode(type_="PrefixUnaryOp",value=inc_sequence,children=[ArrayFactor()])
 	else:
-		node = Factor()
+		node = ArrayFactor()
 	
 	inc_sequence = IncSequence()
 	if inc_sequence != "":
 		return ASTNode(type_="PostfixUnaryOp",value=inc_sequence,children=[node])
+	return node
+
+def ArrayFactor():
+	node = StructFactor()
+	
+	if token == '[':
+		Next()
+		node = ASTNode(type_='ArrayAccess', value=None, children=[node, Expression()])
+		MatchString(']')
+	
+	return node
+
+def StructFactor():
+	node = Factor()
+	
+	while token in ['.', '-']:
+		if token == '.':
+			Next()
+			node = ASTNode(type_='StructMemberAccess', value=None, children=[node, Factor()])
+		elif token == '-':
+			Next()
+			if token != '>':
+				Previous()
+				return node
+			Next()
+			node = ASTNode(type_='StructPointerMemberAccess', value=None, children=[node, Factor()])
+	
 	return node
 
 def ArgumentListCall():
@@ -769,11 +798,7 @@ def Factor():
 			Next() # The token is '+'
 	
 	if token == '0':
-		if value[-1] == 'h':
-			int_val = int(value[:-1],16)
-		else:
-			int_val = int(value)
-		node = ASTNode(type_='Number', value=int_val)
+		node = ASTNode(type_='Number', value=int(value))
 		Next()
 	elif token == '!':
 		MatchString('!')
@@ -788,21 +813,6 @@ def Factor():
 			Next()
 			node = ASTNode(type_='FunctionCall', value=name, children=[ArgumentListCall()])
 			MatchString(')')
-		elif token == '.':
-			Next()
-			node = ASTNode(type_='StructMemberAccess', value=name, children=[Factor()])
-		elif token == '-': # Maybe a struct pointer member access ( -> )
-			Next()
-			if token != '>': # Nope
-				Previous()
-				node = ASTNode(type_='Variable', value=name)
-			else:
-				Next()
-				node = ASTNode(type_='StructPointerMemberAccess', value=name, children=[Factor()])
-		elif token == '[':
-			Next()
-			node = ASTNode(type_='ArrayAccess', value=name, children=[Expression()])
-			MatchString(']')
 		else:
 			node = ASTNode(type_='Variable', value=name)
 	elif token == '*':

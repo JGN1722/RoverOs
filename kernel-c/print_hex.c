@@ -3,14 +3,12 @@ char* cstrud(uint32_t num) {
 	buffd[8] = '\0';
 	
 	char c;
-	int i = 0;
-	while (i != 9) {
+	for (int i = 0; i < 8; i++) {
 		c = (num >> (i << 2)) & 0xf;
 		
 		if (c >= 0xa)	c += 'A' - 10;
 		else		c += '0';
 		buffd[7 - i] = c;
-		i++;
 	}
 	return &buffd;
 }
@@ -20,14 +18,12 @@ char* cstrub(uint8_t num) {
 	buffb[2] = '\0';
 	
 	char c;
-	int i = 0;
-	while (i != 2) {
+	for (int i = 0; i < 2; i++) {
 		c = (num >> (i << 2)) & 0xf;
 		
 		if (c >= 0xa)	c += 'A' - 10;
 		else		c += '0';
 		buffb[1 - i] = c;
-		i++;
 	}
 	return &buffb;
 }

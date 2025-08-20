@@ -5,7 +5,7 @@ Author: JGN1722 (Github)
 Description: The fourth stage of the compiler, that takes an AST and generates assembly code from it
 """
 
-# There are 14 TODOs
+# There are 7 TODOs
 
 TEST_MODE = False
 last_err = ''
@@ -768,7 +768,7 @@ def CompileAssignement(node):
 			abort('Incompatible types')
 	return t
 
-# TODO: avoid storing to const, also I'm pretty sure it can be made much, much simpler by just loading the address and then dereferencing
+# TODO: avoid storing to const
 def CompileStore(node):
 	# This may be either a variable, a dereference, a struct member access or a struct pointer member access
 	if node.type == 'Variable':
@@ -793,108 +793,17 @@ def CompileStore(node):
 		
 		cg.StoreDereferenceMain(GetTypeSize(t))
 		return t.arg
-	elif node.type == 'StructMemberAccess':
+	elif node.type == 'StructMemberAccess' or node.type == 'StructPointerMemberAccess':
 		cg.PushMain()
-		
-		name = node.value
-		member_name = node.children[0].value
-		d = ident_ST.get_symbol_value(name)
-		if not d:
-			Undefined(name)
-		s_t = d['type']
-		if not isinstance(s_t, ctypes.StructType):
-			abort(name + ' is not a struct')
-		
-		struct_name = s_t.name
-		
-		o = 0
-		found = False
-		for m in struct_ST.get_symbol_value(struct_name):
-			if m.value['name'] == member_name:
-				found = True
-				t = m.value['type']
-				break
-			o += GetTypeSize(m.value['type'])
-		if not found:
-			abort('struct ' + struct_name + " doesn't have a member " + member_name)
-		
-		# TODO: I'm ignoring the fact that it would not work with arrays and shit
-		if ident_ST.is_symbol_global(name):
-			cg.LoadGlobalIdentifierAddress(name)
-		else:
-			offset = ident_ST.get_symbol_offset(name)
-			cg.LoadLocalIdentifierAddress(offset * 4)
-		
-		if o:
-			cg.AddMainVal(o)
-		
-		cg.StoreDereferenceMain(GetTypeSize(t))
-		
-		return t
-	
-	elif node.type == 'StructPointerMemberAccess':
-		cg.PushMain()
-		
-		name = node.value
-		member_name = node.children[0].value
-		d = ident_ST.get_symbol_value(name)
-		if not d:
-			Undefined(name)
-		s_t = d['type']
-		if not isinstance(s_t, ctypes.PointerType):
-			abort(name + ' is not a pointer')
-		if not isinstance(s_t.arg, ctypes.StructType):
-			abort(name + ' is not a struct pointer')
-		
-		struct_name = s_t.arg.name
-		
-		o = 0
-		found = False
-		for m in struct_ST.get_symbol_value(struct_name):
-			if m.value['name'] == member_name:
-				found = True
-				t = m.value['type']
-				break
-			o += GetTypeSize(m.value['type'])
-		if not found:
-			abort('struct ' + struct_name + " doesn't have a member " + member_name)
-		
-		# TODO: wouldn't work on an array of struct pointers, I think
-		if ident_ST.is_symbol_global(name):
-			cg.LoadGlobalVariable(name, GetTypeSize(s_t))
-		else:
-			offset = ident_ST.get_symbol_offset(name)
-			cg.LoadLocalVariable(offset * 4, GetTypeSize(s_t))
-		
-		if o:
-			cg.AddMainVal(o)
-		
+		t = CompileAddrOf(node).arg
 		cg.StoreDereferenceMain(GetTypeSize(t))
 		
 		return t
 	elif node.type == 'ArrayAccess':
-		name = node.value
-		if not ident_ST.symbol_exists(name):
-			Undefined(name)
-		t2 = ident_ST.get_symbol_value(name)['type']
-		if not isinstance(t2, ctypes.ArrayType):
-			abort('not array type is not subscriptable')
 		cg.PushMain()
-		if ident_ST.is_symbol_global(name):
-			cg.LoadGlobalIdentifierAddress(name)
-		else:
-			offset = ident_ST.get_symbol_offset(name)
-			cg.LoadLocalVariableAddress((offset -  1) * 4 + t2.len * GetTypeSize(t2.arg))
-		cg.PushMain()
-		t = CompileExpression(node.children[0])
-		if not CanCastImplicitly(t, ctypes.NumberType(size=4)):
-			abort('Cannot index array with something else than int')
-		if GetTypeSize(t2.arg) != 1:
-			cg.MulMainVal(GetTypeSize(t2.arg))
-		cg.AddMainStackTop()
-		cg.StoreDereferenceMain(GetTypeSize(t2.arg))
-		return t2.arg
-
+		t = CompileAddrOf(node).arg
+		cg.StoreDereferenceMain(GetTypeSize(t))
+		return t
 
 def CompileNumber(node):
 	cg.LoadNumber(node.value)
@@ -987,12 +896,11 @@ def CompileDereference(node):
 	cg.DereferenceMain(GetTypeSize(t.arg))
 	return t.arg
 
-def CompileAddr(node):
-	n2 = node.children[0]
-	if not n2.type in ['Variable', 'StructMemberAccess', 'StructPointerMemberAccess', 'ArrayAccess']:
+def CompileAddrOf(node):
+	if not node.type in ['Variable', 'StructMemberAccess', 'StructPointerMemberAccess', 'ArrayAccess']:
 		abort('Cannot compute address of an expression without an address')
-	if n2.type == 'Variable':
-		name = n2.value
+	if node.type == 'Variable':
+		name = node.value
 		
 		d = ident_ST.get_symbol_value(name)
 		if not d:
@@ -1006,91 +914,70 @@ def CompileAddr(node):
 			offset = ident_ST.get_symbol_offset(name)
 			cg.LoadLocalIdentifierAddress(offset * 4)
 			return ctypes.PointerType(arg=t)
-	elif n2.type == 'ArrayAccess':
-		name = n2.value
-		if not ident_ST.symbol_exists(name):
-			Undefined(name)
-		t2 = ident_ST.get_symbol_value(name)['type']
-		if not isinstance(t2, ctypes.ArrayType):
-			abort('not array type is not subscriptable')
-		if ident_ST.is_symbol_global(name):
-			cg.LoadGlobalIdentifierAddress(name)
-		else:
-			offset = ident_ST.get_symbol_offset(name)
-			cg.LoadLocalVariableAddress((offset -  1) * 4 + t2.len * GetTypeSize(t2.arg))
-		cg.PushMain()
-		t = CompileExpression(n2.children[0])
-		if not CanCastImplicitly(t, ctypes.NumberType(size=4)):
-			abort('Cannot index array with something else than a number')
-		if GetTypeSize(t2.arg) != 1:
-			cg.MulMainVal(GetTypeSize(t2.arg))
-		cg.AddMainStackTop() # TODO: that might just be a constant
+	elif node.type == 'ArrayAccess':
+		t = CompileAddrOf(node.children[0]).arg
 		
-		return ctypes.PointerType(arg=t2.arg)
-	else:
-		abort('not implemented') # TODO: do
+		if node.children[1].type == 'Number':
+			cg.AddMainVal(GetTypeSize(t.arg) * int(node.children[1].value))
+		else:
+			cg.PushMain()
+			ti = CompileExpression(node.children[1])
+			if not CanCastImplicitly(ti, ctypes.NumberType(size=4)):
+				abort('Cannot index array with something else than a number')
+			if GetTypeSize(t.arg) != 1:
+				cg.MulMainVal(GetTypeSize(t.arg))
+			cg.AddMainStackTop()
+		
+		return ctypes.PointerType(arg=t.arg)
+	elif node.type == 'StructMemberAccess' or node.type == 'StructPointerMemberAccess':
+		if node.type == 'StructMemberAccess':
+			s_t = CompileAddrOf(node.children[0]).arg
+			
+			if not isinstance(s_t, ctypes.StructType):
+				abort(name + ' is not a struct')
+			
+			struct_name = s_t.name
+		else:
+			s_t = CompileExpression(node.children[0])
+			
+			if not isinstance(s_t, ctypes.PointerType):
+				abort("Cannot access the members of a struct with '->'")
+			if not isinstance(s_t.arg, ctypes.StructType):
+				abort("Cannot use operator '->' with something else than a struct pointer")
+			
+			struct_name = s_t.arg.name
+		
+		member_name = node.children[1].value
+		
+		o = 0
+		found = False
+		for m in struct_ST.get_symbol_value(struct_name):
+			if m.value['name'] == member_name:
+				found = True
+				member_t = m.value['type']
+				break
+			o += GetTypeSize(m.value['type'])
+		if not found:
+			abort('struct ' + struct_name + " doesn't have a member " + member_name)
+		
+		cg.AddMainVal(o)
+		
+		return ctypes.PointerType(arg=member_t)
+
+def CompileAddr(node):
+	return CompileAddrOf(node.children[0])
 
 def CompileStructMemberAccess(node):
-	identifier_name = node.value
-	d = ident_ST.get_symbol_value(identifier_name)
-	if not d:
-		Undefined(identifier_name)
-	t = d['type']
-	if not isinstance(t, ctypes.PointerType):
-		abort("Cannot access the members of a pointer on struct with '.'")
-	struct_name = t.arg
-	abort("not implemented yet") # TODO: do
+	member_t = CompileAddrOf(node).arg
+	cg.DereferenceMain(GetTypeSize(member_t))
+	return member_t
 
 def CompileStructPointerMemberAccess(node):
-	name = node.value
-	d = ident_ST.get_symbol_value(name)
-	if not d:
-		Undefined(name)
-	t = d['type']
-	if not isinstance(t, ctypes.PointerType):
-		abort("Cannot access the members of a struct with '->'")
-	if not isinstance(t.arg, ctypes.StructType):
-		abort("Cannot use operator '->' with something else than a struct pointer")
-	struct_name = t.arg.name
-	member_name = node.children[0].value
-	
-	o = 0
-	found = False
-	for m in struct_ST.get_symbol_value(struct_name):
-		if m.value['name'] == member_name:
-			found = True
-			member_t = m.value['type']
-			break
-		o += GetTypeSize(m.value['type'])
-	if not found:
-		abort('struct ' + struct_name + " doesn't have a member " + member_name)
-	
-	if isinstance(member_t, ctypes.StructType):
-		abort("not implemented yet") # TODO: do
-	else:
-		CompileVariableRead(node)
-		cg.AddMainVal(o)
-		cg.DereferenceMain(GetTypeSize(member_t))
-		return member_t
+	member_t = CompileAddrOf(node).arg
+	cg.DereferenceMain(GetTypeSize(member_t))
+	return member_t
 
 def CompileArrayAccess(node):
-	name = node.value
-	if not ident_ST.symbol_exists(name):
-		Undefined(name)
-	t2 = ident_ST.get_symbol_value(name)['type']
-	if not isinstance(t2, ctypes.ArrayType):
-		abort('not array type is not subscriptable')
-	if ident_ST.is_symbol_global(name):
-		cg.LoadGlobalIdentifierAddress(name)
-	else:
-		offset = ident_ST.get_symbol_offset(name)
-		cg.LoadLocalVariableAddress((offset -  1) * 4 + t2.len * GetTypeSize(t2.arg))
-	cg.PushMain()
-	t = CompileExpression(node.children[0])
-	if not CanCastImplicitly(t, ctypes.NumberType(size=4)):
-		abort('Cannot index array with something else than a number')
-	if GetTypeSize(t2.arg) != 1:
-		cg.MulMainVal(GetTypeSize(t2.arg))
-	cg.AddMainStackTop() # TODO: that might just be a constant
-	cg.DereferenceMain(GetTypeSize(t2.arg))
-	return t2.arg
+	t = CompileAddrOf(node)
+	cg.DereferenceMain(GetTypeSize(t.arg))
+	return t.arg

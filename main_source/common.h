@@ -14,6 +14,4 @@ typedef unsigned int uint32_t;
 #define true  1
 #define false 0
 
-#define VA_ARG(REF_ARG, I, T) ((T)(*((T *)((&REF_ARG) + I * 4))))
-
 #endif
