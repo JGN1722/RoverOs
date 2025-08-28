@@ -83,6 +83,7 @@ if __name__ == "__main__":
 	token_stream = tokenizer.Tokenize(is_main_file=True)
 	
 	# Extend the macros, include the files and such
+	preproc.fmt = format # to know which macro to define
 	preproc.token_stream = token_stream
 	token_stream = preproc.Preprocess()
 	

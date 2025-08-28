@@ -71,11 +71,17 @@ MOV	BYTE [eax], bl
 SUB	esp, 4
 PUSHD	0
 L0:
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 CMP	eax, 8
 JAE	L1
-PUSHD	DWORD [ebp - (-8)]
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, -8
+PUSHD	DWORD [eax]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 SHL	eax, 2
 MOV	cl, al
 SHR	DWORD [esp], cl
@@ -83,10 +89,14 @@ MOV	eax, 15
 AND	DWORD [esp], eax
 POP	eax
 MOV	BYTE [ebp - (4)], al
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 CMP	eax, 10
 JB	L4
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 MOV	eax, 55
 ADD	DWORD [esp], eax
@@ -94,17 +104,23 @@ POP	eax
 MOV	BYTE [ebp - (4)], al
 JMP	L3
 L4:
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 MOV	eax, 48
 ADD	DWORD [esp], eax
 POP	eax
 MOV	BYTE [ebp - (4)], al
 L3:
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 PUSHD	V_buffd
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 SUB	eax, 7
 NEG	eax
 ADD	DWORD [esp], eax
@@ -112,7 +128,9 @@ POP	eax
 POP	ebx
 MOV	BYTE [eax], bl
 L2:
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (8)], eax
 JMP	L0
@@ -133,12 +151,18 @@ MOV	BYTE [eax], bl
 SUB	esp, 4
 PUSHD	0
 L5:
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 CMP	eax, 2
 JAE	L6
-MOVZX	eax, BYTE [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 SHL	eax, 2
 MOV	cl, al
 SHR	DWORD [esp], cl
@@ -146,10 +170,14 @@ MOV	eax, 15
 AND	DWORD [esp], eax
 POP	eax
 MOV	BYTE [ebp - (4)], al
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 CMP	eax, 10
 JB	L9
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 MOV	eax, 55
 ADD	DWORD [esp], eax
@@ -157,17 +185,23 @@ POP	eax
 MOV	BYTE [ebp - (4)], al
 JMP	L8
 L9:
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 MOV	eax, 48
 ADD	DWORD [esp], eax
 POP	eax
 MOV	BYTE [ebp - (4)], al
 L8:
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 PUSHD	V_buffb
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 DEC	eax
 NEG	eax
 ADD	DWORD [esp], eax
@@ -175,7 +209,9 @@ POP	eax
 POP	ebx
 MOV	BYTE [eax], bl
 L7:
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (8)], eax
 JMP	L5
@@ -201,7 +237,9 @@ RET	0
 V_set_terminal_color:
 PUSH	ebp
 MOV	ebp, esp
-MOVZX	eax, BYTE [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOVZX	eax, BYTE [eax]
 MOV	BYTE [V_terminal_color], al
 @@:
 MOV	esp, ebp
@@ -210,10 +248,13 @@ RET	0
 V_set_blinking:
 PUSH	ebp
 MOV	ebp, esp
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 CMP	eax, 0
 JNE	L11
-MOVZX	eax, BYTE[V_terminal_color]
+MOV	eax, V_terminal_color
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 MOV	eax, 127
 AND	DWORD [esp], eax
@@ -222,7 +263,8 @@ CALL	eax
 ADD	esp, 4
 JMP	L10
 L11:
-MOVZX	eax, BYTE[V_terminal_color]
+MOV	eax, V_terminal_color
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 MOV	eax, 127
 AND	DWORD [esp], eax
@@ -240,17 +282,23 @@ RET	0
 V_set_cursor_pos:
 PUSH	ebp
 MOV	ebp, esp
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 IMUL	eax, 80
 PUSHD	eax
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 ADD	DWORD [esp], eax
 PUSHD	14
 PUSHD	980
 MOV	eax, V_outb
 CALL	eax
 ADD	esp, 8
-MOVZX	eax, WORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, WORD [eax]
 SHR	eax, 8
 PUSHD	eax
 PUSHD	981
@@ -262,7 +310,9 @@ PUSHD	980
 MOV	eax, V_outb
 CALL	eax
 ADD	esp, 8
-MOVZX	eax, WORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, WORD [eax]
 PUSHD	eax
 PUSHD	981
 MOV	eax, V_outb
@@ -297,10 +347,14 @@ MOV	eax, V_inb
 CALL	eax
 ADD	esp, 4
 MOV	BYTE [ebp - (8)], al
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 SHL	eax, 8
 PUSHD	eax
-MOVZX	eax, BYTE [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOVZX	eax, BYTE [eax]
 ADD	DWORD [esp], eax
 POP	eax
 @@:
@@ -312,15 +366,21 @@ PUSH	ebp
 MOV	ebp, esp
 PUSHD	753664
 L12:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 CMP	eax, 757664
 JAE	L13
 PUSHD	3872
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 POP	ebx
 MOV	DWORD [eax], ebx
 L14:
-PUSHD	DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+PUSHD	DWORD [eax]
 MOV	eax, 2
 ADD	DWORD [esp], eax
 POP	eax
@@ -342,18 +402,26 @@ MOV	ebp, esp
 PUSHD	753664
 MOV	eax, 1
 L15:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 CMP	eax, 757504
 JAE	L16
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	eax, 160
 MOVZX	eax, WORD [eax]
 PUSHD	eax
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 POP	ebx
 MOV	DWORD [eax], ebx
 L17:
-PUSHD	DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+PUSHD	DWORD [eax]
 MOV	eax, 2
 ADD	DWORD [esp], eax
 POP	eax
@@ -362,15 +430,21 @@ JMP	L15
 L16:
 MOV	eax, 1
 L18:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 CMP	eax, 757664
 JAE	L19
 PUSHD	3872
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 POP	ebx
 MOV	DWORD [eax], ebx
 L20:
-PUSHD	DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+PUSHD	DWORD [eax]
 MOV	eax, 2
 ADD	DWORD [esp], eax
 POP	eax
@@ -388,29 +462,40 @@ SUB	esp, 4
 SUB	esp, 4
 SUB	esp, 4
 SUB	esp, 4
-MOVZX	eax, BYTE [ebp - (-20)]
+MOV	eax, ebp
+SUB	eax, -20
+MOVZX	eax, BYTE [eax]
 CMP	eax, 0
 JNE	L22
-MOVZX	eax, BYTE[V_terminal_color]
+MOV	eax, V_terminal_color
+MOVZX	eax, BYTE [eax]
 MOV	BYTE [ebp - (-20)], al
 L22:
 L21:
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 CMP	eax, -1
 MOV	eax, 0
 SETE	al
 PUSHD	eax
-MOV	eax, DWORD [ebp - (-16)]
+MOV	eax, ebp
+SUB	eax, -16
+MOV	eax, DWORD [eax]
 CMP	eax, -1
 MOV	eax, 0
 SETE	al
 OR	DWORD [esp], eax
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 CMP	eax, 80
 MOV	eax, 0
 SETAE	al
 OR	DWORD [esp], eax
-MOV	eax, DWORD [ebp - (-16)]
+MOV	eax, ebp
+SUB	eax, -16
+MOV	eax, DWORD [eax]
 CMP	eax, 25
 MOV	eax, 0
 SETAE	al
@@ -421,21 +506,29 @@ JE	L24
 MOV	eax, V_get_cursor_pos
 CALL	eax
 MOV	DWORD [ebp - (8)], eax
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 MOV	ebx, 80
 XOR	edx, edx
 IDIV	ebx
 MOV	eax, edx
 MOV	DWORD [ebp - (-12)], eax
-PUSHD	DWORD [ebp - (8)]
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, 8
+PUSHD	DWORD [eax]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 SUB	DWORD [esp], eax
 POP	eax
 MOV	ebx, 80
 XOR	edx, edx
 IDIV	ebx
 MOV	DWORD [ebp - (-16)], eax
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 MOVZX	eax, BYTE [eax]
 CMP	eax, 10
 JE	L26
@@ -447,106 +540,156 @@ JMP	L29
 L26:
 MOV	eax, 0
 MOV	DWORD [ebp - (12)], eax
-MOV	eax, DWORD [ebp - (-16)]
+MOV	eax, ebp
+SUB	eax, -16
+MOV	eax, DWORD [eax]
 MOV	DWORD [ebp - (16)], eax
 JMP	L25
 L27:
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 MOV	DWORD [ebp - (12)], eax
-MOV	eax, DWORD [ebp - (-16)]
+MOV	eax, ebp
+SUB	eax, -16
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (16)], eax
 JMP	L25
 L28:
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 ADD	eax, 8
 PUSHD	eax
 MOV	eax, 4294967288
 AND	DWORD [esp], eax
 POP	eax
 MOV	DWORD [ebp - (12)], eax
-MOV	eax, DWORD [ebp - (-16)]
+MOV	eax, ebp
+SUB	eax, -16
+MOV	eax, DWORD [eax]
 MOV	DWORD [ebp - (16)], eax
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 CMP	eax, 79
 JBE	L31
 MOV	eax, 0
 MOV	DWORD [ebp - (12)], eax
-MOV	eax, DWORD [ebp - (16)]
+MOV	eax, ebp
+SUB	eax, 16
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (16)], eax
 L31:
 L30:
 JMP	L25
 L29:
-MOV	eax, DWORD [ebp - (-16)]
+MOV	eax, ebp
+SUB	eax, -16
+MOV	eax, DWORD [eax]
 IMUL	eax, 80
 PUSHD	eax
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 ADD	DWORD [esp], eax
 POP	eax
 SHL	eax, 1
 ADD	eax, 753664
 MOV	DWORD [ebp - (4)], eax
-MOVZX	eax, BYTE [ebp - (-20)]
+MOV	eax, ebp
+SUB	eax, -20
+MOVZX	eax, BYTE [eax]
 SHL	eax, 8
 PUSHD	eax
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 MOVZX	eax, BYTE [eax]
 ADD	DWORD [esp], eax
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 POP	ebx
 MOV	DWORD [eax], ebx
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 CMP	eax, 79
 JAE	L33
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (12)], eax
-MOV	eax, DWORD [ebp - (-16)]
+MOV	eax, ebp
+SUB	eax, -16
+MOV	eax, DWORD [eax]
 MOV	DWORD [ebp - (16)], eax
 JMP	L32
 L33:
 MOV	eax, 0
 MOV	DWORD [ebp - (12)], eax
-MOV	eax, DWORD [ebp - (-16)]
+MOV	eax, ebp
+SUB	eax, -16
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (16)], eax
 L32:
 L25:
-MOV	eax, DWORD [ebp - (16)]
+MOV	eax, ebp
+SUB	eax, 16
+MOV	eax, DWORD [eax]
 CMP	eax, 25
 JB	L35
-MOV	eax, DWORD [ebp - (16)]
+MOV	eax, ebp
+SUB	eax, 16
+MOV	eax, DWORD [eax]
 DEC	eax
 MOV	DWORD [ebp - (16)], eax
 MOV	eax, V_scroll
 CALL	eax
 L35:
 L34:
-PUSHD	DWORD [ebp - (16)]
-PUSHD	DWORD [ebp - (12)]
+MOV	eax, ebp
+SUB	eax, 16
+PUSHD	DWORD [eax]
+MOV	eax, ebp
+SUB	eax, 12
+PUSHD	DWORD [eax]
 MOV	eax, V_set_cursor_pos
 CALL	eax
 ADD	esp, 8
 JMP	L23
 L24:
-MOV	eax, DWORD [ebp - (-16)]
+MOV	eax, ebp
+SUB	eax, -16
+MOV	eax, DWORD [eax]
 IMUL	eax, 80
 PUSHD	eax
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 ADD	DWORD [esp], eax
 POP	eax
 SHL	eax, 1
 ADD	eax, 753664
 MOV	DWORD [ebp - (4)], eax
-MOVZX	eax, BYTE [ebp - (-20)]
+MOV	eax, ebp
+SUB	eax, -20
+MOVZX	eax, BYTE [eax]
 SHL	eax, 8
 PUSHD	eax
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 MOVZX	eax, BYTE [eax]
 ADD	DWORD [esp], eax
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 POP	ebx
 MOV	DWORD [eax], ebx
 L23:
@@ -559,18 +702,26 @@ PUSH	ebp
 MOV	ebp, esp
 PUSHD	1
 L36:
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 MOVZX	eax, BYTE [eax]
 CMP	eax, 0
 JE	L37
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 MOVZX	eax, BYTE [eax]
 CMP	eax, 37
 JNE	L39
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (-8)], eax
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 MOVZX	eax, BYTE [eax]
 CMP	eax, 100
 JE	L41
@@ -583,7 +734,9 @@ L41:
 MOV	eax, ebp
 SUB	eax, -8
 PUSHD	eax
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 SHL	eax, 2
 ADD	DWORD [esp], eax
 POP	eax
@@ -600,7 +753,9 @@ L42:
 MOV	eax, ebp
 SUB	eax, -8
 PUSHD	eax
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 SHL	eax, 2
 ADD	DWORD [esp], eax
 POP	eax
@@ -618,7 +773,9 @@ L43:
 MOV	eax, ebp
 SUB	eax, -8
 PUSHD	eax
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 SHL	eax, 2
 ADD	DWORD [esp], eax
 POP	eax
@@ -631,7 +788,9 @@ L44:
 PUSHD	0
 PUSHD	-1
 PUSHD	-1
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 DEC	eax
 PUSHD	eax
 MOV	eax, V_putchar
@@ -640,15 +799,21 @@ ADD	esp, 16
 PUSHD	0
 PUSHD	-1
 PUSHD	-1
-PUSHD	DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+PUSHD	DWORD [eax]
 MOV	eax, V_putchar
 CALL	eax
 ADD	esp, 16
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 DEC	eax
 MOV	DWORD [ebp - (4)], eax
 L40:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (4)], eax
 JMP	L38
@@ -656,12 +821,16 @@ L39:
 PUSHD	0
 PUSHD	-1
 PUSHD	-1
-PUSHD	DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+PUSHD	DWORD [eax]
 MOV	eax, V_putchar
 CALL	eax
 ADD	esp, 16
 L38:
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (-8)], eax
 JMP	L36
@@ -675,11 +844,15 @@ PUSH	ebp
 MOV	ebp, esp
 PUSHD	0
 L45:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 CMP	eax, 3145727
 JAE	L46
 L47:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (4)], eax
 JMP	L45
@@ -797,16 +970,22 @@ PUSH	ebp
 MOV	ebp, esp
 PUSHD	0
 L56:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 CMP	eax, 32
 JAE	L57
 PUSHD	V_except_default
-PUSHD	DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+PUSHD	DWORD [eax]
 MOV	eax, V_install_interrupt_handler
 CALL	eax
 ADD	esp, 8
 L58:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (4)], eax
 JMP	L56
@@ -900,12 +1079,16 @@ MOV	eax, V_inb
 CALL	eax
 ADD	esp, 4
 PUSHD	eax
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 MOV	eax, V_set_terminal_color
 CALL	eax
 ADD	esp, 4
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 PUSHD	L61
 MOV	eax, V_printf
@@ -926,16 +1109,22 @@ PUSH	ebp
 MOV	ebp, esp
 PUSHD	32
 L62:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 CMP	eax, 40
 JAE	L63
 PUSHD	V_master_irq_default
-PUSHD	DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+PUSHD	DWORD [eax]
 MOV	eax, V_install_interrupt_handler
 CALL	eax
 ADD	esp, 8
 L64:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (4)], eax
 JMP	L62
@@ -943,16 +1132,22 @@ L63:
 MOV	eax, 40
 MOV	DWORD [ebp - (4)], eax
 L65:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 CMP	eax, 48
 JAE	L66
 PUSHD	V_slave_irq_default
-PUSHD	DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+PUSHD	DWORD [eax]
 MOV	eax, V_install_interrupt_handler
 CALL	eax
 ADD	esp, 8
 L67:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (4)], eax
 JMP	L65
@@ -988,34 +1183,50 @@ V_install_interrupt_handler:
 PUSH	ebp
 MOV	ebp, esp
 PUSHD	V_idt
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 SHL	eax, 3
 ADD	DWORD [esp], eax
-PUSHD	DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+PUSHD	DWORD [eax]
 MOV	eax, 65535
 AND	DWORD [esp], eax
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 POP	ebx
 MOV	WORD [eax], bx
 PUSHD	8
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	eax, 2
 POP	ebx
 MOV	WORD [eax], bx
 PUSHD	142
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	eax, 5
 POP	ebx
 MOV	BYTE [eax], bl
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 SHR	eax, 16
 PUSHD	eax
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	eax, 6
 POP	ebx
 MOV	WORD [eax], bx
 PUSHD	0
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	eax, 4
 POP	ebx
 MOV	BYTE [eax], bl
@@ -1048,12 +1259,16 @@ PUSHD	160
 MOV	eax, V_outb
 CALL	eax
 ADD	esp, 8
-PUSHD	DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+PUSHD	DWORD [eax]
 PUSHD	33
 MOV	eax, V_outb
 CALL	eax
 ADD	esp, 8
-PUSHD	DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+PUSHD	DWORD [eax]
 PUSHD	161
 MOV	eax, V_outb
 CALL	eax
@@ -1078,13 +1293,17 @@ PUSHD	161
 MOV	eax, V_outb
 CALL	eax
 ADD	esp, 8
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 PUSHD	33
 MOV	eax, V_outb
 CALL	eax
 ADD	esp, 8
-MOVZX	eax, BYTE [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 PUSHD	161
 MOV	eax, V_outb
@@ -1097,13 +1316,17 @@ RET	0
 V_PIC_mask:
 PUSH	ebp
 MOV	ebp, esp
-MOVZX	eax, BYTE [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 PUSHD	33
 MOV	eax, V_outb
 CALL	eax
 ADD	esp, 8
-MOVZX	eax, BYTE [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 PUSHD	161
 MOV	eax, V_outb
@@ -1131,16 +1354,22 @@ PUSH	ebp
 MOV	ebp, esp
 PUSHD	0
 L69:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 CMP	eax, 256
 JAE	L70
 PUSHD	V_generic_interrupt_handler
-PUSHD	DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+PUSHD	DWORD [eax]
 MOV	eax, V_install_interrupt_handler
 CALL	eax
 ADD	esp, 8
 L71:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (4)], eax
 JMP	L69
@@ -1172,19 +1401,27 @@ RET	0
 V_bitmap_get:
 PUSH	ebp
 MOV	ebp, esp
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 SHR	eax, 3
 PUSHD	eax
-PUSHD	DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+PUSHD	DWORD [eax]
 MOV	eax, 3
 AND	DWORD [esp], eax
 PUSHD	V_memory_bitmap
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	DWORD [esp], eax
 POP	eax
 MOVZX	eax, BYTE [eax]
 PUSHD	eax
-MOVZX	eax, BYTE [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOVZX	eax, BYTE [eax]
 MOV	cl, al
 MOV	eax, 1
 SHL	eax, cl
@@ -1200,10 +1437,14 @@ RET	0
 V_bitmap_set:
 PUSH	ebp
 MOV	ebp, esp
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 SHR	eax, 3
 PUSHD	eax
-PUSHD	DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+PUSHD	DWORD [eax]
 MOV	eax, 3
 AND	DWORD [esp], eax
 POP	eax
@@ -1211,19 +1452,27 @@ MOV	cl, al
 MOV	eax, 1
 SHL	eax, cl
 PUSHD	eax
-MOVZX	eax, BYTE [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOVZX	eax, BYTE [eax]
 CMP	eax, 0
 JE	L73
 PUSHD	V_memory_bitmap
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	DWORD [esp], eax
 POP	eax
 MOVZX	eax, BYTE [eax]
 PUSHD	eax
-MOVZX	eax, BYTE [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOVZX	eax, BYTE [eax]
 OR	DWORD [esp], eax
 PUSHD	V_memory_bitmap
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	DWORD [esp], eax
 POP	eax
 POP	ebx
@@ -1231,16 +1480,22 @@ MOV	BYTE [eax], bl
 JMP	L72
 L73:
 PUSHD	V_memory_bitmap
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	DWORD [esp], eax
 POP	eax
 MOVZX	eax, BYTE [eax]
 PUSHD	eax
-MOVZX	eax, BYTE [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOVZX	eax, BYTE [eax]
 NOT	eax
 AND	DWORD [esp], eax
 PUSHD	V_memory_bitmap
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	DWORD [esp], eax
 POP	eax
 POP	ebx
@@ -1255,10 +1510,14 @@ PUSH	ebp
 MOV	ebp, esp
 PUSHD	0
 L74:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 CMP	eax, 1048576
 JAE	L75
-PUSHD	DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+PUSHD	DWORD [eax]
 MOV	eax, V_bitmap_get
 CALL	eax
 ADD	esp, 4
@@ -1268,17 +1527,23 @@ and	eax, 0xff
 CMP	eax, 0
 JE	L78
 PUSHD	1
-PUSHD	DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+PUSHD	DWORD [eax]
 MOV	eax, V_bitmap_set
 CALL	eax
 ADD	esp, 8
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 SHL	eax, 12
 JMP	@f
 L78:
 L77:
 L76:
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (4)], eax
 JMP	L74
@@ -1291,11 +1556,15 @@ RET	0
 V_pfree:
 PUSH	ebp
 MOV	ebp, esp
-MOV	eax, DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+MOV	eax, DWORD [eax]
 SHR	eax, 12
 PUSHD	eax
 PUSHD	0
-PUSHD	DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+PUSHD	DWORD [eax]
 MOV	eax, V_bitmap_set
 CALL	eax
 ADD	esp, 8
@@ -1314,36 +1583,54 @@ MOV	eax, V_printf
 CALL	eax
 ADD	esp, 4
 L80:
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 CMP	eax, 0
 JBE	L81
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	eax, 20
 PUSHD	DWORD [eax]
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	eax, 16
 PUSHD	DWORD [eax]
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	eax, 8
 PUSHD	DWORD [eax]
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	eax, 12
 PUSHD	DWORD [eax]
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 PUSHD	DWORD [eax]
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOV	eax, DWORD [eax]
 ADD	eax, 4
 PUSHD	DWORD [eax]
 PUSHD	L82
 MOV	eax, V_printf
 CALL	eax
 ADD	esp, 4
-PUSHD	DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+PUSHD	DWORD [eax]
 MOV	eax, 24
 ADD	DWORD [esp], eax
 POP	eax
 MOV	DWORD [ebp - (4)], eax
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 DEC	eax
 MOV	DWORD [ebp - (8)], eax
 JMP	L80
@@ -1360,32 +1647,44 @@ MOV	eax, 2054
 PUSHD	DWORD [eax]
 PUSHD	0
 L83:
-MOV	eax, DWORD [ebp - (12)]
+MOV	eax, ebp
+SUB	eax, 12
+MOV	eax, DWORD [eax]
 CMP	eax, 1310
 JAE	L84
 PUSHD	255
 PUSHD	V_memory_bitmap
-MOV	eax, DWORD [ebp - (12)]
+MOV	eax, ebp
+SUB	eax, 12
+MOV	eax, DWORD [eax]
 ADD	DWORD [esp], eax
 POP	eax
 POP	ebx
 MOV	BYTE [eax], bl
 L85:
-MOV	eax, DWORD [ebp - (12)]
+MOV	eax, ebp
+SUB	eax, 12
+MOV	eax, DWORD [eax]
 INC	eax
 MOV	DWORD [ebp - (12)], eax
 JMP	L83
 L84:
 L86:
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 CMP	eax, 0
 JBE	L87
-PUSHD	DWORD [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+PUSHD	DWORD [eax]
 MOV	eax, 24
 ADD	DWORD [esp], eax
 POP	eax
 MOV	DWORD [ebp - (4)], eax
-MOV	eax, DWORD [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOV	eax, DWORD [eax]
 DEC	eax
 MOV	DWORD [ebp - (8)], eax
 JMP	L86
@@ -1408,12 +1707,16 @@ PUSHD	15
 MOV	eax, V_set_terminal_color
 CALL	eax
 ADD	esp, 4
-PUSHD	DWORD [ebp - (-8)]
+MOV	eax, ebp
+SUB	eax, -8
+PUSHD	DWORD [eax]
 PUSHD	L88
 MOV	eax, V_printf
 CALL	eax
 ADD	esp, 4
-MOV	eax, DWORD [ebp - (-12)]
+MOV	eax, ebp
+SUB	eax, -12
+MOV	eax, DWORD [eax]
 CALL	eax
 PUSHD	2
 MOV	eax, V_set_terminal_color
@@ -1491,13 +1794,21 @@ MOV	eax, V_bitmap_get
 CALL	eax
 ADD	esp, 4
 PUSHD	eax
-MOVZX	eax, BYTE [ebp - (16)]
+MOV	eax, ebp
+SUB	eax, 16
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
-MOVZX	eax, BYTE [ebp - (12)]
+MOV	eax, ebp
+SUB	eax, 12
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
-MOVZX	eax, BYTE [ebp - (8)]
+MOV	eax, ebp
+SUB	eax, 8
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
-MOVZX	eax, BYTE [ebp - (4)]
+MOV	eax, ebp
+SUB	eax, 4
+MOVZX	eax, BYTE [eax]
 PUSHD	eax
 PUSHD	L94
 MOV	eax, V_printf

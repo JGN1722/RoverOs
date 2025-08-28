@@ -56,17 +56,25 @@ def Expected(s):
 def GetChar():
 	global streampos, lookahead, character_number, line_number
 	
-	if streampos >= len(source_text):
-		lookahead = "\0"
-	else:
-		lookahead = source_text[streampos]
-		streampos += 1
-		
-		# Update the line and character values, used for error reporting
-		character_number += 1
-		if lookahead == chr(10):
+	# GCC-style line continuations
+	if streampos <= len(source_text) - 2:
+		if source_text[streampos] == '\\' and source_text[streampos + 1] == chr(10):
+			streampos += 2
 			line_number += 1
 			character_number = 1
+	
+	if streampos >= len(source_text):
+		lookahead = '\0'
+		return
+	
+	lookahead = source_text[streampos]
+	streampos += 1
+	
+	# Update the line and character values, used for error reporting
+	character_number += 1
+	if lookahead == chr(10):
+		line_number += 1
+		character_number = 1
 
 def GetName():
 	global lookahead, token, value

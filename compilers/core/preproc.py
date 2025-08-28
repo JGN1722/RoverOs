@@ -16,6 +16,7 @@ import core.tokenizer as tokenizer
 
 script_directory = ''
 include_directory = ''
+fmt = ''
 
 token_stream = []
 streampos = -1
@@ -27,7 +28,7 @@ character_number = 0
 
 defined_macros = {
 	'_ROVERC':[[],[]],
-	'_WIN32':[[],[]], # TODO: undefine it when freestanding
+	'_WIN32':[[],[]],
 	'VA_ARG': [[
 			(' ', ' '), ('(', '('), ('(', '('),
 			('x', 'T'), (')', ')'), ('(', '('),
@@ -455,7 +456,8 @@ def PreprocessTokenBlock(root_level=True):
 def Preprocess():
 	global streampos, token, value
 	
-	# TODO: add line continuation
+	if fmt == 'f':
+		del defined_macros['_WIN32']
 	
 	streampos = -1
 	token = ''

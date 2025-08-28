@@ -5,7 +5,7 @@ Author: JGN1722 (Github)
 Description: The fourth stage of the compiler, that takes an AST and generates assembly code from it
 """
 
-# There are 10 TODOs ( + 1 in helpers.py, and 3 in preproc.py )
+# There are 9 TODOs ( + 1 in helpers.py, and 1 in preproc.py )
 
 TEST_MODE = False
 last_err = ''
@@ -886,7 +886,7 @@ def CompileDereference(node):
 def CompileAddrOf(node):
 	if not node.type in ['Variable', 'StructMemberAccess', 'StructPointerMemberAccess', 'ArrayAccess']:
 		abort('Cannot compute address of an expression without an address')
-	if node.type == 'Variable': # TODO: what happens when it's a function name ?
+	if node.type == 'Variable':
 		name = node.value
 		
 		d = ident_ST.get_symbol_value(name)
@@ -955,27 +955,13 @@ def CompileAddr(node):
 	return CompileAddrOf(node.children[0])
 
 def CompileVariableRead(node):
-	name = node.value
-	
-	d = ident_ST.get_symbol_value(name)
-	if not d:
-		Undefined(name)
-	t = d['type']
-	
-	if ident_ST.is_symbol_global(name):
-		if isinstance(t, ctypes.StructType):
-			abort('Cannot load structured type here')
-		if isinstance(t, ctypes.FunctionType):
-			cg.LoadGlobalIdentifierAddress(name)
-			return ctypes.PointerType(arg=t, const=False) # Decay to func pointer
-		cg.LoadGlobalVariable(name, GetTypeSize(t))
-		return t
-	else:
-		if isinstance(t, ctypes.StructType):
-			abort('Cannot load structured type here')
-		offset = ident_ST.get_symbol_offset(name)
-		cg.LoadLocalVariable(offset * 4, GetTypeSize(t))
-		return t
+	t = CompileAddrOf(node)
+	if isinstance(t.arg, ctypes.StructType):
+		abort('Cannot load a structured type here')
+	if not isinstance(t.arg, ctypes.FunctionType):
+		t = t.arg
+		cg.DereferenceMain(GetTypeSize(t))
+	return t
 
 def CompileStructMemberAccess(node):
 	member_t = CompileAddrOf(node).arg
