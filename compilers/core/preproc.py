@@ -27,7 +27,7 @@ character_number = 0
 
 defined_macros = {
 	'_ROVERC':[[],[]],
-	'_WIN32':[[],[]],
+	'_WIN32':[[],[]], # TODO: undefine it when freestanding
 	'VA_ARG': [[
 			(' ', ' '), ('(', '('), ('(', '('),
 			('x', 'T'), (')', ')'), ('(', '('),
@@ -435,7 +435,7 @@ def PreprocessTokenBlock(root_level=True):
 			return
 		
 		if not token == "\0":
-			if directive == "include":
+			if directive == "include": # TODO: add embed, if, elif, else, elifdef, elifndef
 				IncludeDirective()
 			elif directive == "define":
 				DefineDirective()
@@ -454,6 +454,8 @@ def PreprocessTokenBlock(root_level=True):
 
 def Preprocess():
 	global streampos, token, value
+	
+	# TODO: add line continuation
 	
 	streampos = -1
 	token = ''

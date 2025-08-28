@@ -43,7 +43,7 @@ void enum_memory_map() {
 	printf("Base Address\t\tLength\t\t\tType\t\tAcpi attribs\r\n");
 	while (entry_count > 0) {
 		printf("%d%d\t%d%d\t%d\t%d\r\n", entry->base_hi, entry->base_low, entry->len_hi, entry->len_low, entry->type, entry->acpi_attribs);
-		entry += 24; // sizeof(memory_map_entry) = 24
+		entry += sizeof(memory_map_entry);
 		entry_count--;
 	}
 }
@@ -59,7 +59,7 @@ void fill_bitmap() {
 	while (entry_count > 0) {
 		// ...
 		
-		entry += 24;
+		entry += sizeof(memory_map_entry);
 		entry_count--;
 	}
 }

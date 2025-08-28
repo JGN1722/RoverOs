@@ -751,12 +751,21 @@ def UnaryFactor():
 	return node
 
 def ArrayFactor():
-	node = StructFactor()
+	node = FuncFactor()
 	
 	if token == '[':
 		Next()
 		node = ASTNode(type_='ArrayAccess', value=None, children=[node, Expression()])
 		MatchString(']')
+	
+	return node
+
+def FuncFactor():
+	node = StructFactor()
+	
+	if token == '(':
+		node = ASTNode(type_='FunctionCall', value=None, children=[node, ArgumentListCall()])
+		MatchString(')')
 	
 	return node
 
@@ -779,6 +788,7 @@ def StructFactor():
 
 def ArgumentListCall():
 	node = ASTNode(type_="ArgumentListCall", value=None, children=[])
+	MatchString('(')
 	if token != ")":
 		node.children.append(Expression())
 		while token == ",":
@@ -809,10 +819,12 @@ def Factor():
 	elif token == 'x':
 		name = value
 		Next()
-		if token == '(':
-			Next()
-			node = ASTNode(type_='FunctionCall', value=name, children=[ArgumentListCall()])
+		if name == 'sizeof':
+			MatchString('(')
+			base_t = ParseBaseType()
+			new_t = DeclPart(base_t, abstract=True)['type']
 			MatchString(')')
+			node = ASTNode(type_='SizeOf', value=new_t)
 		else:
 			node = ASTNode(type_='Variable', value=name)
 	elif token == '*':

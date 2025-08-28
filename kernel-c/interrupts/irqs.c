@@ -27,7 +27,7 @@ void install_irq_interrupts() {
 	for (int i = MASTER_IRQ_VECTOR_OFFSET; i < MASTER_IRQ_VECTOR_OFFSET + 8; i++) {
 		install_interrupt_handler(i, master_irq_default);
 	}
-	for (int i = SLAVE_IRQ_VECTOR_OFFSET; i < SLAVE_IRQ_VECTOR_OFFSET + 8; i++) {
+	for (i = SLAVE_IRQ_VECTOR_OFFSET; i < SLAVE_IRQ_VECTOR_OFFSET + 8; i++) {
 		install_interrupt_handler(i, slave_irq_default);
 	}
 	

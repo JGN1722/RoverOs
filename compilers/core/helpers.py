@@ -55,7 +55,7 @@ class ASTNode:
 	def __eq__(self, other):
 		return type(self) == type(other) and self.type == other.type and self.children == other.children and self.value == other.value
 
-class Attribute:
+class Attribute: # TODO: better attribute handling
 	def __init__(self, vendor="", name="", arguments=[]):
 		self.vendor = vendor
 		self.name = name

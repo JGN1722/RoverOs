@@ -5,7 +5,7 @@ Author: JGN1722 (Github)
 Description: The fourth stage of the compiler, that takes an AST and generates assembly code from it
 """
 
-# There are 7 TODOs
+# There are 10 TODOs ( + 1 in helpers.py, and 3 in preproc.py )
 
 TEST_MODE = False
 last_err = ''
@@ -127,13 +127,18 @@ def CompileDecl(node):
 	else:
 		CompileGlobalDecl(node)
 
-def CompileGlobalDecl(node): # TODO: add attribute((align(...)))
+def CompileGlobalDecl(node):
 	name = node.value['name']
 	if ident_ST.symbol_exists(name):
 		abort('Name redefinition (' + name + ')')
 	ident_ST.add_symbol(name, node.value)
 	t = node.value['type']
 	size = GetTypeSize(t)
+	
+	for a in node.value['attributes']:
+		if not a.vendor and a.name == 'align':
+			cg.AlignData(a.arguments[0])
+	
 	if node.children != []:
 		if not isinstance(t, ctypes.NumberType):
 			abort('Cannot initialize a non-number variable')
@@ -176,7 +181,7 @@ def CompileFunction(node):
 	
 	node.value['type'].args.reverse()
 	
-	CompileBlock(node.children[0])
+	CompileBlock(node.children[0], is_root=True)
 	
 	cg.PutAnonymousLabel()
 	
@@ -222,8 +227,11 @@ def CompileEpilog(node):
 	else:
 		cg.StandardReturn(len(node.children[1].children) * 4 if Attribute(name='__stdcall') in node.value['attributes'] else 0)
 
-def CompileBlock(node, can_break=False, can_continue=False, break_label='', continue_label=''):
-	BlockProlog() # TODO: pop the vars, idk man that's terrible
+def CompileBlock(node, can_break=False, can_continue=False, break_label='', continue_label='', is_root=False):
+	global allocated_stack_units
+	
+	BlockProlog()
+	old_stack_height = allocated_stack_units
 	for statement in node.children:
 		if statement.type == 'Decl':
 			CompileLocDecl(statement)
@@ -249,7 +257,10 @@ def CompileBlock(node, can_break=False, can_continue=False, break_label='', cont
 			CompileContinue(statement, can_continue, continue_label)
 		else:
 			CompileStatementExpression(statement)
+	if not is_root:
+		cg.StackFree(allocated_stack_units - old_stack_height)
 	BlockEpilog()
+	allocated_stack_units = old_stack_height
 
 def BlockProlog():
 	ident_ST.new_scope()
@@ -293,7 +304,6 @@ def CompileWhile(node):
 
 def CompileFor(node):
 	L1, L2, L3 = cg.NewLabel(), cg.NewLabel(), cg.NewLabel()
-	BlockProlog()
 		
 	if node.children[0].type == "Decl":
 		CompileLocDecl(node.children[0])
@@ -308,8 +318,6 @@ def CompileFor(node):
 	CompileStatementExpression(node.children[2])
 	cg.BranchTo(L1)
 	cg.PutLabel(L2)
-	
-	BlockEpilog()
 
 def CompileSwitch(node):
 	CompileExpression(node.children[0])
@@ -345,6 +353,9 @@ def CompileLocDecl(node):
 	global allocated_stack_units
 	
 	allocated_stack_units += 1
+	
+	if ident_ST.symbol_exists(node.value['name']):
+		abort('identifier redefinition (' + node.value['name'] + ')')
 	
 	ident_ST.add_symbol(node.value['name'], node.value, stack_offset=allocated_stack_units)
 	
@@ -469,6 +480,8 @@ def CompileExpression(node):
 		return CompileAddr(node)
 	elif node.type == 'Number':
 		return CompileNumber(node)
+	elif node.type == 'SizeOf':
+		return CompileSizeOf(node)
 	elif node.type == 'TypeCast':
 		return CompileTypecast(node)
 
@@ -706,7 +719,7 @@ def CompilePostfixUnaryOp(node):
 	cg.SecondaryToPrimary()
 	return t
 
-def CompileStatementPrefixUnaryOp(node): # TODO: Get better codegen to optimize this
+def CompileStatementPrefixUnaryOp(node):
 	if node.value == '!':
 		t = CompileExpression(node.children[0])
 		cg.LogicalNotMain()
@@ -793,13 +806,7 @@ def CompileStore(node):
 		
 		cg.StoreDereferenceMain(GetTypeSize(t))
 		return t.arg
-	elif node.type == 'StructMemberAccess' or node.type == 'StructPointerMemberAccess':
-		cg.PushMain()
-		t = CompileAddrOf(node).arg
-		cg.StoreDereferenceMain(GetTypeSize(t))
-		
-		return t
-	elif node.type == 'ArrayAccess':
+	elif node.type in ['StructMemberAccess','StructPointerMemberAccess','ArrayAccess']:
 		cg.PushMain()
 		t = CompileAddrOf(node).arg
 		cg.StoreDereferenceMain(GetTypeSize(t))
@@ -819,73 +826,53 @@ def CompileString(node):
 	cg.LoadLabel(L)
 	return ctypes.PointerType(arg=ctypes.NumberType(size=1))
 
-def CompileVariableRead(node):
-	name = node.value
-	
-	d = ident_ST.get_symbol_value(name)
-	if not d:
-		Undefined(name)
-	t = d['type']
-	
-	if ident_ST.is_symbol_global(name):
-		if isinstance(t, ctypes.StructType):
-			abort('Cannot load structured type here')
-		if isinstance(t, ctypes.FunctionType):
-			cg.LoadGlobalIdentifierAddress(name)
-			return ctypes.PointerType(arg=t, const=False) # Decay to func pointer
-		cg.LoadGlobalVariable(name, GetTypeSize(t))
-		return t
-	else:
-		if isinstance(t, ctypes.StructType):
-			abort('Cannot load structured type here')
-		offset = ident_ST.get_symbol_offset(name)
-		cg.LoadLocalVariable(offset * 4, GetTypeSize(t))
-		return t
+def CompileSizeOf(node):
+	n = GetTypeSize(node.value)
+	if n == 0:
+		abort('Unknown storage size')
+	cg.LoadNumber(n)
+	return ctypes.NumberType(size=4)
 
 def CompileFunctionCall(node):
-	name = node.value
-	d = ident_ST.get_symbol_value(name)
-	if d == None:
-		Undefined(name)
-	for a in d['attributes']:
-		if not a.vendor and a.name == 'deprecated':
-			warning(f'Function {name} is deprecated for the reason: {a.arguments[0]}')
-	t = d['type']
+	# TODO: reactivate
+	# for a in d['attributes']:
+	#	if not a.vendor and a.name == 'deprecated':
+	#		warning(f'Function {name} is deprecated for the reason: {a.arguments[0]}')
 	
-	if isinstance(t, ctypes.FunctionType):
-		arg_list = t.args
-		i = len(arg_list) - 1
-		call_args = node.children[0].children
-		call_args.reverse() # We use cdecl, so arguments are pushed in reverse
-		
-		for child in call_args:
-			arg_type = CompileExpression(child)
-			if i >= 0:
-				if arg_type != arg_list[i]['type'] and not CanCastImplicitly(arg_type, arg_list[i]['type']):
-					abort(f'wrong type of argument {i} while calling {name}')
-			cg.PushMain()
-			i -= 1
-		
-		call_args.reverse() # Re-reverse so we can re-use the values, though idk if we ever do that. Stupid in-place function.
-		
-		if len(call_args) != len(t.args) and not Attribute(vendor='roverc', name='varargs') in d['attributes']:
-			abort("wrong number of arguments while calling " + name + ": " + str(len(call_args)) + " instead of " + str(len(t.args)))
-		cg.CallFunction(name)
-		
-		if len(t.args) != 0 and not Attribute(name='__stdcall') in d['attributes']:
-			cg.StackFree(len(t.args))
-		
-		return t.ret
-	elif isinstance(t, ctypes.PointerType) and isinstance(t.arg, ctypes.FunctionType):
-		if ident_ST.is_symbol_global(name):
-			cg.LoadGlobalVariable(name, 4)
-		else:
-			offset = ident_ST.get_symbol_offset(name)
-			cg.LoadLocalVariable(offset * 4, 4)
-		cg.CallMain()
-		return t.arg.ret
-	else:
-		abort('uncallable identifier (' + name + ')')
+	arg_types = []
+	call_args = node.children[1].children
+	call_args.reverse() # We use cdecl, so arguments are pushed in reverse
+	# TODO: maybe it's not in stdcall ?
+	
+	for child in call_args:
+		arg_types.append(CompileExpression(child))
+		cg.PushMain()
+	
+	call_args.reverse() # Re-reverse so we can re-use the values, though idk if we ever do that. Stupid in-place function.
+	
+	t = CompileExpression(node.children[0])
+	if not isinstance(t, ctypes.PointerType) or not isinstance(t.arg, ctypes.FunctionType):
+		abort('uncallable expression')
+	
+	arg_list = t.arg.args
+	i = len(arg_list) - 1
+	for arg_t in arg_types:
+		if i >= 0:
+			if arg_t != arg_list[i]['type'] and not CanCastImplicitly(arg_t, arg_list[i]['type']):
+				abort(f'wrong type of argument {i}')
+		i -= 1
+	
+	# TODO: where are the fucking attributes now !!!
+	# if len(call_args) != len(t.arg.args) and not Attribute(vendor='roverc', name='varargs') in d['attributes']:
+	#	abort("wrong number of arguments while calling " + name + ": " + str(len(call_args)) + " instead of " + str(len(t.args)))
+	
+	cg.CallMain()
+	
+	# if not Attribute(name='__stdcall') in d['attributes']:
+	if True: # Temp
+		cg.StackFree(len(t.arg.args)) # TODO: Where do I find the attribute list now ?
+	
+	return t.arg.ret
 
 def CompileDereference(node):
 	t = CompileExpression(node.children[0])
@@ -899,7 +886,7 @@ def CompileDereference(node):
 def CompileAddrOf(node):
 	if not node.type in ['Variable', 'StructMemberAccess', 'StructPointerMemberAccess', 'ArrayAccess']:
 		abort('Cannot compute address of an expression without an address')
-	if node.type == 'Variable':
+	if node.type == 'Variable': # TODO: what happens when it's a function name ?
 		name = node.value
 		
 		d = ident_ST.get_symbol_value(name)
@@ -967,6 +954,29 @@ def CompileAddrOf(node):
 def CompileAddr(node):
 	return CompileAddrOf(node.children[0])
 
+def CompileVariableRead(node):
+	name = node.value
+	
+	d = ident_ST.get_symbol_value(name)
+	if not d:
+		Undefined(name)
+	t = d['type']
+	
+	if ident_ST.is_symbol_global(name):
+		if isinstance(t, ctypes.StructType):
+			abort('Cannot load structured type here')
+		if isinstance(t, ctypes.FunctionType):
+			cg.LoadGlobalIdentifierAddress(name)
+			return ctypes.PointerType(arg=t, const=False) # Decay to func pointer
+		cg.LoadGlobalVariable(name, GetTypeSize(t))
+		return t
+	else:
+		if isinstance(t, ctypes.StructType):
+			abort('Cannot load structured type here')
+		offset = ident_ST.get_symbol_offset(name)
+		cg.LoadLocalVariable(offset * 4, GetTypeSize(t))
+		return t
+
 def CompileStructMemberAccess(node):
 	member_t = CompileAddrOf(node).arg
 	cg.DereferenceMain(GetTypeSize(member_t))
@@ -977,7 +987,7 @@ def CompileStructPointerMemberAccess(node):
 	cg.DereferenceMain(GetTypeSize(member_t))
 	return member_t
 
-def CompileArrayAccess(node):
-	t = CompileAddrOf(node)
-	cg.DereferenceMain(GetTypeSize(t.arg))
-	return t.arg
+def CompileArrayAccess(node): # TODO: Allow pointer subscript
+	t = CompileAddrOf(node).arg
+	cg.DereferenceMain(GetTypeSize(t))
+	return t

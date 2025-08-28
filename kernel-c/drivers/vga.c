@@ -58,7 +58,6 @@ void scroll() { // TODO: should update cursor pos
 void putchar(char* ptr, uint32_t x, uint32_t y, uint8_t attr) {
 	uint16_t* addr;
 	uint32_t linear_pos, new_x, new_y;
-	uint32_t temp1, temp2, temp3;
 	
 	if (attr == 0) attr = terminal_color;
 	

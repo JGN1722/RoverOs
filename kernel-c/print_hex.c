@@ -4,7 +4,7 @@ char* cstrud(uint32_t num) {
 	
 	char c;
 	for (int i = 0; i < 8; i++) {
-		c = (num >> (i << 2)) & 0xf;
+		c = (num >> (i * 4)) & 0xf;
 		
 		if (c >= 0xa)	c += 'A' - 10;
 		else		c += '0';
@@ -19,7 +19,7 @@ char* cstrub(uint8_t num) {
 	
 	char c;
 	for (int i = 0; i < 2; i++) {
-		c = (num >> (i << 2)) & 0xf;
+		c = (num >> (i * 4)) & 0xf;
 		
 		if (c >= 0xa)	c += 'A' - 10;
 		else		c += '0';

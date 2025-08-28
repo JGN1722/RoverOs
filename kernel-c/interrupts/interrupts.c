@@ -3,7 +3,7 @@
 #include "exceptions.c"
 #include "irqs.c"
 
-idt_entry_t idt[IDT_ENTRIES];
+[[align(16)]] idt_entry_t idt[IDT_ENTRIES];
 idtr_t idtr;
 
 void build_idt() {

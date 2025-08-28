@@ -20,7 +20,7 @@ class SymbolTable:
 	
 	def symbol_exists(self, name):
 		for i in range(len(self.scopes) - 1, -1, -1):
-			if name in self.scopes[i]:
+			if name in self.scopes[i].keys():
 				return True
 		return False
 	

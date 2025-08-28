@@ -100,7 +100,9 @@ def AddMainStackTop():
 	EmitLn("POP	eax")
 
 def AddMainVal(n):
-	if n != 0:
+	if n == 1:
+		EmitLn('INC	eax')
+	elif n != 0:
 		EmitLn("ADD	eax, " + str(n))
 
 def SubMainStackTop():
@@ -108,7 +110,9 @@ def SubMainStackTop():
 	EmitLn("POP	eax")
 
 def SubMainVal(n):
-	if n != 0:
+	if n == 1:
+		EmitLn('DEC	eax')
+	elif n != 0:
 		EmitLn("SUB	eax, " + str(n))
 
 def MulMainStackTop():
@@ -116,8 +120,12 @@ def MulMainStackTop():
 	EmitLn("ADD	esp, 4")
 
 def MulMainVal(n):
-	if n != 1:
-		EmitLn("IMUL	eax, " + str(n))
+	if n in [2 ** i for i in range(1, 32)]:
+		for i in range(1, 32):
+			if n == 2 ** i:
+				EmitLn('SHL	eax, ' + str(i))
+	elif n != 1:
+		EmitLn('IMUL	eax, ' + str(n))
 
 def DivMainStackTop():
 	EmitLn("POP	ebx")
@@ -126,15 +134,22 @@ def DivMainStackTop():
 	EmitLn("IDIV	ebx")
 
 def DivMainVal(n):
-	if n != 1:
+	if n in [2 ** i for i in range(1, 32)]:
+		for i in range(1, 32):
+			if n == 2 ** i:
+				EmitLn('SHR	eax, ' + str(i))
+	elif n != 1:
 		EmitLn("MOV	ebx, " + str(n))
 		EmitLn("XOR	edx, edx")
 		EmitLn("IDIV	ebx")
 
 def DivValMain(n):
-	EmitLn("MOV	ebx, " + str(n))
-	EmitLn("XOR	edx, edx")
-	EmitLn("IDIV	ebx, eax")
+	if n != 0:
+		EmitLn("MOV	ebx, " + str(n))
+		EmitLn("XOR	edx, edx")
+		EmitLn("IDIV	ebx, eax")
+	else:
+		EmitLn("MOV	eax, 0")
 
 def ModMainStackTop():
 	EmitLn("POP	ebx")
@@ -144,10 +159,15 @@ def ModMainStackTop():
 	EmitLn("MOV	eax, edx")
 
 def ModMainVal(n):
-	EmitLn("MOV	ebx, " + str(n))
-	EmitLn("XOR	edx, edx")
-	EmitLn("IDIV	ebx")
-	EmitLn("MOV	eax, edx")
+	if n in [2 ** i for i in range(1, 32)]:
+		for i in range(1, 32):
+			if n == 2 ** i:
+				EmitLn('AND	eax, ' + str(i))
+	else:
+		EmitLn("MOV	ebx, " + str(n))
+		EmitLn("XOR	edx, edx")
+		EmitLn("IDIV	ebx")
+		EmitLn("MOV	eax, edx")
 
 def ShlMainStackTop():
 	EmitLn("MOV	cl, al")
@@ -155,12 +175,14 @@ def ShlMainStackTop():
 	EmitLn("POP	eax")
 
 def ShlMainVal(n):
-	EmitLn("SHL	eax, " + str(n))
+	if n != 0:
+		EmitLn("SHL	eax, " + str(n))
 
 def ShlValMain(n):
-	EmitLn("MOV	cl, al")
-	EmitLn("MOV	eax, " + str(n))
-	EmitLn("SHL	eax, cl")
+	if n != 0:
+		EmitLn("MOV	cl, al")
+		EmitLn("MOV	eax, " + str(n))
+		EmitLn("SHL	eax, cl")
 
 def ShrMainStackTop():
 	EmitLn("MOV	cl, al")
@@ -168,12 +190,14 @@ def ShrMainStackTop():
 	EmitLn("POP	eax")
 
 def ShrMainVal(n):
-	EmitLn("SHR	eax, " + str(n))
+	if n != 0:
+		EmitLn("SHR	eax, " + str(n))
 
 def ShrValMain(n):
-	EmitLn("MOV	cl, al")
-	EmitLn("MOV	eax, " + str(n))
-	EmitLn("SHR	eax, cl")
+	if n != 0:
+		EmitLn("MOV	cl, al")
+		EmitLn("MOV	eax, " + str(n))
+		EmitLn("SHR	eax, cl")
 
 def AndMainStackTop():
 	EmitLn("AND	DWORD [esp], eax")
@@ -209,10 +233,12 @@ def StoreDereferenceMain(size):
 
 def StackAlloc(n):
 	n = int(n)
-	EmitLn("SUB	esp, " + str((n // 4) * 4 + 4 if n % 4 != 0 else n))
+	if n != 0:
+		EmitLn("SUB	esp, " + str((n // 4) * 4 + 4 if n % 4 != 0 else n))
 
 def StackFree(n):
-	EmitLn("ADD	esp, " + str(int(n) * 4))
+	if int(n) != 0:
+		EmitLn("ADD	esp, " + str(int(n) * 4))
 
 def LoadNumber(v):
 	EmitLn("MOV	eax, " + str(v))
@@ -240,7 +266,7 @@ def LoadLocalVariable(o, size):
 
 def LoadLocalIdentifierAddress(o):
 	EmitLn("MOV	eax, ebp")
-	EmitLn("SUB eax, " + str(o))
+	EmitLn("SUB	eax, " + str(o))
 
 def StoreToLocalVariable(o, size):
 	EmitLn("MOV	" + GetSizeQualifier(size) + " [ebp - (" + str(o) + ")], " + GetRegisterNameBySize(size))
@@ -328,6 +354,9 @@ def NewLabel():
 
 def PutIdentifier(l):
 	PutLabel("V_" + l)
+
+def AlignData(n):
+	EmitLnData('align ' + str(n))
 
 def PutLabel(l):
 	EmitLn(l + ":")
