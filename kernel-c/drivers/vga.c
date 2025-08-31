@@ -13,7 +13,7 @@ void set_terminal_color(char col) {
 
 void set_blinking(int b) {
 	if (b == 0) set_terminal_color(terminal_color & 0x7f);
-	else set_terminal_color((terminal_color & 0x7f) + 0x80);
+	else set_terminal_color(terminal_color | 0x80);
 }
 
 void set_cursor_pos(uint32_t x, uint32_t y) {
@@ -46,8 +46,7 @@ void clear_screen() {
 }
 
 void scroll() { // TODO: should update cursor pos
-	uint16_t *ptr = VIDEO_MEMORY;
-	for (; ptr < VIDEO_MEMORY + 2 * MAX_ROWS * MAX_COLS - 2 * MAX_COLS; ptr += 2) {
+	for (uint16_t *ptr = VIDEO_MEMORY; ptr < VIDEO_MEMORY + 2 * MAX_ROWS * MAX_COLS - 2 * MAX_COLS; ptr += 2) {
 		*ptr = *((uint16_t *)(ptr + 2 * MAX_COLS));
 	}
 	for (; ptr < VIDEO_MEMORY + 2 * MAX_ROWS * MAX_COLS; ptr += 2) {

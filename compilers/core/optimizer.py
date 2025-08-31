@@ -32,12 +32,49 @@ def remove_pop_push(code: str) -> str:
 	pattern = re.compile('POP	eax\nPUSHD	eax\n')
 	return pattern.sub(r'', code)
 
-def Peephole(asm):
+def remove_mov_call(code: str) -> str:
+	pattern = re.compile(r'MOV	eax, (\w+)\nCALL	eax\n')
+	return pattern.sub(r'CALL	\1\n', code)
+
+def remove_lea_dereference(code: str) -> str:
+	pattern = re.compile(r'LEA	eax, \[ebp - \((-?\d+)\)\]\n(MOV|MOVZX)	eax, (BYTE|WORD|DWORD) \[eax\]')
+	
+	return pattern.sub(r'\2	eax, \3 [ebp - (\1)]', code)
+
+def remove_lea_push(code: str) -> str:
+	pattern = re.compile(r'LEA	eax, \[ebp - \((-?\d+)\)\]\nPUSHD	(BYTE|WORD|DWORD) \[eax\]')
+	
+	return pattern.sub(r'PUSHD	\2 [ebp - (\1)]', code)
+
+def better_var_load(code: str) -> str:
+	pattern = re.compile(r'MOV	eax, V_(\w+)\n(MOV|MOVZX)	eax, (BYTE|WORD|DWORD) \[eax\]')
+	
+	return pattern.sub(r'\2	eax, \3 [V_\1]', code)
+
+def better_var_push(code: str) -> str:
+	pattern = re.compile(r'MOV	eax, V_(\w+)\nPUSHD	(BYTE|WORD|DWORD) \[eax\]')
+	
+	return pattern.sub(r'PUSHD	\2 [V_\1]', code)
+
+def _peephole(asm):
 	asm = remove_jmp_label(asm)
 	asm = remove_jmp_anonymous(asm)
 	asm = remove_mov_push(asm)
 	asm = remove_pop_push(asm)
+	asm = remove_mov_call(asm)
+	asm = remove_lea_dereference(asm)
+	asm = remove_lea_push(asm)
+	asm = better_var_load(asm)
+	asm = better_var_push(asm)
 	# asm = remove_mov_cmp(asm) # Doesn't work with Switch()
+	return asm
+
+def Peephole(asm):
+	l = len(asm)
+	asm = _peephole(asm)
+	while len(asm) != l:
+		l = len(asm)
+		asm = _peephole(asm)
 	return asm
 
 def FoldConstants(AST):

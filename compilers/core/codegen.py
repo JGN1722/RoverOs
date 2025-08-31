@@ -163,6 +163,8 @@ def ModMainVal(n):
 		for i in range(1, 32):
 			if n == 2 ** i:
 				EmitLn('AND	eax, ' + str(i))
+	elif n == 1:
+		EmitLn("MOV	eax, 0")
 	else:
 		EmitLn("MOV	ebx, " + str(n))
 		EmitLn("XOR	edx, edx")
@@ -236,9 +238,12 @@ def StackAlloc(n):
 	if n != 0:
 		EmitLn("SUB	esp, " + str((n // 4) * 4 + 4 if n % 4 != 0 else n))
 
-def StackFree(n):
+def StackFree(n, no_flag_clobber=False):
 	if int(n) != 0:
-		EmitLn("ADD	esp, " + str(int(n) * 4))
+		if no_flag_clobber:
+			EmitLn('LEA	esp, [esp + ' + str(int(n) * 4) + ']')
+		else:
+			EmitLn("ADD	esp, " + str(int(n) * 4))
 
 def LoadNumber(v):
 	EmitLn("MOV	eax, " + str(v))
@@ -265,8 +270,7 @@ def LoadLocalVariable(o, size):
 		EmitLn("MOVZX	eax, " + GetSizeQualifier(size) + " [ebp - (" + str(o) + ")]")
 
 def LoadLocalIdentifierAddress(o):
-	EmitLn("MOV	eax, ebp")
-	EmitLn("SUB	eax, " + str(o))
+	EmitLn("LEA	eax, [ebp - (" + str(o) + ")]")
 
 def StoreToLocalVariable(o, size):
 	EmitLn("MOV	" + GetSizeQualifier(size) + " [ebp - (" + str(o) + ")], " + GetRegisterNameBySize(size))

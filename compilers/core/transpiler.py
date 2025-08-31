@@ -5,7 +5,7 @@ Author: JGN1722 (Github)
 Description: The fourth stage of the compiler, that takes an AST and generates assembly code from it
 """
 
-# There are 9 TODOs ( + 1 in helpers.py, and 1 in preproc.py )
+# There are 7 TODOs ( + 1 in helpers.py, and 1 in preproc.py )
 
 TEST_MODE = False
 last_err = ''
@@ -357,11 +357,19 @@ def CompileLocDecl(node):
 	if ident_ST.symbol_exists(node.value['name']):
 		abort('identifier redefinition (' + node.value['name'] + ')')
 	
+	vt = node.value['type']
+	if isinstance(vt, ctypes.FunctionType):
+		abort('nested functions are not allowed')
+	
 	ident_ST.add_symbol(node.value['name'], node.value, stack_offset=allocated_stack_units)
 	
 	# Add the initializer value if there's one
 	if len(node.children) != 0:
-		CompileExpression(node.children[0])
+		if not isinstance(vt, ctypes.NumberType) and not isinstance(vt, ctypes.PointerType):
+			abort('Cannot initialize non-number variable')
+		t = CompileExpression(node.children[0])
+		if not CanCastImplicitly(t, node.value['type']):
+			abort('Incompatible types:' + str(t) + ',' + str(node.value['type']))
 		cg.PushMain()
 	else:
 		size = GetTypeSize(node.value['type'])
@@ -445,7 +453,7 @@ def CompileTrueCondition(node, L):
 			cg.BranchTo(L)
 	
 	else:
-		CompileBinaryOp(node)
+		CompileExpression(node)
 		cg.TestNull()
 		cg.BranchIfFalse(L)
 
@@ -517,19 +525,16 @@ def CompileBinaryOp(node):
 		return CompileShl(node)
 	elif node.value == '>>':
 		return CompileShr(node)
-	return CompileBinaryOpX(node)
-	
-	# TODO: finish implementing them
-	if node.value == '&&':
-		return CompileAnd(node)
 	elif node.value == '&':
 		return CompileBitwiseAnd(node)
-	elif node.value == '||':
-		return CompileOr(node)
 	elif node.value == '|':
 		return CompileBitwiseOr(node)
 	elif node.value == '^':
 		return CompileXor(node)
+	elif node.value == '&&':
+		return CompileAnd(node)
+	elif node.value == '||':
+		return CompileOr(node)
 
 def CompileAdd(node):
 	if node.children[0].type == 'Number':
@@ -624,23 +629,58 @@ def CompileShl(node):
 		cg.ShlMainStackTop()
 	return ctypes.NumberType(size=4)
 
-def CompileBinaryOpX(node):
+def CompileBitwiseAnd(node):
 	t1 = CompileExpression(node.children[0])
 	cg.PushMain()
 	t2 = CompileExpression(node.children[1])
-	if node.value == "&&":
-		cg.AndMainStackTop() # TODO: make it lazy
-	elif node.value == "&":
-		cg.AndMainStackTop()
-	elif node.value == "||":
-		cg.OrMainStackTop() # TODO: make it lazy
-	elif node.value == "|":
-		cg.OrMainStackTop()
-	elif node.value == "^":
-		cg.XorMainStackTop()
+	cg.AndMainStackTop()
 	return ctypes.NumberType(size=4)
 
-# Only unsigned comparisons are supported right now
+def CompileBitwiseOr(node):
+	t1 = CompileExpression(node.children[0])
+	cg.PushMain()
+	t2 = CompileExpression(node.children[1])
+	cg.OrMainStackTop()
+	return ctypes.NumberType(size=4)
+
+def CompileXor(node):
+	t1 = CompileExpression(node.children[0])
+	cg.PushMain()
+	t2 = CompileExpression(node.children[1])
+	cg.XorMainStackTop()
+	return ctypes.NumberType(size=4)
+
+def CompileAnd(node):
+	# If the first evaluates to 0, the code must not evaluate the second
+	L = cg.NewLabel()
+	
+	t1 = CompileExpression(node.children[0])
+	cg.TestNull()
+	cg.BranchIfTrue(L)
+	
+	cg.PushMain()
+	t2 = CompileExpression(node.children[1])
+	cg.AndMainStackTop()
+	
+	cg.PutLabel(L)
+	return ctypes.NumberType(size=4)
+
+def CompileOr(node):
+	# If the first evaluates to 1, the code must not evaluate the second
+	L = cg.NewLabel()
+	
+	t1 = CompileExpression(node.children[0])
+	cg.TestNull()
+	cg.BranchIfFalse(L)
+	
+	cg.PushMain()
+	t2 = CompileExpression(node.children[1])
+	cg.OrMainStackTop()
+	
+	cg.PutLabel(L)
+	return ctypes.NumberType(size=4)
+
+# TODO: Only unsigned comparisons are supported right now
 def CompileRelation(node):
 	if node.children[1].type == "Number":
 		CompileExpression(node.children[0])
@@ -686,7 +726,7 @@ def CompileSingleRelation(node):
 		cg.CompareStackTopMain()
 	
 	if node.children[0].type != 'Number' and node.children[1].type != 'Number':
-		cg.StackFree(1)
+		cg.StackFree(1, no_flag_clobber=True)
 	
 	return ctypes.NumberType(size=1)
 
@@ -746,7 +786,7 @@ def CompileStatementPostfixUnaryOp(node):
 	CompileStore(node.children[0])
 	return t
 
-def CompileAssignement(node):
+def CompileAssignement(node): # TODO: what if we're storing a constant ?
 	if not node.children[0].type in ['Variable', 'Dereference', 'ArrayAccess', 'StructMemberAccess', 'StructPointerMemberAccess']:
 		abort('Cannot assign to something else than a variable')
 	if node.value == '=':
@@ -781,8 +821,7 @@ def CompileAssignement(node):
 			abort('Incompatible types')
 	return t
 
-# TODO: avoid storing to const
-def CompileStore(node):
+def CompileStore(node): # TODO: applying const to pointer is misunderstood I think
 	# This may be either a variable, a dereference, a struct member access or a struct pointer member access
 	if node.type == 'Variable':
 		name = node.value
@@ -790,6 +829,10 @@ def CompileStore(node):
 		if not d:
 			Undefined(name)
 		t = d['type']
+		
+		if isinstance(t, ctypes.NumberType):
+			if t.const:
+				abort('cannot store to constant variable')
 		
 		if ident_ST.is_symbol_global(name):
 			cg.StoreToGlobalVariable(name, GetTypeSize(t))
@@ -804,11 +847,16 @@ def CompileStore(node):
 		if not isinstance(t, ctypes.PointerType):
 			abort('Undereferencable expression (not a pointer)')
 		
-		cg.StoreDereferenceMain(GetTypeSize(t))
+		if t.const:
+			abort('cannot store to dereference of a constant pointer')
+		
+		cg.StoreDereferenceMain(GetTypeSize(t.arg))
 		return t.arg
 	elif node.type in ['StructMemberAccess','StructPointerMemberAccess','ArrayAccess']:
 		cg.PushMain()
 		t = CompileAddrOf(node).arg
+		if hasattr(t, 'const') and t.const:
+			abort('cannot store to constant expression')
 		cg.StoreDereferenceMain(GetTypeSize(t))
 		return t
 
@@ -904,6 +952,11 @@ def CompileAddrOf(node):
 	elif node.type == 'ArrayAccess':
 		t = CompileAddrOf(node.children[0]).arg
 		
+		if isinstance(t, ctypes.PointerType):
+			cg.DereferenceMain(4)
+		elif not isinstance(t, ctypes.ArrayType):
+			abort('a subscript can only be applied to a pointer or an array')
+		
 		if node.children[1].type == 'Number':
 			cg.AddMainVal(GetTypeSize(t.arg) * int(node.children[1].value))
 		else:
@@ -973,7 +1026,7 @@ def CompileStructPointerMemberAccess(node):
 	cg.DereferenceMain(GetTypeSize(member_t))
 	return member_t
 
-def CompileArrayAccess(node): # TODO: Allow pointer subscript
+def CompileArrayAccess(node):
 	t = CompileAddrOf(node).arg
 	cg.DereferenceMain(GetTypeSize(t))
 	return t
