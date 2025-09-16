@@ -6,13 +6,11 @@ Description: The second stage of the compiler, that takes a stream of tokens and
 It implements a limited yet working preprocessor, with #include, #define, #undef, #ifdef, #ifndef, #error and #warning
 """
 
-TEST_MODE = False
-last_err = ''
-
 import sys
 
 from core.helpers import *
 import core.tokenizer as tokenizer
+import core.error as err
 
 script_directory = ''
 include_directory = ''
@@ -45,14 +43,7 @@ defined_macros = {
 
 # Error functions
 def abort(s):
-	global last_err
-	
-	if TEST_MODE:
-		last_err = s
-		raise TestModeError
-	
-	print('Error:', s, '(file', file_name, 'line', line_number, 'character', character_number, ')', file=sys.stderr)
-	sys.exit(-1)
+	err.abort(s + ' (file' + file_name + ' line' + str(line_number) + ' character' + str(character_number) + ')')
 
 def Expected(s):
 	abort('Expected ' + s)
@@ -294,7 +285,7 @@ def WarningDirective():
 		warning_string += value
 		RemoveToken()
 	
-	print("Warning:",warning_string)
+	err.warning(warning_string.lstrip())
 
 def BuildString():
 	l,c = line_number, character_number

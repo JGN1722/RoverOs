@@ -9,6 +9,8 @@ import sys
 
 from core.helpers import *
 
+import core.error as err
+
 script_directory = ""
 
 # The messages displayed to the user via the command line
@@ -83,5 +85,4 @@ def ParseCommandLine():
 
 # Error functions
 def abort(s):
-	print("Error: " + s, file=sys.stderr)
-	sys.exit(-1)
+	erro.abort(s)

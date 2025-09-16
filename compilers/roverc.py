@@ -20,6 +20,7 @@ import core.optimizer as optimizer
 import core.tokenizer as tokenizer
 import core.preproc as preproc
 import core.parser as parser
+import core.error as err
 
 commandline.script_directory = script_directory
 tokenizer.script_directory = script_directory
@@ -37,14 +38,10 @@ def compile(asm):
 	subprocess.run([script_directory + "\\fasm.exe",script_directory + "\\output.asm",output_file])
 
 # Error functions
-def abort(s): # TODO: I should rather create an error module
-	print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
-	sys.exit()
+def abort(s):
+	err.abort(s)
 
-# Output functions
 file_name = ""
-line_number = 0
-character_number = 0
 source_file = ""
 output_file = ""
 

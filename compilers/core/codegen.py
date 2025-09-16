@@ -27,7 +27,7 @@ def EmitLnData(s):
 def GetFreestandingOutput():
 	global output
 	
-	return "use32\n" + "org " + str(0x7c00 + 512 + 512) + "\n" + "JMP V_main\n" + output + output_data # Return the raw code
+	return "use32\n" + "org " + str(0x8000) + "\n" + "JMP V_main\n" + output + output_data # Return the raw code
 
 def GetWindowsOutput():
 	global output, output_data

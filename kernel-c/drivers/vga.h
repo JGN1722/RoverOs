@@ -9,7 +9,7 @@ uint32_t get_cursor_pos();
 void clear_screen();
 void scroll();
 void putchar(char* ptr, uint32_t x, uint32_t y, uint8_t attr);
-void printf(char* fmt, ...);
+void printf(const char* fmt, ...);
 void sleep();
 
 #define VIDEO_MEMORY 0xB8000

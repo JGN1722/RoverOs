@@ -49,7 +49,7 @@ class NumberType(Type_):
 		return True
 	
 	def __eq__(self, other):
-		return isinstance(other, self.__class__) and other.is_number and self.size == other.size and self.const == other.const and self.signed == other.signed
+		return isinstance(other, self.__class__) and other.is_number and self.size == other.size and self.signed == other.signed
 	
 	def __repr__(self):
 		return f'NumberType(size={self.size}, const={self.const}, signed={self.signed})'
@@ -84,7 +84,7 @@ class PointerType(Type_):
 		return True
 	
 	def __eq__(self, other):
-		return isinstance(other, self.__class__) and other.is_pointer() and self.arg == other.arg and self.const == other.const
+		return isinstance(other, self.__class__) and other.is_pointer() and self.arg == other.arg
 	
 	def __repr__(self):
 		return f'PointerType(arg={self.arg}, const={self.const})'

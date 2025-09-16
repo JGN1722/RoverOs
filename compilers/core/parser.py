@@ -5,15 +5,13 @@ Author: JGN1722 (Github)
 Description: The third stage of the compiler, that takes a preprocessed stream of tokens and outputs an AST
 """
 
-TEST_MODE = False
-last_err = ''
-
 import sys
 
 from core.helpers import *
 import core.ctypes as ctypes
 import core.symboltable as st
 import core.optimizer as opt
+import core.error as err
 
 AST = None
 token_stream = None
@@ -31,14 +29,7 @@ ST = st.SymbolTable()
 
 # Error functions
 def abort(s):
-	global last_err
-	
-	if TEST_MODE:
-		last_err = s
-		raise TestModeError
-	
-	print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
-	sys.exit(-1)
+	err.abort(s + ' (file' + file_name + ' line' + str(line_number) + ' character' + str(character_number) + ')')
 
 def Expected(s):
 	abort("Expected " + s)

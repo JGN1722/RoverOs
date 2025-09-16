@@ -107,7 +107,7 @@ void putchar(char* ptr, uint32_t x, uint32_t y, uint8_t attr) {
 	}
 }
 
-void printf(char* fmt, ...) {
+void printf(const char* fmt, ...) {
 	int i = 1;
 	while (*fmt != 0) {
 		if (*fmt == '%') {

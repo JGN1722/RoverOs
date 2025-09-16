@@ -8,6 +8,8 @@ Description: A set of helper functions and misc data used throughout the compile
 import os
 import sys
 
+import core.error as err
+
 base_types = [
 	'char',
 	'short',
@@ -167,5 +169,4 @@ def convert_to_ext(file_path, new_ext):
 
 # Error functions
 def abort(s):
-	print("Error: " + s, file=sys.stderr)
-	sys.exit(-1)
+	err.abort(s)

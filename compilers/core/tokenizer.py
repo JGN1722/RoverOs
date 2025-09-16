@@ -5,12 +5,10 @@ Author: JGN1722 (Github)
 Description: The first stage of the compiler, that breaks up the source into an array of tokens
 """
 
-TEST_MODE = False
-last_err = ''
-
 import sys
 
 from core.helpers import *
+import core.error as err
 
 """
 The approach I took there is taken from the book I first used to start writing compilers:
@@ -40,14 +38,7 @@ character_number = 1
 
 # Error functions
 def abort(s):
-	global last_err
-	
-	if TEST_MODE:
-		last_err = s
-		raise TestModeError
-	
-	print("Error: " + s, "(file", file_name, "line", line_number, "character", character_number, ")", file=sys.stderr)
-	sys.exit(-1)
+	err.abort(s + ' (file' + file_name + ' line' + str(line_number) + ' character' + str(character_number) + ')')
 
 def Expected(s):
 	abort("Expected " + s)

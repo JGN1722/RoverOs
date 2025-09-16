@@ -2,8 +2,8 @@
 #define _COMMON_H
 
 // Useful constants
-#define KERNEL_ADDRESS 0x100000
-#define STACK_ADDRESS 0x7c00 - 1
+#define KERNEL_ADDRESS (0x8000)
+#define STACK_ADDRESS (0x7c00)
 
 // Some types
 typedef unsigned char uint8_t;

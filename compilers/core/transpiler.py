@@ -5,17 +5,13 @@ Author: JGN1722 (Github)
 Description: The fourth stage of the compiler, that takes an AST and generates assembly code from it
 """
 
-# There are 7 TODOs ( + 1 in helpers.py, and 1 in preproc.py )
-
-TEST_MODE = False
-last_err = ''
-
-import sys
+# There are 6 TODOs ( + 1 in helpers.py, 1 in roverc.py and 1 in preproc.py )
 
 from core.helpers import *
 import core.symboltable as st
 import core.codegen as cg
 import core.ctypes as ctypes
+import core.error as err
 
 struct_ST = st.SymbolTable()
 ident_ST = st.IdentSymbolTable()
@@ -26,19 +22,11 @@ allocated_stack_units = 0 # Number of local variables on the stack
 
 # Error functions
 def abort(s):
-	global last_err
-	
-	if TEST_MODE:
-		last_err = s
-		raise TestModeError
-	
 	# I'm still yet to find how to use file_name, line_number and character_number here
-	# For now, just print it raw
-	print("Error: " + s, file=sys.stderr)
-	sys.exit(-1)
+	err.abort(s)
 
 def warning(s):
-	print("Warning: " + s)
+	err.warning(s)
 
 def Expected(s):
 	abort("Expected " + s)
@@ -369,7 +357,7 @@ def CompileLocDecl(node):
 			abort('Cannot initialize non-number variable')
 		t = CompileExpression(node.children[0])
 		if not CanCastImplicitly(t, node.value['type']):
-			abort('Incompatible types:' + str(t) + ',' + str(node.value['type']))
+			abort('Incompatible types')
 		cg.PushMain()
 	else:
 		size = GetTypeSize(node.value['type'])
@@ -793,7 +781,7 @@ def CompileAssignement(node): # TODO: what if we're storing a constant ?
 		t = CompileExpression(node.children[1])
 		t2 = CompileStore(node.children[0])
 		if not CanCastImplicitly(t, t2):
-			abort('Incompatible types')
+			abort('Incompatible types: ' + str(t) + ',' + str(t2))
 	else:
 		CompileExpression(node.children[0])
 		cg.PushMain()
@@ -821,7 +809,7 @@ def CompileAssignement(node): # TODO: what if we're storing a constant ?
 			abort('Incompatible types')
 	return t
 
-def CompileStore(node): # TODO: applying const to pointer is misunderstood I think
+def CompileStore(node):
 	# This may be either a variable, a dereference, a struct member access or a struct pointer member access
 	if node.type == 'Variable':
 		name = node.value
@@ -829,6 +817,9 @@ def CompileStore(node): # TODO: applying const to pointer is misunderstood I thi
 		if not d:
 			Undefined(name)
 		t = d['type']
+		
+		if isinstance(t, ctypes.ArrayType) or isinstance(t, ctypes.FunctionType) or isinstance(t, ctypes.StructType):
+			abort('Cannot store to this type')
 		
 		if isinstance(t, ctypes.NumberType):
 			if t.const:
@@ -847,8 +838,8 @@ def CompileStore(node): # TODO: applying const to pointer is misunderstood I thi
 		if not isinstance(t, ctypes.PointerType):
 			abort('Undereferencable expression (not a pointer)')
 		
-		if t.const:
-			abort('cannot store to dereference of a constant pointer')
+		if t.arg.const:
+			abort('cannot store to dereference of a pointer to a constant type')
 		
 		cg.StoreDereferenceMain(GetTypeSize(t.arg))
 		return t.arg

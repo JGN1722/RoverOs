@@ -1,8 +1,9 @@
 import os
+import sys
 import struct
 
 # Constants
-BOOT_SECTOR_SIZE = 512
+BOOT_SECTOR_SIZE = 1024
 SUPERBLOCK_SIZE = 1024
 BLOCK_SIZE = 1024
 INODE_SIZE = 64
@@ -39,18 +40,22 @@ def write_inode(index, used, name, ext, num_blocks, data_pointer):
     inode[0] = 1 if used else 0
     
     # Name (57 bytes, padded with \x00)
-    name_bytes = name.encode('ascii')[:57]
+    name_bytes = name.encode('ascii')[:56]
     inode[1:1 + len(name_bytes)] = name_bytes
     
     # Extension (3 bytes, padded with \x00)
     ext_bytes = ext.encode('ascii')[:3]
-    inode[57:57 + len(ext_bytes)] = ext_bytes
+    inode[56:56 + len(ext_bytes)] = ext_bytes
     
     # Number of blocks (1 byte)
+    print(hex(num_blocks))
+    if num_blocks > 0xff:
+        print("Unable to write file wider than 255Kib")
+        sys.exit(-1)
     inode[59] = num_blocks
     
     # Data pointer (4 bytes, little-endian)
-    struct.pack_into('<I', inode, 60, data_pointer)
+    struct.pack_into('<I', inode, 60, data_pointer + BOOT_SECTOR_SIZE)
     
     # Write inode to buffer
     buffer[inode_offset:inode_offset + INODE_SIZE] = inode
