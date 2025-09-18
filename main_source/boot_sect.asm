@@ -1,6 +1,6 @@
 KERNEL_ADDRESS = 0x8000
 STACK_ADDRESS = 0x7c00
-MEM_MAP_ADDRESS = 0x600
+MEM_MAP_ADDRESS = 0x500
 MEM_MAP_ENTRIES_START = MEM_MAP_ADDRESS + 4
 
 ; a simple boot sector
@@ -10,7 +10,7 @@ org 0x7c00
 
 jmp	0x0000:start
 
-include '..\boot\bpb.asm'
+; include '..\boot\bpb.asm'
 
 start:
 
@@ -35,7 +35,7 @@ mov	BYTE [HMAX], dh
 and	cl, 0x3f
 mov	BYTE [SMAX], cl
 
-mov	ax, 0
+xor	ax, ax
 mov	es, ax				; the interrupt trashes es
 
 mov	ax, 0003h			; set VGA video mode
@@ -66,7 +66,7 @@ jmp	stage2
 BOOT_DRIVE	db 0
 
 include '..\boot\print_string.asm'
-; include '..\boot\print_hex.asm'
+include '..\boot\print_hex.asm'
 include '..\boot\disk_read.asm'
 
 ;_____________________________________________________________
@@ -101,8 +101,7 @@ int	0x15
 
 jc	mem_error
 
-mov	edx, 0x534d4150
-cmp	eax, edx
+cmp	eax, 0x534d4150
 jne	mem_error
 
 test	ebx, ebx
@@ -112,12 +111,11 @@ add	di, 24
 
 .get_next_entry:
 mov	DWORD [es:di + 20], 1
+mov	edx, 0x534d4150
 mov	eax, 0xe820
 mov	ecx, 24
 int	0x15
 jc	.end_mem_map
-
-mov	edx, 0x534d4150
 
 .process_mem_map_entry:
 jcxz	.skip_entry
@@ -155,8 +153,8 @@ jmp CODE_SEG:init_pm
 
 MEM_ERR_MSG	db 'Error while detecting RAM',0
 mem_error:
-	mov	si, MEM_ERR_MSG
-	call	print_string
+mov	si, MEM_ERR_MSG
+jmp	print_string
 
 ;_____________________________________________________________
 ;real mode code

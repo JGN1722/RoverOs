@@ -16,11 +16,7 @@ struct idt_entry_t {
 };
 typedef struct idt_entry_t idt_entry_t;
 
-#define IDT_ADDRESS 0x0
 #define IDT_ENTRIES 256
-#define IDTR_ADDRESS IDT_ADDRESS + IDT_ENTRIES * 8
-#define IDTR_SIZE 6
-
 #define IDT_ERR_ENTRIES 32
 #define IRQ_NUMBER 16
 #define MASTER_IRQ_VECTOR_OFFSET 0x20

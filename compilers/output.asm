@@ -1236,8 +1236,8 @@ RET	0
 V_enum_memory_map:
 PUSH	ebp
 MOV	ebp, esp
-PUSHD	1540
-MOV	eax, 1536
+PUSHD	1284
+MOV	eax, 1280
 PUSHD	DWORD [eax]
 PUSHD	L82
 CALL	V_printf
@@ -1283,13 +1283,13 @@ RET	0
 V_fill_bitmap:
 PUSH	ebp
 MOV	ebp, esp
-PUSHD	1540
-MOV	eax, 1536
+PUSHD	1284
+MOV	eax, 1280
 PUSHD	DWORD [eax]
 PUSHD	0
 L86:
 MOV	eax, DWORD [ebp - (12)]
-CMP	eax, 26214
+CMP	eax, 104857
 JAE	L87
 PUSHD	255
 PUSHD	V_memory_bitmap
@@ -1482,7 +1482,7 @@ align 16
 V_idt rb 2048
 V_idtr rb 6
 L71 db 85, 110, 104, 97, 110, 100, 108, 101, 100, 32, 105, 110, 116, 101, 114, 114, 117, 112, 116, 32, 114, 101, 99, 101, 105, 118, 101, 100, 13, 10, 0
-V_memory_bitmap rb 26214
+V_memory_bitmap rb 104857
 L82 db 66, 97, 115, 101, 32, 65, 100, 100, 114, 101, 115, 115, 9, 9, 76, 101, 110, 103, 116, 104, 9, 9, 9, 84, 121, 112, 101, 9, 9, 65, 99, 112, 105, 32, 97, 116, 116, 114, 105, 98, 115, 13, 10, 0
 L85 db 37, 100, 37, 100, 9, 37, 100, 37, 100, 9, 37, 100, 9, 37, 100, 13, 10, 0
 L91 db 32, 43, 32, 37, 115, 0

@@ -48,7 +48,6 @@ def write_inode(index, used, name, ext, num_blocks, data_pointer):
     inode[56:56 + len(ext_bytes)] = ext_bytes
     
     # Number of blocks (1 byte)
-    print(hex(num_blocks))
     if num_blocks > 0xff:
         print("Unable to write file wider than 255Kib")
         sys.exit(-1)

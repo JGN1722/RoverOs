@@ -3,13 +3,11 @@
 buff db '0x',0,0,0,0,0
 
 print_hex:
-	pusha
-	
-	mov	di, buff + 5
+	mov	si, buff + 4
 	
 	.fill_next_char:
-	cmp	di, buff + 1
-	je	.end
+	cmp	si, buff
+	je	print_string
 	
 	;get the nibble to print in al-low
 	mov	al, bl
@@ -23,14 +21,7 @@ print_hex:
 	.not_letter:
 	add	al, '0'
 	
-	mov	BYTE [di], al
-	dec	di
+	mov	BYTE [si + 1], al
+	dec	si
 	
 	jmp	.fill_next_char
-	
-	.end:
-	mov	si, buff
-	call	print_string
-	
-	popa
-	ret

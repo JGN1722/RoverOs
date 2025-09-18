@@ -28,18 +28,31 @@ jc	disk_error
 cmp	ax, 1			; We gotta have al = 1, ah = 0
 jne	disk_error		; Might as well do a single cmp
 
-add	WORD [disk_buff], 512
 inc	WORD [disk_LBA]
 dec	BYTE [disk_N]
+add	WORD [disk_buff], 512
+
+cmp	WORD [disk_buff], 0x200
+jae	.read_sect
+
+mov	ax, es
+add	ax, 0x1000
+mov	es, ax
+
 jmp	.read_sect
 
 .end:
+
+xor	ax, ax
+mov	es, ax
 ret
 
 MSG_ERR_DISK	db 'Disk read error',0
 disk_error:
 mov	si, MSG_ERR_DISK
 jmp	print_string
+
+counter		dw 0
 
 SMAX		db 0
 HMAX		db 0

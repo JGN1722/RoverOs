@@ -781,7 +781,7 @@ def CompileAssignement(node): # TODO: what if we're storing a constant ?
 		t = CompileExpression(node.children[1])
 		t2 = CompileStore(node.children[0])
 		if not CanCastImplicitly(t, t2):
-			abort('Incompatible types: ' + str(t) + ',' + str(t2))
+			abort('Incompatible types')
 	else:
 		CompileExpression(node.children[0])
 		cg.PushMain()

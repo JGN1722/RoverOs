@@ -1,13 +1,13 @@
 #ifndef _PMM_H
 #define _PMM_H
 
-#define MEM_MAP_ADDRESS 0x600
+#define MEM_MAP_ADDRESS 0x500
 #define MEM_MAP_ENTRIES_START (MEM_MAP_ADDRESS + 4)
 
 #define PMM_BLOCK_SIZE 4096
 #define MAX_MEMORY (4 * 1024 * 1024 * 1024)
 #define MAX_BLOCK_NUMBER (MAX_MEMORY / PMM_BLOCK_SIZE)
-#define BITMAP_SIZE ((MAX_BLOCK_NUMBER / 8) / 5)
+#define BITMAP_SIZE (((MAX_BLOCK_NUMBER / 8) * 4 / 5))
 
 struct memory_map_entry {
 	uint32_t base_low, base_hi;
