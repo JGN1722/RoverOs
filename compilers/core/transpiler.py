@@ -5,7 +5,7 @@ Author: JGN1722 (Github)
 Description: The fourth stage of the compiler, that takes an AST and generates assembly code from it
 """
 
-# There are 6 TODOs ( + 1 in helpers.py, 1 in roverc.py and 1 in preproc.py )
+# There are 4 TODOs ( + 1 in helpers.py, 1 in roverc.py and 1 in preproc.py )
 
 from core.helpers import *
 import core.symboltable as st
@@ -882,6 +882,7 @@ def CompileFunctionCall(node):
 	call_args = node.children[1].children
 	call_args.reverse() # We use cdecl, so arguments are pushed in reverse
 	# TODO: maybe it's not in stdcall ?
+	#	And would that require the entire argument access scheme for stdcall ?
 	
 	for child in call_args:
 		arg_types.append(CompileExpression(child))
@@ -901,15 +902,13 @@ def CompileFunctionCall(node):
 				abort(f'wrong type of argument {i}')
 		i -= 1
 	
-	# TODO: where are the fucking attributes now !!!
-	# if len(call_args) != len(t.arg.args) and not Attribute(vendor='roverc', name='varargs') in d['attributes']:
-	#	abort("wrong number of arguments while calling " + name + ": " + str(len(call_args)) + " instead of " + str(len(t.args)))
+	if len(call_args) != len(t.arg.args) and not t.arg.varargs:
+		abort("wrong number of arguments while calling " + name + ": " + str(len(call_args)) + " instead of " + str(len(t.arg.args)))
 	
 	cg.CallMain()
 	
-	# if not Attribute(name='__stdcall') in d['attributes']:
-	if True: # Temp
-		cg.StackFree(len(t.arg.args)) # TODO: Where do I find the attribute list now ?
+	if not t.arg.convention == 'stdcall':
+		cg.StackFree(len(call_args))
 	
 	return t.arg.ret
 

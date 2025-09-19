@@ -29,7 +29,7 @@ ST = st.SymbolTable()
 
 # Error functions
 def abort(s):
-	err.abort(s + ' (file' + file_name + ' line' + str(line_number) + ' character' + str(character_number) + ')')
+	err.abort(s + ' (file ' + file_name + ' line ' + str(line_number) + ' character ' + str(character_number) + ')')
 
 def Expected(s):
 	abort("Expected " + s)
@@ -308,9 +308,12 @@ def DoWhile():
 	return node
 
 def Return():
-	node = ASTNode(type_="ControlStructure",value="RETURN",children=[])
-	MatchString("return")
-	node.children.append(Expression())
+	node = ASTNode(type_='ControlStructure',value='RETURN',children=[])
+	MatchString('return')
+	if token == ';':
+		node.children.append(ASTNode(type_='Number', value='0'))
+	else:
+		node.children.append(Expression())
 	return node
 
 def Asm():
@@ -374,6 +377,9 @@ def Decl():
 			node.children.append(Block())
 		else:
 			MatchString(';')
+		
+		if Attribute(vendor='roverc', name='stdcall') in d['attributes']:
+			d['type'].convention = 'stdcall'
 		
 		node_array.append(node)
 		
@@ -483,6 +489,7 @@ def DeclPart(t, abstract=False):
 		
 		args = []
 		
+		has_variable_arg_count = False
 		if token != ')':
 			
 			while True:
@@ -492,6 +499,7 @@ def DeclPart(t, abstract=False):
 					MatchString('.')
 					MatchString('.')
 					d['attributes'].append(Attribute(vendor='roverc', name='varargs'))
+					has_variable_arg_count = True
 					
 					break
 				
@@ -517,9 +525,9 @@ def DeclPart(t, abstract=False):
 		MatchString(')')
 		
 		if parentheses:
-			empty.make_function(args=args, ret=t)
+			empty.make_function(args=args, ret=t, varargs=has_variable_arg_count)
 		else:
-			d['type'] = ctypes.FunctionType(args=args, ret=d['type'])
+			d['type'] = ctypes.FunctionType(args=args, ret=d['type'], varargs=has_variable_arg_count)
 	
 	elif token == '[':
 		MatchString('[')

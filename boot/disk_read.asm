@@ -1,7 +1,7 @@
 disk_read:
 
 .read_sect:
-cmp	BYTE [disk_N], 0
+cmp	WORD [disk_N], 0
 je	.end
 
 mov	ax, WORD [disk_LBA]
@@ -29,7 +29,7 @@ cmp	ax, 1			; We gotta have al = 1, ah = 0
 jne	disk_error		; Might as well do a single cmp
 
 inc	WORD [disk_LBA]
-dec	BYTE [disk_N]
+dec	WORD [disk_N]
 add	WORD [disk_buff], 512
 
 cmp	WORD [disk_buff], 0x200
@@ -52,11 +52,9 @@ disk_error:
 mov	si, MSG_ERR_DISK
 jmp	print_string
 
-counter		dw 0
-
 SMAX		db 0
 HMAX		db 0
 
 disk_buff	dw 0
 disk_LBA	dw 0
-disk_N		db 0
+disk_N		dw 0

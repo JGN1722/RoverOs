@@ -868,7 +868,7 @@ MOVZX	eax, BYTE [ebp - (4)]
 PUSHD	eax
 PUSHD	L64
 CALL	V_printf
-ADD	esp, 4
+ADD	esp, 8
 PUSHD	32
 PUSHD	32
 CALL	V_outb
@@ -1106,6 +1106,13 @@ V_bitmap_get:
 PUSH	ebp
 MOV	ebp, esp
 MOV	eax, DWORD [ebp - (-8)]
+CMP	eax, 1048576
+JB	L76
+MOV	eax, 1
+JMP	@f
+L76:
+L75:
+MOV	eax, DWORD [ebp - (-8)]
 SHR	eax, 3
 PUSHD	eax
 PUSHD	DWORD [ebp - (-8)]
@@ -1134,6 +1141,13 @@ V_bitmap_set:
 PUSH	ebp
 MOV	ebp, esp
 MOV	eax, DWORD [ebp - (-8)]
+CMP	eax, 1048576
+JB	L78
+MOV	eax, 0
+JMP	@f
+L78:
+L77:
+MOV	eax, DWORD [ebp - (-8)]
 SHR	eax, 3
 PUSHD	eax
 PUSHD	DWORD [ebp - (-8)]
@@ -1146,7 +1160,7 @@ SHL	eax, cl
 PUSHD	eax
 MOVZX	eax, BYTE [ebp - (-12)]
 CMP	eax, 0
-JE	L76
+JE	L80
 PUSHD	V_memory_bitmap
 MOV	eax, DWORD [ebp - (4)]
 ADD	DWORD [esp], eax
@@ -1161,8 +1175,8 @@ ADD	DWORD [esp], eax
 POP	eax
 POP	ebx
 MOV	BYTE [eax], bl
-JMP	L75
-L76:
+JMP	L79
+L80:
 PUSHD	V_memory_bitmap
 MOV	eax, DWORD [ebp - (4)]
 ADD	DWORD [esp], eax
@@ -1178,7 +1192,7 @@ ADD	DWORD [esp], eax
 POP	eax
 POP	ebx
 MOV	BYTE [eax], bl
-L75:
+L79:
 @@:
 MOV	esp, ebp
 POP	ebp
@@ -1186,34 +1200,89 @@ RET	0
 V_palloc:
 PUSH	ebp
 MOV	ebp, esp
-PUSHD	0
-L77:
+PUSHD	1284
+MOV	eax, 1280
+PUSHD	DWORD [eax]
+L81:
+MOV	eax, DWORD [ebp - (8)]
+CMP	eax, 0
+JBE	L82
 MOV	eax, DWORD [ebp - (4)]
-CMP	eax, 1048576
-JAE	L78
-PUSHD	DWORD [ebp - (4)]
+ADD	eax, 16
+MOV	eax, DWORD [eax]
+CMP	eax, 1
+MOV	eax, 0
+SETE	al
+CMP	eax, 0
+JE	L85
+PUSHD	eax
+MOV	eax, DWORD [ebp - (4)]
+ADD	eax, 4
+MOV	eax, DWORD [eax]
+test	eax, eax
+setz	al
+and	eax, 0xff
+AND	DWORD [esp], eax
+POP	eax
+L85:
+CMP	eax, 0
+JE	L84
+MOV	eax, DWORD [ebp - (4)]
+MOV	eax, DWORD [eax]
+SHR	eax, 12
+PUSHD	eax
+MOV	eax, DWORD [ebp - (4)]
+ADD	eax, 8
+MOV	eax, DWORD [eax]
+SHR	eax, 12
+PUSHD	eax
+PUSHD	0
+L86:
+PUSHD	DWORD [ebp - (20)]
+MOV	eax, DWORD [ebp - (16)]
+CMP	DWORD [esp], eax
+LEA	esp, [esp + 4]
+JAE	L87
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (20)]
+ADD	DWORD [esp], eax
+PUSHD	DWORD [ebp - (24)]
 CALL	V_bitmap_get
 ADD	esp, 4
 test	eax, eax
 setz	al
 and	eax, 0xff
 CMP	eax, 0
-JE	L81
+JE	L90
 PUSHD	1
-PUSHD	DWORD [ebp - (4)]
+PUSHD	DWORD [ebp - (24)]
 CALL	V_bitmap_set
 ADD	esp, 8
-MOV	eax, DWORD [ebp - (4)]
+MOV	eax, DWORD [ebp - (24)]
 SHL	eax, 12
 JMP	@f
-L81:
-L80:
-L79:
-MOV	eax, DWORD [ebp - (4)]
+L90:
+L89:
+ADD	esp, 4
+L88:
+MOV	eax, DWORD [ebp - (20)]
 INC	eax
+MOV	DWORD [ebp - (20)], eax
+JMP	L86
+L87:
+ADD	esp, 12
+L84:
+L83:
+PUSHD	DWORD [ebp - (4)]
+MOV	eax, 24
+ADD	DWORD [esp], eax
+POP	eax
 MOV	DWORD [ebp - (4)], eax
-JMP	L77
-L78:
+MOV	eax, DWORD [ebp - (8)]
+DEC	eax
+MOV	DWORD [ebp - (8)], eax
+JMP	L81
+L82:
 MOV	eax, 0
 @@:
 MOV	esp, ebp
@@ -1239,13 +1308,13 @@ MOV	ebp, esp
 PUSHD	1284
 MOV	eax, 1280
 PUSHD	DWORD [eax]
-PUSHD	L82
+PUSHD	L91
 CALL	V_printf
 ADD	esp, 4
-L83:
+L92:
 MOV	eax, DWORD [ebp - (8)]
 CMP	eax, 0
-JBE	L84
+JBE	L93
 MOV	eax, DWORD [ebp - (4)]
 ADD	eax, 20
 PUSHD	DWORD [eax]
@@ -1263,9 +1332,9 @@ PUSHD	DWORD [eax]
 MOV	eax, DWORD [ebp - (4)]
 ADD	eax, 4
 PUSHD	DWORD [eax]
-PUSHD	L85
+PUSHD	L94
 CALL	V_printf
-ADD	esp, 4
+ADD	esp, 28
 PUSHD	DWORD [ebp - (4)]
 MOV	eax, 24
 ADD	DWORD [esp], eax
@@ -1274,8 +1343,8 @@ MOV	DWORD [ebp - (4)], eax
 MOV	eax, DWORD [ebp - (8)]
 DEC	eax
 MOV	DWORD [ebp - (8)], eax
-JMP	L83
-L84:
+JMP	L92
+L93:
 @@:
 MOV	esp, ebp
 POP	ebp
@@ -1287,10 +1356,10 @@ PUSHD	1284
 MOV	eax, 1280
 PUSHD	DWORD [eax]
 PUSHD	0
-L86:
+L95:
 MOV	eax, DWORD [ebp - (12)]
-CMP	eax, 104857
-JAE	L87
+CMP	eax, 131072
+JAE	L96
 PUSHD	255
 PUSHD	V_memory_bitmap
 MOV	eax, DWORD [ebp - (12)]
@@ -1298,16 +1367,68 @@ ADD	DWORD [esp], eax
 POP	eax
 POP	ebx
 MOV	BYTE [eax], bl
-L88:
+L97:
 MOV	eax, DWORD [ebp - (12)]
 INC	eax
 MOV	DWORD [ebp - (12)], eax
-JMP	L86
-L87:
-L89:
+JMP	L95
+L96:
+L98:
 MOV	eax, DWORD [ebp - (8)]
 CMP	eax, 0
-JBE	L90
+JBE	L99
+MOV	eax, DWORD [ebp - (4)]
+ADD	eax, 16
+MOV	eax, DWORD [eax]
+CMP	eax, 1
+MOV	eax, 0
+SETE	al
+CMP	eax, 0
+JE	L102
+PUSHD	eax
+MOV	eax, DWORD [ebp - (4)]
+ADD	eax, 4
+MOV	eax, DWORD [eax]
+test	eax, eax
+setz	al
+and	eax, 0xff
+AND	DWORD [esp], eax
+POP	eax
+L102:
+CMP	eax, 0
+JE	L101
+MOV	eax, DWORD [ebp - (4)]
+MOV	eax, DWORD [eax]
+SHR	eax, 12
+PUSHD	eax
+MOV	eax, DWORD [ebp - (4)]
+ADD	eax, 8
+MOV	eax, DWORD [eax]
+SHR	eax, 12
+PUSHD	eax
+MOV	eax, 0
+MOV	DWORD [ebp - (12)], eax
+L103:
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (20)]
+CMP	DWORD [esp], eax
+LEA	esp, [esp + 4]
+JAE	L104
+PUSHD	0
+PUSHD	DWORD [ebp - (16)]
+MOV	eax, DWORD [ebp - (12)]
+ADD	DWORD [esp], eax
+CALL	V_bitmap_set
+ADD	esp, 8
+L105:
+MOV	eax, DWORD [ebp - (12)]
+INC	eax
+MOV	DWORD [ebp - (12)], eax
+JMP	L103
+L104:
+ADD	esp, 8
+L101:
+L100:
 PUSHD	DWORD [ebp - (4)]
 MOV	eax, 24
 ADD	DWORD [esp], eax
@@ -1316,8 +1437,24 @@ MOV	DWORD [ebp - (4)], eax
 MOV	eax, DWORD [ebp - (8)]
 DEC	eax
 MOV	DWORD [ebp - (8)], eax
-JMP	L89
-L90:
+JMP	L98
+L99:
+MOV	eax, 0
+MOV	DWORD [ebp - (12)], eax
+L106:
+MOV	eax, DWORD [ebp - (12)]
+CMP	eax, 256
+JAE	L107
+PUSHD	1
+PUSHD	DWORD [ebp - (12)]
+CALL	V_bitmap_set
+ADD	esp, 8
+L108:
+MOV	eax, DWORD [ebp - (12)]
+INC	eax
+MOV	DWORD [ebp - (12)], eax
+JMP	L106
+L107:
 @@:
 MOV	esp, ebp
 POP	ebp
@@ -1325,6 +1462,7 @@ RET	0
 V_setup_memory:
 PUSH	ebp
 MOV	ebp, esp
+CALL	V_fill_bitmap
 @@:
 MOV	esp, ebp
 POP	ebp
@@ -1336,15 +1474,15 @@ PUSHD	15
 CALL	V_set_terminal_color
 ADD	esp, 4
 PUSHD	DWORD [ebp - (-8)]
-PUSHD	L91
+PUSHD	L109
 CALL	V_printf
-ADD	esp, 4
+ADD	esp, 8
 MOV	eax, DWORD [ebp - (-12)]
 CALL	eax
 PUSHD	2
 CALL	V_set_terminal_color
 ADD	esp, 4
-PUSHD	L92
+PUSHD	L110
 CALL	V_printf
 ADD	esp, 4
 PUSHD	15
@@ -1358,67 +1496,30 @@ V_main:
 PUSH	ebp
 MOV	ebp, esp
 CALL	V_init_vga
-PUSHD	L93
+PUSHD	L111
 CALL	V_printf
 ADD	esp, 4
 PUSHD	V_setup_interrupts
-PUSHD	L94
+PUSHD	L112
 CALL	V_init_component
 ADD	esp, 8
 PUSHD	V_setup_memory
-PUSHD	L95
+PUSHD	L113
 CALL	V_init_component
 ADD	esp, 8
-PUSHD	L96
+PUSHD	L114
 CALL	V_printf
 ADD	esp, 4
 CALL	V_enum_memory_map
-PUSHD	42
-CALL	V_bitmap_get
-ADD	esp, 4
-PUSHD	eax
-PUSHD	1
-PUSHD	42
-CALL	V_bitmap_set
-ADD	esp, 8
-PUSHD	42
-CALL	V_bitmap_get
-ADD	esp, 4
-PUSHD	eax
-PUSHD	1
-PUSHD	42
-CALL	V_bitmap_set
-ADD	esp, 8
-PUSHD	42
-CALL	V_bitmap_get
-ADD	esp, 4
-PUSHD	eax
-PUSHD	0
-PUSHD	42
-CALL	V_bitmap_set
-ADD	esp, 8
-PUSHD	42
-CALL	V_bitmap_get
-ADD	esp, 4
-PUSHD	eax
-MOVZX	eax, BYTE [ebp - (16)]
-PUSHD	eax
-MOVZX	eax, BYTE [ebp - (12)]
-PUSHD	eax
-MOVZX	eax, BYTE [ebp - (8)]
-PUSHD	eax
-MOVZX	eax, BYTE [ebp - (4)]
-PUSHD	eax
-PUSHD	L97
-CALL	V_printf
-ADD	esp, 4
 CALL	V_palloc
 PUSHD	eax
 CALL	V_palloc
 PUSHD	eax
-PUSHD	L98
+PUSHD	DWORD [ebp - (8)]
+PUSHD	DWORD [ebp - (4)]
+PUSHD	L115
 CALL	V_printf
-ADD	esp, 4
+ADD	esp, 12
 PUSHD	1
 CALL	V_bitmap_get
 ADD	esp, 4
@@ -1427,9 +1528,9 @@ PUSHD	0
 CALL	V_bitmap_get
 ADD	esp, 4
 PUSHD	eax
-PUSHD	L99
+PUSHD	L116
 CALL	V_printf
-ADD	esp, 4
+ADD	esp, 12
 PUSHD	0
 CALL	V_pfree
 ADD	esp, 4
@@ -1444,21 +1545,60 @@ PUSHD	0
 CALL	V_bitmap_get
 ADD	esp, 4
 PUSHD	eax
-PUSHD	L100
+PUSHD	L117
 CALL	V_printf
+ADD	esp, 12
+PUSHD	42
+CALL	V_bitmap_get
 ADD	esp, 4
+PUSHD	eax
+PUSHD	1
+PUSHD	42
+CALL	V_bitmap_set
+ADD	esp, 8
+PUSHD	42
+CALL	V_bitmap_get
+ADD	esp, 4
+PUSHD	eax
+PUSHD	1
+PUSHD	42
+CALL	V_bitmap_set
+ADD	esp, 8
+PUSHD	42
+CALL	V_bitmap_get
+ADD	esp, 4
+PUSHD	eax
+PUSHD	0
+PUSHD	42
+CALL	V_bitmap_set
+ADD	esp, 8
+PUSHD	42
+CALL	V_bitmap_get
+ADD	esp, 4
+PUSHD	eax
+MOVZX	eax, BYTE [ebp - (24)]
+PUSHD	eax
+MOVZX	eax, BYTE [ebp - (20)]
+PUSHD	eax
+MOVZX	eax, BYTE [ebp - (16)]
+PUSHD	eax
+MOVZX	eax, BYTE [ebp - (12)]
+PUSHD	eax
+PUSHD	L118
+CALL	V_printf
+ADD	esp, 20
 PUSHD	255
 PUSHD	253
 CALL	V_PIC_mask
 ADD	esp, 8
 sti
-PUSHD	L101
+PUSHD	L119
 CALL	V_printf
 ADD	esp, 4
-L102:
+L120:
 hlt
-JMP	L102
-L103:
+JMP	L120
+L121:
 MOV	eax, 0
 @@:
 MOV	esp, ebp
@@ -1482,17 +1622,17 @@ align 16
 V_idt rb 2048
 V_idtr rb 6
 L71 db 85, 110, 104, 97, 110, 100, 108, 101, 100, 32, 105, 110, 116, 101, 114, 114, 117, 112, 116, 32, 114, 101, 99, 101, 105, 118, 101, 100, 13, 10, 0
-V_memory_bitmap rb 104857
-L82 db 66, 97, 115, 101, 32, 65, 100, 100, 114, 101, 115, 115, 9, 9, 76, 101, 110, 103, 116, 104, 9, 9, 9, 84, 121, 112, 101, 9, 9, 65, 99, 112, 105, 32, 97, 116, 116, 114, 105, 98, 115, 13, 10, 0
-L85 db 37, 100, 37, 100, 9, 37, 100, 37, 100, 9, 37, 100, 9, 37, 100, 13, 10, 0
-L91 db 32, 43, 32, 37, 115, 0
-L92 db 32, 91, 32, 79, 75, 32, 93, 13, 10, 0
-L93 db 73, 110, 105, 116, 105, 97, 108, 105, 122, 105, 110, 103, 32, 116, 104, 101, 32, 115, 121, 115, 116, 101, 109, 46, 46, 46, 13, 10, 0
-L94 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 105, 110, 116, 101, 114, 114, 117, 112, 116, 115, 46, 46, 46, 32, 0
-L95 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 109, 101, 109, 111, 114, 121, 46, 46, 46, 0
-L96 db 84, 101, 115, 116, 105, 110, 103, 32, 109, 101, 109, 111, 114, 121, 58, 13, 10, 0
-L97 db 115, 104, 111, 117, 108, 100, 32, 112, 114, 105, 110, 116, 32, 48, 63, 32, 48, 49, 32, 48, 49, 32, 48, 48, 58, 32, 37, 99, 32, 37, 99, 32, 37, 99, 32, 37, 99, 13, 10, 0
-L98 db 115, 104, 111, 117, 108, 100, 32, 112, 114, 105, 110, 116, 32, 48, 48, 48, 48, 49, 48, 48, 48, 32, 48, 48, 48, 48, 48, 48, 48, 48, 58, 32, 37, 100, 32, 37, 100, 13, 10, 0
-L99 db 115, 104, 111, 117, 108, 100, 32, 112, 114, 105, 110, 116, 32, 48, 49, 32, 48, 49, 58, 32, 37, 99, 32, 37, 99, 13, 10, 0
-L100 db 115, 104, 111, 117, 108, 100, 32, 112, 114, 105, 110, 116, 32, 48, 48, 32, 48, 48, 58, 32, 37, 99, 32, 37, 99, 13, 10, 0
-L101 db 97, 108, 108, 32, 100, 111, 110, 101, 44, 32, 104, 97, 110, 103, 105, 110, 103, 13, 10, 0
+V_memory_bitmap rb 131072
+L91 db 66, 97, 115, 101, 32, 65, 100, 100, 114, 101, 115, 115, 9, 9, 76, 101, 110, 103, 116, 104, 9, 9, 9, 84, 121, 112, 101, 9, 9, 65, 99, 112, 105, 32, 97, 116, 116, 114, 105, 98, 115, 13, 10, 0
+L94 db 37, 100, 37, 100, 9, 37, 100, 37, 100, 9, 37, 100, 9, 37, 100, 13, 10, 0
+L109 db 32, 43, 32, 37, 115, 0
+L110 db 32, 91, 32, 79, 75, 32, 93, 13, 10, 0
+L111 db 73, 110, 105, 116, 105, 97, 108, 105, 122, 105, 110, 103, 32, 116, 104, 101, 32, 115, 121, 115, 116, 101, 109, 46, 46, 46, 13, 10, 0
+L112 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 105, 110, 116, 101, 114, 114, 117, 112, 116, 115, 46, 46, 46, 32, 0
+L113 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 109, 101, 109, 111, 114, 121, 46, 46, 46, 0
+L114 db 84, 101, 115, 116, 105, 110, 103, 32, 109, 101, 109, 111, 114, 121, 58, 13, 10, 0
+L115 db 115, 104, 111, 117, 108, 100, 32, 112, 114, 105, 110, 116, 32, 48, 48, 49, 48, 48, 48, 48, 48, 32, 48, 48, 49, 48, 49, 48, 48, 48, 58, 32, 37, 100, 32, 37, 100, 13, 10, 0
+L116 db 115, 104, 111, 117, 108, 100, 32, 112, 114, 105, 110, 116, 32, 48, 49, 32, 48, 49, 58, 32, 37, 99, 32, 37, 99, 13, 10, 0
+L117 db 115, 104, 111, 117, 108, 100, 32, 112, 114, 105, 110, 116, 32, 48, 48, 32, 48, 48, 58, 32, 37, 99, 32, 37, 99, 13, 10, 0
+L118 db 115, 104, 111, 117, 108, 100, 32, 112, 114, 105, 110, 116, 32, 48, 49, 32, 48, 49, 32, 48, 49, 32, 48, 48, 58, 32, 37, 99, 32, 37, 99, 32, 37, 99, 32, 37, 99, 13, 10, 0
+L119 db 97, 108, 108, 32, 100, 111, 110, 101, 44, 32, 104, 97, 110, 103, 105, 110, 103, 13, 10, 0

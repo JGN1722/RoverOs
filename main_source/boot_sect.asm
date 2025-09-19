@@ -43,19 +43,30 @@ int	10h
 
 mov	WORD [disk_buff], 0x7e00	; read the second stage
 mov	WORD [disk_LBA], 1
-mov	BYTE [disk_N], 1
+mov	WORD [disk_N], 1
 call	disk_read
 
 mov	WORD [disk_buff], 0x8000	; load the second inode
 mov	WORD [disk_LBA], 4		; inode array base address (5th sector)
-mov	BYTE [disk_N], 1
+mov	WORD [disk_N], 1
 call	disk_read
 
-mov	al, BYTE [0x8000 + 64 + 59]	; second inode, offset 59 contains kernel length
-shl	al, 1				; sectors for bios are 512b, but 1024b for fs
+mov	ah, 0x0e
+mov	si, LOAD_MSG
+
+.print_next_char:
+lodsb
+cmp	al, 0
+je	.end
+int	0x10
+jmp	.print_next_char
+.end:
+
+mov	ax, WORD [0x8000 + 64 + 58]	; second inode, offset 58 contains kernel length
+shl	ax, 1				; sectors for bios are 512b, but 1024b for fs
 mov	WORD [disk_buff], KERNEL_ADDRESS
 mov	WORD [disk_LBA], 2 + 2 + 16 + 2	; second file content start address
-mov	BYTE [disk_N], al		; (and the kernel is always the second file)
+mov	WORD [disk_N], ax		; (and the kernel is always the second file)
 call	disk_read
 
 jmp	stage2
@@ -64,9 +75,10 @@ jmp	stage2
 ;16 bits data and includes
 
 BOOT_DRIVE	db 0
+LOAD_MSG	db 'Loading kernel...',0
 
 include '..\boot\print_string.asm'
-include '..\boot\print_hex.asm'
+; include '..\boot\print_hex.asm'
 include '..\boot\disk_read.asm'
 
 ;_____________________________________________________________

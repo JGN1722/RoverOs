@@ -7,7 +7,7 @@
 #define PMM_BLOCK_SIZE 4096
 #define MAX_MEMORY (4 * 1024 * 1024 * 1024)
 #define MAX_BLOCK_NUMBER (MAX_MEMORY / PMM_BLOCK_SIZE)
-#define BITMAP_SIZE (((MAX_BLOCK_NUMBER / 8) * 4 / 5))
+#define BITMAP_SIZE (MAX_BLOCK_NUMBER / 8)
 
 struct memory_map_entry {
 	uint32_t base_low, base_hi;

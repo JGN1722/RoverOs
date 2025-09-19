@@ -39,19 +39,20 @@ def write_inode(index, used, name, ext, num_blocks, data_pointer):
     # Used flag (1 byte)
     inode[0] = 1 if used else 0
     
-    # Name (57 bytes, padded with \x00)
-    name_bytes = name.encode('ascii')[:56]
+    # Name (55 bytes, padded with \x00)
+    name_bytes = name.encode('ascii')[:55]
     inode[1:1 + len(name_bytes)] = name_bytes
     
     # Extension (3 bytes, padded with \x00)
     ext_bytes = ext.encode('ascii')[:3]
-    inode[56:56 + len(ext_bytes)] = ext_bytes
+    inode[55:55 + len(ext_bytes)] = ext_bytes
     
     # Number of blocks (1 byte)
-    if num_blocks > 0xff:
+    if num_blocks * 2 > 0xffff:
         print("Unable to write file wider than 255Kib")
         sys.exit(-1)
-    inode[59] = num_blocks
+    inode[58] = num_blocks & 0x00ff # Little-endian
+    inode[59] = (num_blocks >> 8)
     
     # Data pointer (4 bytes, little-endian)
     struct.pack_into('<I', inode, 60, data_pointer + BOOT_SECTOR_SIZE)

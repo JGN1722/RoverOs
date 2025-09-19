@@ -110,10 +110,12 @@ class ArrayType(Type_):
 		return f'ArrayType(arg={self.arg}, len={self.len})'
 
 class FunctionType(Type_):
-	def __init__(self, args, ret):
+	def __init__(self, args, ret, convention='cdecl', varargs=False):
 		super().__init__()
 		self.args = args
 		self.ret = ret
+		self.convention = convention
+		self.varargs = varargs
 	
 	def weak_compat(self, other):
 		if not isinstance(other, self.__class__):
@@ -154,9 +156,9 @@ class StructType(Type_):
 		return f'StructType(name={self.name})'
 
 class EmptyType(Type_):
-	def make_function(self, args, ret):
+	def make_function(self, args, ret, convention='cdecl', varargs=False):
 		self.__class__ = FunctionType
-		self.__init__(args, ret)
+		self.__init__(args, ret, convention, varargs)
 	
 	def make_array(self, arg, len):
 		self.__class__ = ArrayType

@@ -38,7 +38,7 @@ character_number = 1
 
 # Error functions
 def abort(s):
-	err.abort(s + ' (file' + file_name + ' line' + str(line_number) + ' character' + str(character_number) + ')')
+	err.abort(s + ' (file ' + file_name + ' line ' + str(line_number) + ' character ' + str(character_number) + ')')
 
 def Expected(s):
 	abort("Expected " + s)
