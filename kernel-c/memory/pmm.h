@@ -23,7 +23,7 @@ void bitmap_set(uint32_t block_index, uint8_t value);
 void *palloc();
 void pfree(void *block);
 void enum_memory_map();
-void fill_bitmap();
+uint32_t fill_bitmap();
 void setup_memory(); 
 
 #endif

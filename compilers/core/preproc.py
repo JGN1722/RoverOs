@@ -159,8 +159,6 @@ def DefineDirective():
 	defined_macros[macro_name] = [macro_value,macro_params]
 
 def IncludeFile(new_source_file_name):
-	global lookahead, file_name, line_number, character_number, token, value
-	
 	if new_source_file_name == "":
 		abort("source file not specified")
 	
@@ -190,9 +188,9 @@ def IncludeDirective():
 		Expected("name of file to include (not " + value + ")")
 	
 	file = value
-	RemoveToken()
 	
 	new_stream = IncludeFile(include_directory + file if is_std_file else file)
+	RemoveToken()
 	
 	for i in range(len(new_stream)):
 		token_stream.insert(streampos + i, new_stream[i])
@@ -288,7 +286,7 @@ def WarningDirective():
 	err.warning(warning_string.lstrip())
 
 def BuildString():
-	l,c = line_number, character_number
+	l,c,f = line_number, character_number, file_name
 	MatchRemoveToken(chr(34))
 	string_value = ""
 	while token != chr(34):
@@ -297,12 +295,12 @@ def BuildString():
 		string_value += value
 		RemoveToken()
 	MatchRemoveToken(chr(34))
-	token_stream.insert(streampos, ("s", string_value, file_name, l, c))
+	token_stream.insert(streampos, ("s", string_value, f, l, c))
 	
 	Reload()
 
 def BuildIncludeString():
-	l,c = line_number, character_number
+	l,c,f = line_number, character_number, file_name
 	MatchRemoveToken('<')
 	string_value = ''
 	while token != '>':
@@ -311,7 +309,7 @@ def BuildIncludeString():
 		string_value += value
 		RemoveToken()
 	MatchRemoveToken('>')
-	token_stream.insert(streampos, ('s', string_value, file_name, l, c))
+	token_stream.insert(streampos, ('s', string_value, f, l, c))
 	
 	Reload()
 
@@ -395,6 +393,59 @@ def ExtendMacro(macro_name):
 	
 	RemoveToken()
 
+def BuildNumber():
+	l, c = line_number, character_number
+	if value != '0':
+		return;
+	
+	Next()
+	v = value.lower()
+	
+	if v[0] != 'x' and v[0] != 'b':
+		return
+	
+	# We now established that we're parsing a number with
+	# a specified base (0x... or 0b...)
+	Previous()
+	MatchRemoveToken('0')
+	
+	base = 2 if v[0] == 'b' else 16
+	
+	if v[1:] == '':
+		Expected('Valid numeric value')
+	
+	v = v[1:]
+	
+	n = 0
+	if base == 2:
+		# We're expecting a single number, with only 0 and 1
+		k = 2 ** (len(v) - 1)
+		for c in v:
+			if c != '0' and c != '1':
+				abort(f'Unexpected base 2 digit ({c})')
+			n += k * int(c)
+			k //= 2
+	
+	if base == 16:
+		# Now, it can be an arbitrarily long sequence of
+		# identifiers and numbers, with only hex letters
+		# in the identifiers
+		k = 16 ** (len(v) - 1)
+		for c in v:
+			if IsDigit(c):
+				n += k * int(c)
+				k //= 16
+			elif IsHexDigit(c):
+				o = ord(c)
+				n += k * (o - ord('a') + 10)
+				k //= 16
+			else:
+				abort(f'Unexpected base 16 digit ({c})')
+	
+	RemoveToken()
+	token_stream.insert(streampos, ('0', str(n), file_name, l, c))
+	Reload()
+
 def PreprocessTokenBlock(root_level=True):
 	
 	while not token == "\0":
@@ -408,14 +459,16 @@ def PreprocessTokenBlock(root_level=True):
 			
 			# We need to operate a bit on the token before going to the next:
 			# There can be macros to expand, and newlines to remove
-			if IsBlank(token):
-				RemoveToken()
-			elif value in defined_macros:
+			if value in defined_macros:
 				ExtendMacro(value)
 			elif token == '"':
 				BuildString()
 			elif token == "'":
 				BuildChar()
+			elif value == "0":
+				BuildNumber()
+			elif IsBlank(token):
+				RemoveToken()
 			else:
 				Next()
 		
@@ -428,7 +481,7 @@ def PreprocessTokenBlock(root_level=True):
 		
 		if not token == "\0":
 			if directive == "include": # TODO: add embed, if, elif, else, elifdef, elifndef
-				IncludeDirective()
+				IncludeDirective() # Also, conditional compilation directives do not nest well
 			elif directive == "define":
 				DefineDirective()
 			elif directive == "undef":

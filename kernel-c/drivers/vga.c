@@ -134,7 +134,3 @@ void printf(const char* fmt, ...) {
 		fmt++;
 	}
 }
-
-void sleep() {
-	for (int i = 0; i < 0x2FFFFF; i++);
-}

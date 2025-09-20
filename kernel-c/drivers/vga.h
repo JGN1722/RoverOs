@@ -10,7 +10,6 @@ void clear_screen();
 void scroll();
 void putchar(char* ptr, uint32_t x, uint32_t y, uint8_t attr);
 void printf(const char* fmt, ...);
-void sleep();
 
 #define VIDEO_MEMORY 0xB8000
 #define MAX_ROWS 25

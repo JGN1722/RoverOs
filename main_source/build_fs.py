@@ -49,7 +49,7 @@ def write_inode(index, used, name, ext, num_blocks, data_pointer):
     
     # Number of blocks (1 byte)
     if num_blocks * 2 > 0xffff:
-        print("Unable to write file wider than 255Kib")
+        print("Unable to write file wider than 4Mib")
         sys.exit(-1)
     inode[58] = num_blocks & 0x00ff # Little-endian
     inode[59] = (num_blocks >> 8)

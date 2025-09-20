@@ -903,7 +903,7 @@ def CompileFunctionCall(node):
 		i -= 1
 	
 	if len(call_args) != len(t.arg.args) and not t.arg.varargs:
-		abort("wrong number of arguments while calling " + name + ": " + str(len(call_args)) + " instead of " + str(len(t.arg.args)))
+		abort("wrong number of arguments: " + str(len(call_args)) + " instead of " + str(len(t.arg.args)))
 	
 	cg.CallMain()
 	
@@ -1003,6 +1003,8 @@ def CompileVariableRead(node):
 		abort('Cannot load a structured type here')
 	if not isinstance(t.arg, ctypes.FunctionType):
 		t = t.arg
+		if isinstance(t, ctypes.ArrayType): # Decay array to ptr
+			return ctypes.PointerType(arg=t.arg)
 		cg.DereferenceMain(GetTypeSize(t))
 	return t
 

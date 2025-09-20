@@ -10,7 +10,6 @@
 
 // Memory
 #include "..\kernel-c\memory\pmm.c"
-#include "..\kernel-c\memory\vmm.c"
 
 // TODO: error handling
 void init_component(char *msg, void (*fptr)(void)) {
@@ -28,7 +27,26 @@ int main() {
 	
 	init_component("Setting up interrupts... ", setup_interrupts);
 	init_component("Setting up memory...", setup_memory);
-	init_component("Setting up virtual memory...", setup_vmemory);
+	
+	printf("Testing memory:\r\n");
+	enum_memory_map();
+	
+	void *ptr1 = palloc(), *ptr2 = palloc();
+	printf("should print 00100000 00101000: %d %d\r\n", ptr1, ptr2);
+	
+	printf("should print 01 01: %c %c\r\n", bitmap_get(0x00), bitmap_get(0x01));
+	pfree(0x00);
+	pfree(PMM_BLOCK_SIZE);
+	printf("should print 00 00: %c %c\r\n", bitmap_get(0x00), bitmap_get(0x01));
+	
+	uint8_t a = bitmap_get(0x2A);
+	bitmap_set(0x2A, 1);
+	uint8_t b = bitmap_get(0x2A);
+	bitmap_set(0x2A, 1);
+	uint8_t c = bitmap_get(0x2A);
+	bitmap_set(0x2A, 0);
+	uint8_t d = bitmap_get(0x2A);
+	printf("should print 01 01 01 00: %c %c %c %c\r\n", a, b, c, d);
 	
 	PIC_mask(0xfd, 0xff); // Enable the keyboard only
 	

@@ -65,9 +65,10 @@ void enum_memory_map() {
 	}
 }
 
-void fill_bitmap() {
+uint32_t fill_bitmap() {
 	memory_map_entry *entry = MEM_MAP_ENTRIES_START;
 	uint32_t entry_count = *(uint32_t *)MEM_MAP_ADDRESS;
+	uint32_t byte_count = 0;
 	
 	for (uint32_t i = 0; i < BITMAP_SIZE; i++) {
 		memory_bitmap[i] = 0xff;
@@ -83,6 +84,7 @@ void fill_bitmap() {
 			uint32_t len        = entry->len_low  / PMM_BLOCK_SIZE;
 			
 			for (i = 0; i < len; i++) {
+				if (i >= 0x100) byte_count++;
 				bitmap_set(base_block + i, false);
 			}
 		}
@@ -95,8 +97,11 @@ void fill_bitmap() {
 	for (i = 0; i < 0x100; i++) {
 		bitmap_set(i, true);
 	}
+	
+	return byte_count * PMM_BLOCK_SIZE;
 }
 
 void setup_memory() {
-	fill_bitmap();
+	uint32_t detected_mem = fill_bitmap();
+	printf("(detected 0x%d usable bytes)", detected_mem);
 }
