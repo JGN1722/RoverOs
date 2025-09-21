@@ -74,7 +74,11 @@ def CanCastImplicitly(t, dst):
 		return True
 	elif isinstance(t, ctypes.NumberType) and isinstance(dst, ctypes.PointerType):
 		return True
-	elif isinstance(t, ctypes.PointerType) and isinstance(dst, ctypes.PointerType) and isinstance(t.arg, ctypes.VoidType):
+	elif isinstance(t, ctypes.PointerType) and isinstance(dst, ctypes.NumberType):
+		return True
+	elif isinstance(t, ctypes.PointerType) and isinstance(t.arg, ctypes.VoidType) and isinstance(dst, ctypes.PointerType):
+		return True
+	elif isinstance(t, ctypes.PointerType) and isinstance(dst, ctypes.PointerType) and isinstance(dst.arg, ctypes.VoidType):
 		return True
 	return False
 
@@ -128,7 +132,7 @@ def CompileGlobalDecl(node):
 			cg.AlignData(a.arguments[0])
 	
 	if node.children != []:
-		if not isinstance(t, ctypes.NumberType):
+		if not isinstance(t, ctypes.NumberType) and not isinstance(t, ctypes.PointerType):
 			abort('Cannot initialize a non-number variable')
 		if node.children[0].type != 'Number':
 			abort('Initializer element is not constant')
@@ -882,7 +886,7 @@ def CompileFunctionCall(node):
 	call_args = node.children[1].children
 	call_args.reverse() # We use cdecl, so arguments are pushed in reverse
 	# TODO: maybe it's not in stdcall ?
-	#	And would that require the entire argument access scheme for stdcall ?
+	#	And would that require rewriting the entire argument access scheme for stdcall ?
 	
 	for child in call_args:
 		arg_types.append(CompileExpression(child))
@@ -896,10 +900,14 @@ def CompileFunctionCall(node):
 	
 	arg_list = t.arg.args
 	i = len(arg_list) - 1
+	if t.arg.varargs:
+		i += len(call_args) - len(arg_list)
 	for arg_t in arg_types:
-		if i >= 0:
-			if arg_t != arg_list[i]['type'] and not CanCastImplicitly(arg_t, arg_list[i]['type']):
-				abort(f'wrong type of argument {i}')
+		if i >= len(arg_list):
+			i -= 1
+			continue
+		if arg_t != arg_list[i]['type'] and not CanCastImplicitly(arg_t, arg_list[i]['type']):
+			abort(f'wrong type of argument {i}')
 		i -= 1
 	
 	if len(call_args) != len(t.arg.args) and not t.arg.varargs:

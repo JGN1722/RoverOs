@@ -1486,14 +1486,447 @@ mov cr3, eax
 MOV	esp, ebp
 POP	ebp
 RET	0
+V_get_page_table_vaddr:
+PUSH	ebp
+MOV	ebp, esp
+MOV	eax, DWORD [ebp - (-8)]
+SHL	eax, 12
+ADD	eax, 4290772992
+@@:
+MOV	esp, ebp
+POP	ebp
+RET	0
+V_get_page_table_paddr:
+PUSH	ebp
+MOV	ebp, esp
+PUSHD	V_page_directory
+MOV	eax, DWORD [ebp - (-8)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+MOV	eax, 4294963200
+AND	DWORD [esp], eax
+POP	eax
+@@:
+MOV	esp, ebp
+POP	ebp
+RET	0
+V_map_virtual_to_physical:
+PUSH	ebp
+MOV	ebp, esp
+MOV	eax, DWORD [ebp - (-8)]
+SHR	eax, 22
+PUSHD	eax
+MOV	eax, 1023
+AND	DWORD [esp], eax
+MOV	eax, DWORD [ebp - (-8)]
+SHR	eax, 12
+PUSHD	eax
+MOV	eax, 1023
+AND	DWORD [esp], eax
+MOV	eax, DWORD [ebp - (4)]
+CMP	eax, 1023
+JNE	L110
+MOV	eax, 0
+JMP	@f
+L110:
+L109:
+PUSHD	V_page_directory
+MOV	eax, DWORD [ebp - (4)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+MOV	eax, 1
+AND	DWORD [esp], eax
+POP	eax
+test	eax, eax
+setz	al
+and	eax, 0xff
+CMP	eax, 0
+JE	L112
+CALL	V_palloc
+PUSHD	eax
+MOV	eax, 1
+OR	DWORD [esp], eax
+MOV	eax, 2
+OR	DWORD [esp], eax
+PUSHD	V_page_directory
+MOV	eax, DWORD [ebp - (4)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+POP	ebx
+MOV	DWORD [eax], ebx
+PUSHD	DWORD [ebp - (4)]
+CALL	V_get_page_table_vaddr
+ADD	esp, 4
+PUSHD	eax
+PUSHD	0
+L113:
+MOV	eax, DWORD [ebp - (16)]
+CMP	eax, 1024
+JAE	L114
+PUSHD	2
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (16)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+POP	ebx
+MOV	DWORD [eax], ebx
+L115:
+MOV	eax, DWORD [ebp - (16)]
+INC	eax
+MOV	DWORD [ebp - (16)], eax
+JMP	L113
+L114:
+ADD	esp, 8
+L112:
+L111:
+PUSHD	DWORD [ebp - (4)]
+CALL	V_get_page_table_vaddr
+ADD	esp, 4
+PUSHD	eax
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (8)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+MOV	eax, 1
+AND	DWORD [esp], eax
+POP	eax
+CMP	eax, 0
+JE	L117
+MOV	eax, 0
+JMP	@f
+L117:
+L116:
+PUSHD	DWORD [ebp - (-12)]
+MOV	eax, 4294963200
+AND	DWORD [esp], eax
+MOV	eax, 1
+OR	DWORD [esp], eax
+MOV	eax, 2
+OR	DWORD [esp], eax
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (8)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+POP	ebx
+MOV	DWORD [eax], ebx
+CALL	V_invalidate_TLB
+MOV	eax, 1
+@@:
+MOV	esp, ebp
+POP	ebp
+RET	0
+V_unmap_vaddr:
+PUSH	ebp
+MOV	ebp, esp
+MOV	eax, DWORD [ebp - (-8)]
+SHR	eax, 22
+PUSHD	eax
+MOV	eax, 1023
+AND	DWORD [esp], eax
+MOV	eax, DWORD [ebp - (-8)]
+SHR	eax, 12
+PUSHD	eax
+MOV	eax, 1023
+AND	DWORD [esp], eax
+PUSHD	V_page_directory
+MOV	eax, DWORD [ebp - (4)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+MOV	eax, 1
+AND	DWORD [esp], eax
+POP	eax
+test	eax, eax
+setz	al
+and	eax, 0xff
+CMP	eax, 0
+JE	L119
+MOV	eax, 0
+JMP	@f
+L119:
+L118:
+PUSHD	DWORD [ebp - (4)]
+CALL	V_get_page_table_vaddr
+ADD	esp, 4
+PUSHD	eax
+PUSHD	2
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (8)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+POP	ebx
+MOV	DWORD [eax], ebx
+PUSHD	0
+L120:
+MOV	eax, DWORD [ebp - (16)]
+CMP	eax, 1024
+JAE	L121
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (16)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+MOV	eax, 1
+AND	DWORD [esp], eax
+POP	eax
+CMP	eax, 0
+JE	L124
+MOV	eax, 0
+JMP	@f
+L124:
+L123:
+L122:
+MOV	eax, DWORD [ebp - (16)]
+INC	eax
+MOV	DWORD [ebp - (16)], eax
+JMP	L120
+L121:
+PUSHD	DWORD [ebp - (4)]
+CALL	V_get_page_table_paddr
+ADD	esp, 4
+PUSHD	eax
+CALL	V_pfree
+ADD	esp, 4
+CALL	V_invalidate_TLB
+@@:
+MOV	esp, ebp
+POP	ebp
+RET	0
+V_set_page_flags:
+PUSH	ebp
+MOV	ebp, esp
+MOV	eax, DWORD [ebp - (-8)]
+SHR	eax, 22
+PUSHD	eax
+MOV	eax, 1023
+AND	DWORD [esp], eax
+MOV	eax, DWORD [ebp - (-8)]
+SHR	eax, 12
+PUSHD	eax
+MOV	eax, 1023
+AND	DWORD [esp], eax
+PUSHD	V_page_directory
+MOV	eax, DWORD [ebp - (4)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+MOV	eax, 1
+AND	DWORD [esp], eax
+POP	eax
+test	eax, eax
+setz	al
+and	eax, 0xff
+CMP	eax, 0
+JE	L126
+MOV	eax, 0
+JMP	@f
+L126:
+L125:
+PUSHD	DWORD [ebp - (4)]
+CALL	V_get_page_table_vaddr
+ADD	esp, 4
+PUSHD	eax
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (8)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+PUSHD	DWORD [ebp - (-12)]
+MOV	eax, 4095
+AND	DWORD [esp], eax
+POP	eax
+OR	DWORD [esp], eax
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (8)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+POP	ebx
+MOV	DWORD [eax], ebx
+@@:
+MOV	esp, ebp
+POP	ebp
+RET	0
+V_clear_page_flags:
+PUSH	ebp
+MOV	ebp, esp
+MOV	eax, DWORD [ebp - (-8)]
+SHR	eax, 22
+PUSHD	eax
+MOV	eax, 1023
+AND	DWORD [esp], eax
+MOV	eax, DWORD [ebp - (-8)]
+SHR	eax, 12
+PUSHD	eax
+MOV	eax, 1023
+AND	DWORD [esp], eax
+PUSHD	V_page_directory
+MOV	eax, DWORD [ebp - (4)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+MOV	eax, 1
+AND	DWORD [esp], eax
+POP	eax
+test	eax, eax
+setz	al
+and	eax, 0xff
+CMP	eax, 0
+JE	L128
+MOV	eax, 0
+JMP	@f
+L128:
+L127:
+PUSHD	DWORD [ebp - (4)]
+CALL	V_get_page_table_vaddr
+ADD	esp, 4
+PUSHD	eax
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (8)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+PUSHD	DWORD [ebp - (-12)]
+MOV	eax, 4095
+AND	DWORD [esp], eax
+POP	eax
+NOT	eax
+AND	DWORD [esp], eax
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (8)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+POP	ebx
+MOV	DWORD [eax], ebx
+@@:
+MOV	esp, ebp
+POP	ebp
+RET	0
+V_get_page_flags:
+PUSH	ebp
+MOV	ebp, esp
+MOV	eax, DWORD [ebp - (-8)]
+SHR	eax, 22
+PUSHD	eax
+MOV	eax, 1023
+AND	DWORD [esp], eax
+MOV	eax, DWORD [ebp - (-8)]
+SHR	eax, 12
+PUSHD	eax
+MOV	eax, 1023
+AND	DWORD [esp], eax
+PUSHD	V_page_directory
+MOV	eax, DWORD [ebp - (4)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+MOV	eax, 1
+AND	DWORD [esp], eax
+POP	eax
+test	eax, eax
+setz	al
+and	eax, 0xff
+CMP	eax, 0
+JE	L130
+MOV	eax, 0
+JMP	@f
+L130:
+L129:
+PUSHD	DWORD [ebp - (4)]
+CALL	V_get_page_table_vaddr
+ADD	esp, 4
+PUSHD	eax
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (8)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+MOV	eax, 4095
+AND	DWORD [esp], eax
+POP	eax
+@@:
+MOV	esp, ebp
+POP	ebp
+RET	0
+V_translate_vaddr:
+PUSH	ebp
+MOV	ebp, esp
+MOV	eax, DWORD [ebp - (-8)]
+SHR	eax, 22
+PUSHD	eax
+MOV	eax, 1023
+AND	DWORD [esp], eax
+MOV	eax, DWORD [ebp - (-8)]
+SHR	eax, 12
+PUSHD	eax
+MOV	eax, 1023
+AND	DWORD [esp], eax
+PUSHD	V_page_directory
+MOV	eax, DWORD [ebp - (4)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+MOV	eax, 1
+AND	DWORD [esp], eax
+POP	eax
+test	eax, eax
+setz	al
+and	eax, 0xff
+CMP	eax, 0
+JE	L132
+MOV	eax, 0
+JMP	@f
+L132:
+L131:
+PUSHD	DWORD [ebp - (4)]
+CALL	V_get_page_table_vaddr
+ADD	esp, 4
+PUSHD	eax
+PUSHD	DWORD [ebp - (12)]
+MOV	eax, DWORD [ebp - (8)]
+SHL	eax, 2
+ADD	DWORD [esp], eax
+POP	eax
+PUSHD	DWORD [eax]
+PUSHD	DWORD [ebp - (-8)]
+MOV	eax, 4095
+AND	DWORD [esp], eax
+POP	eax
+ADD	eax, 4294963200
+AND	DWORD [esp], eax
+POP	eax
+@@:
+MOV	esp, ebp
+POP	ebp
+RET	0
 V_setup_vmemory:
 PUSH	ebp
 MOV	ebp, esp
 PUSHD	0
-L109:
+L133:
 MOV	eax, DWORD [ebp - (4)]
 CMP	eax, 1024
-JAE	L110
+JAE	L134
 PUSHD	2
 PUSHD	V_page_directory
 MOV	eax, DWORD [ebp - (4)]
@@ -1502,20 +1935,31 @@ ADD	DWORD [esp], eax
 POP	eax
 POP	ebx
 MOV	DWORD [eax], ebx
-L111:
+L135:
 MOV	eax, DWORD [ebp - (4)]
 INC	eax
 MOV	DWORD [ebp - (4)], eax
-JMP	L109
-L110:
+JMP	L133
+L134:
+PUSHD	V_page_directory
+MOV	eax, 4294963200
+AND	DWORD [esp], eax
+MOV	eax, 1
+OR	DWORD [esp], eax
+MOV	eax, 2
+OR	DWORD [esp], eax
+MOV	eax, V_page_directory
+ADD	eax, 4092
+POP	ebx
+MOV	DWORD [eax], ebx
 CALL	V_palloc
 PUSHD	eax
 MOV	eax, 0
 MOV	DWORD [ebp - (4)], eax
-L112:
+L136:
 MOV	eax, DWORD [ebp - (4)]
 CMP	eax, 1024
-JAE	L113
+JAE	L137
 MOV	eax, DWORD [ebp - (4)]
 SHL	eax, 12
 PUSHD	eax
@@ -1530,12 +1974,12 @@ ADD	DWORD [esp], eax
 POP	eax
 POP	ebx
 MOV	DWORD [eax], ebx
-L114:
+L138:
 MOV	eax, DWORD [ebp - (4)]
 INC	eax
 MOV	DWORD [ebp - (4)], eax
-JMP	L112
-L113:
+JMP	L136
+L137:
 PUSHD	DWORD [ebp - (8)]
 MOV	eax, 1
 OR	DWORD [esp], eax
@@ -1547,8 +1991,6 @@ MOV	DWORD [eax], ebx
 PUSHD	V_page_directory
 CALL	V_enable_paging
 ADD	esp, 4
-MOV	eax, 4194303
-MOVZX	eax, BYTE [eax]
 @@:
 MOV	esp, ebp
 POP	ebp
@@ -1560,7 +2002,7 @@ PUSHD	15
 CALL	V_set_terminal_color
 ADD	esp, 4
 PUSHD	DWORD [ebp - (-8)]
-PUSHD	L115
+PUSHD	L139
 CALL	V_printf
 ADD	esp, 8
 MOV	eax, DWORD [ebp - (-12)]
@@ -1568,7 +2010,7 @@ CALL	eax
 PUSHD	2
 CALL	V_set_terminal_color
 ADD	esp, 4
-PUSHD	L116
+PUSHD	L140
 CALL	V_printf
 ADD	esp, 4
 PUSHD	15
@@ -1582,19 +2024,19 @@ V_main:
 PUSH	ebp
 MOV	ebp, esp
 CALL	V_init_vga
-PUSHD	L117
+PUSHD	L141
 CALL	V_printf
 ADD	esp, 4
 PUSHD	V_setup_interrupts
-PUSHD	L118
+PUSHD	L142
 CALL	V_init_component
 ADD	esp, 8
 PUSHD	V_setup_memory
-PUSHD	L119
+PUSHD	L143
 CALL	V_init_component
 ADD	esp, 8
 PUSHD	V_setup_vmemory
-PUSHD	L120
+PUSHD	L144
 CALL	V_init_component
 ADD	esp, 8
 PUSHD	255
@@ -1602,13 +2044,13 @@ PUSHD	253
 CALL	V_PIC_mask
 ADD	esp, 8
 sti
-PUSHD	L121
+PUSHD	L145
 CALL	V_printf
 ADD	esp, 4
-L122:
+L146:
 hlt
-JMP	L122
-L123:
+JMP	L146
+L147:
 MOV	eax, 0
 @@:
 MOV	esp, ebp
@@ -1638,10 +2080,10 @@ L91 db 37, 100, 37, 100, 9, 37, 100, 37, 100, 9, 37, 100, 9, 37, 100, 13, 10, 0
 L108 db 40, 100, 101, 116, 101, 99, 116, 101, 100, 32, 48, 120, 37, 100, 32, 117, 115, 97, 98, 108, 101, 32, 98, 121, 116, 101, 115, 41, 0
 align 4096
 V_page_directory rb 4096
-L115 db 32, 43, 32, 37, 115, 0
-L116 db 32, 91, 32, 79, 75, 32, 93, 13, 10, 0
-L117 db 73, 110, 105, 116, 105, 97, 108, 105, 122, 105, 110, 103, 32, 116, 104, 101, 32, 115, 121, 115, 116, 101, 109, 46, 46, 46, 13, 10, 0
-L118 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 105, 110, 116, 101, 114, 114, 117, 112, 116, 115, 46, 46, 46, 32, 0
-L119 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 109, 101, 109, 111, 114, 121, 46, 46, 46, 0
-L120 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 118, 105, 114, 116, 117, 97, 108, 32, 109, 101, 109, 111, 114, 121, 46, 46, 46, 0
-L121 db 97, 108, 108, 32, 100, 111, 110, 101, 44, 32, 104, 97, 110, 103, 105, 110, 103, 13, 10, 0
+L139 db 32, 43, 32, 37, 115, 0
+L140 db 32, 91, 32, 79, 75, 32, 93, 13, 10, 0
+L141 db 73, 110, 105, 116, 105, 97, 108, 105, 122, 105, 110, 103, 32, 116, 104, 101, 32, 115, 121, 115, 116, 101, 109, 46, 46, 46, 13, 10, 0
+L142 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 105, 110, 116, 101, 114, 114, 117, 112, 116, 115, 46, 46, 46, 32, 0
+L143 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 109, 101, 109, 111, 114, 121, 46, 46, 46, 0
+L144 db 83, 101, 116, 116, 105, 110, 103, 32, 117, 112, 32, 118, 105, 114, 116, 117, 97, 108, 32, 109, 101, 109, 111, 114, 121, 46, 46, 46, 0
+L145 db 97, 108, 108, 32, 100, 111, 110, 101, 44, 32, 104, 97, 110, 103, 105, 110, 103, 13, 10, 0
