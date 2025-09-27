@@ -1,6 +1,6 @@
 KERNEL_ADDRESS = 0x8000
 STACK_ADDRESS = 0x7c00
-MEM_MAP_ADDRESS = 0x500
+MEM_MAP_ADDRESS = 0x4000 ; TODO: move the paging structures
 MEM_MAP_ENTRIES_START = MEM_MAP_ADDRESS + 4
 
 ; a simple boot sector
@@ -183,7 +183,44 @@ mov	gs, ax
 mov	ebp, STACK_ADDRESS
 mov	esp, ebp
 
-jmp	CODE_SEG:KERNEL_ADDRESS ; jump to the kernel code
+higher_half:
+; Setup placeholder paging structures at 0x00002000
+mov	ecx, 0x800
+mov	eax, 0x00000002
+mov	edi, 0x00002000
+rep	stosd
+
+; Identity map the first 4Mib
+mov	ecx, 0x400
+mov	edi, 0x00003000
+mov	eax, 0x00000003
+.fill_pt:
+mov	DWORD [edi], eax
+add	eax, 0x1000
+add	edi, 4
+loop	.fill_pt
+
+mov	DWORD [0x00002000], 0x00003003
+mov	DWORD [0x00002c00], 0x00003003
+mov	DWORD [0x00002ffc], 0x00002003 ; recursive mapping
+
+mov	eax, 0x00002000
+mov	cr3, eax
+
+mov	eax, cr0
+or	eax, 0x80000000
+mov	cr0, eax
+
+jmp	CODE_SEG:.continue + 0xc0000000
+
+.continue:
+mov	DWORD [0x00002000], 0x00000002
+
+add	ebp, 0xc0000000
+add	esp, 0xc0000000
+
+; jump to the kernel code
+jmp	CODE_SEG:KERNEL_ADDRESS + 0xc0000000
 
 ;_____________________________________________________________
 ;padding

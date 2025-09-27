@@ -1,7 +1,7 @@
 #ifndef _PMM_H
 #define _PMM_H
 
-#define MEM_MAP_ADDRESS 0x500
+#define MEM_MAP_ADDRESS 0xc0004000
 #define MEM_MAP_ENTRIES_START (MEM_MAP_ADDRESS + 4)
 
 #define PMM_BLOCK_SIZE 4096

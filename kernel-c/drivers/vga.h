@@ -11,7 +11,7 @@ void scroll();
 void putchar(char* ptr, uint32_t x, uint32_t y, uint8_t attr);
 void printf(const char* fmt, ...);
 
-#define VIDEO_MEMORY 0xB8000
+#define VIDEO_MEMORY 0xc00B8000
 #define MAX_ROWS 25
 #define MAX_COLS 80
 #define REG_SCREEN_CTRL 0x3D4

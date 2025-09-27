@@ -740,27 +740,17 @@ def IncSequence():
 def UnaryFactor():
 	inc_sequence = IncSequence()
 	if inc_sequence != "":
-		node = ASTNode(type_="PrefixUnaryOp",value=inc_sequence,children=[ArrayFactor()])
+		node = ASTNode(type_="PrefixUnaryOp",value=inc_sequence,children=[FuncFactor()])
 	else:
-		node = ArrayFactor()
+		node = FuncFactor()
 	
 	inc_sequence = IncSequence()
 	if inc_sequence != "":
 		return ASTNode(type_="PostfixUnaryOp",value=inc_sequence,children=[node])
 	return node
 
-def ArrayFactor():
-	node = FuncFactor()
-	
-	if token == '[':
-		Next()
-		node = ASTNode(type_='ArrayAccess', value=None, children=[node, Expression()])
-		MatchString(']')
-	
-	return node
-
 def FuncFactor():
-	node = StructFactor()
+	node = DataStructFactor()
 	
 	if token == '(':
 		node = ASTNode(type_='FunctionCall', value=None, children=[node, ArgumentListCall()])
@@ -768,10 +758,10 @@ def FuncFactor():
 	
 	return node
 
-def StructFactor():
+def DataStructFactor():
 	node = Factor()
 	
-	while token in ['.', '-']:
+	while token in ['.', '-', '[']:
 		if token == '.':
 			Next()
 			node = ASTNode(type_='StructMemberAccess', value=None, children=[node, Factor()])
@@ -782,6 +772,10 @@ def StructFactor():
 				return node
 			Next()
 			node = ASTNode(type_='StructPointerMemberAccess', value=None, children=[node, Factor()])
+		if token == '[':
+			Next()
+			node = ASTNode(type_='ArrayAccess', value=None, children=[node, Expression()])
+			MatchString(']')
 	
 	return node
 
@@ -820,10 +814,16 @@ def Factor():
 		Next()
 		if name == 'sizeof':
 			MatchString('(')
-			base_t = ParseBaseType()
-			new_t = DeclPart(base_t, abstract=True)['type']
+			if DoesTypeFollow():
+				base_t = ParseBaseType()
+				new_t = DeclPart(base_t, abstract=True)['type']
+				node = ASTNode(type_='SizeOf', value=new_t)
+			elif token == 'x':
+				node = ASTNode(type_='SizeOfVar', value=value)
+				Next()
+			else:
+				Expected('Type or variable')
 			MatchString(')')
-			node = ASTNode(type_='SizeOf', value=new_t)
 		else:
 			node = ASTNode(type_='Variable', value=name)
 	elif token == '*':

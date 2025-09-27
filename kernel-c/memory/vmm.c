@@ -2,15 +2,9 @@
 
 [[align(4096)]] uint32_t page_directory[1024];
 
-void enable_paging(uint32_t *page_directory) {
-	// Load the page directory
+void load_page_dir(uint32_t *page_directory) {
 	asm("mov eax, DWORD [ebp + 8]");
 	asm("mov cr3, eax");
-	
-	// Actually enable paging
-	asm("mov eax, cr0");
-	asm("or eax, 0x80000000");
-	asm("mov cr0, eax");
 }
 
 void invalidate_TLB() {
@@ -144,12 +138,25 @@ void setup_vmemory() {
 	// Set up the recursive mapping
 	page_directory[1023] = (page_directory & PG_ADDR_MASK) | PG_PRESENT | PG_WRITE;
 	
-	// identity map the first 4 Mib
+	// Map first 4 Mib to the the third Gib, that's where the kernel is
 	uint32_t *page_table = (uint32_t *)(palloc());
-	for (i = 0; i < 1024; i++) {
-		page_table[i] = (i * 0x1000) | PG_PRESENT | PG_WRITE;
-	}
-	page_directory[0] = ((uint32_t)page_table) | PG_PRESENT | PG_WRITE;
 	
-	enable_paging(page_directory);
+	// Here's a bit of a hack, to solve the problem of the page table's physical
+	// address not being mapped. What I'm gonna do is get the bootloader's
+	// page directory, and set the page table address as a page table there.
+	// Then, I can access it using the recursive mapping trick.
+	uint32_t *bootloader_page_dir;
+	asm("mov eax, cr3");
+	asm("mov DWORD [esp], eax");
+	bootloader_page_dir += 0xc0000000; // Convert to virtual address
+	
+	bootloader_page_dir[1] = page_table | PG_PRESENT | PG_WRITE;
+	
+	uint32_t *page_table_vaddr = 0xffc01000;
+	for (i = 0; i < 1024; i++) {
+		page_table_vaddr[i] = (i * 0x1000) | PG_PRESENT | PG_WRITE;
+	}
+	page_directory[0x300] = ((uint32_t)page_table) | PG_PRESENT | PG_WRITE;
+	
+	load_page_dir(page_directory - 0xc0000000);
 }

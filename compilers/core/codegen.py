@@ -27,7 +27,7 @@ def EmitLnData(s):
 def GetFreestandingOutput():
 	global output
 	
-	return "use32\n" + "org " + str(0x8000) + "\n" + "JMP V_main\n" + output + output_data # Return the raw code
+	return "use32\n" + "org " + str(0xc0008000) + "\n" + "JMP V_main\n" + output + output_data # Return the raw code
 
 def GetWindowsOutput():
 	global output, output_data
@@ -185,6 +185,8 @@ def ShlValMain(n):
 		EmitLn("MOV	cl, al")
 		EmitLn("MOV	eax, " + str(n))
 		EmitLn("SHL	eax, cl")
+	else:
+		EmitLn("MOV	eax, 0")
 
 def ShrMainStackTop():
 	EmitLn("MOV	cl, al")
@@ -200,18 +202,29 @@ def ShrValMain(n):
 		EmitLn("MOV	cl, al")
 		EmitLn("MOV	eax, " + str(n))
 		EmitLn("SHR	eax, cl")
+	else:
+		EmitLn("MOV	eax, 0")
 
 def AndMainStackTop():
 	EmitLn("AND	DWORD [esp], eax")
 	EmitLn("POP	eax")
 
+def AndMainVal(n):
+	EmitLn("AND	eax, " + str(n))
+
 def OrMainStackTop():
 	EmitLn("OR	DWORD [esp], eax")
 	EmitLn("POP	eax")
 
+def OrMainVal(n):
+	EmitLn("OR	eax, " + str(n))
+
 def XorMainStackTop():
 	EmitLn("XOR	DWORD [esp], eax")
 	EmitLn("POP	eax")
+
+def XorMainVal(n):
+	EmitLn("XOR	eax, " + str(n))
 
 def MainToStackTop():
 	EmitLn("MOV	DWORD [esp], eax")

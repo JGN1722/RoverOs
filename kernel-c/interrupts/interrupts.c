@@ -14,14 +14,13 @@ void build_idt() {
 	asm("lidt [eax]");
 }
 
+// TODO: take the GDT into account
 void install_interrupt_handler(uint32_t i, void (*fptr)()) {
-	idt_entry_t *ptr = &(idt[i]);
-	
-	ptr->isr_low = fptr & 0xffff; // lower 16 bits
-	ptr->kernel_cs = 0x08;
-	ptr->attributes = 0x8E;
-	ptr->isr_high = fptr >> 16; // upper 16 bits
-	ptr->reserved = 0;
+	idt[i].isr_low = fptr & 0xffff; // lower 16 bits
+	idt[i].kernel_cs = 0x08;
+	idt[i].attributes = 0x8E;
+	idt[i].isr_high = fptr >> 16; // upper 16 bits
+	idt[i].reserved = 0;
 }
 
 void PIC_remap(uint32_t offset1, uint32_t offset2) {

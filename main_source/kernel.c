@@ -5,7 +5,8 @@
 // Drivers
 #include "..\kernel-c\drivers\vga.c"
 
-// Interrupts
+// Descriptor tables
+#include "..\kernel-c\gdt\gdt.c"
 #include "..\kernel-c\interrupts\interrupts.c"
 
 // Memory
@@ -26,6 +27,7 @@ int main() {
 	init_vga();
 	printf("Initializing the system...\r\n");
 	
+	init_component("Setting up Global Descriptor Table... ", setup_gdt);
 	init_component("Setting up interrupts... ", setup_interrupts);
 	init_component("Setting up memory...", setup_memory);
 	init_component("Setting up virtual memory...", setup_vmemory);

@@ -24,7 +24,7 @@
 
 // The three other flags are undefined
 
-void enable_paging(uint32_t *page_directory);
+void load_page_dir(uint32_t *page_directory);
 void invalidate_TLB();
 uint32_t *get_page_table_vaddr(uint32_t i);
 uint32_t *get_page_table_paddr(uint32_t i);

@@ -482,6 +482,8 @@ def CompileExpression(node):
 		return CompileNumber(node)
 	elif node.type == 'SizeOf':
 		return CompileSizeOf(node)
+	elif node.type == 'SizeOfVar':
+		return CompileSizeOfVar(node)
 	elif node.type == 'TypeCast':
 		return CompileTypecast(node)
 
@@ -623,23 +625,32 @@ def CompileShl(node):
 
 def CompileBitwiseAnd(node):
 	t1 = CompileExpression(node.children[0])
-	cg.PushMain()
-	t2 = CompileExpression(node.children[1])
-	cg.AndMainStackTop()
+	if node.children[1].type == 'Number':
+		cg.AndMainVal(node.children[1].value)
+	else:
+		cg.PushMain()
+		t2 = CompileExpression(node.children[1])
+		cg.AndMainStackTop()
 	return ctypes.NumberType(size=4)
 
 def CompileBitwiseOr(node):
 	t1 = CompileExpression(node.children[0])
-	cg.PushMain()
-	t2 = CompileExpression(node.children[1])
-	cg.OrMainStackTop()
+	if node.children[1].type == 'Number':
+		cg.OrMainVal(node.children[1].value)
+	else:
+		cg.PushMain()
+		t2 = CompileExpression(node.children[1])
+		cg.OrMainStackTop()
 	return ctypes.NumberType(size=4)
 
 def CompileXor(node):
 	t1 = CompileExpression(node.children[0])
-	cg.PushMain()
-	t2 = CompileExpression(node.children[1])
-	cg.XorMainStackTop()
+	if node.children[1].type == 'Number':
+		cg.XorMainVal(node.children[1].value)
+	else:
+		cg.PushMain()
+		t2 = CompileExpression(node.children[1])
+		cg.XorMainStackTop()
 	return ctypes.NumberType(size=4)
 
 def CompileAnd(node):
@@ -873,6 +884,21 @@ def CompileSizeOf(node):
 	n = GetTypeSize(node.value)
 	if n == 0:
 		abort('Unknown storage size')
+	cg.LoadNumber(n)
+	return ctypes.NumberType(size=4)
+
+def CompileSizeOfVar(node):
+	name = node.value
+	
+	d = ident_ST.get_symbol_value(name)
+	if not d:
+		Undefined(name)
+	t = d['type']
+	n = GetTypeSize(t)
+	
+	if n == 0:
+		abort('Unknow storage size')
+	
 	cg.LoadNumber(n)
 	return ctypes.NumberType(size=4)
 
