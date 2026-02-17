@@ -38,14 +38,6 @@ if not %errorlevel% == 0 (
 )
 echo.
 
-:: create the image
-echo ======= IMAGE FILE =======
-copy /b image\boot_sect.bin+image\fs.bin image\image.bin
-if not %errorlevel% == 0 (
-	goto _l_end
-)
-echo.
-
 :: create the bochs script
 echo floppya: 1_44=%~dp0image\image.bin, status=inserted > image\bochsrc
 echo boot: a >> image\bochsrc

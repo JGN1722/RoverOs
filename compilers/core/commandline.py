@@ -14,7 +14,7 @@ import core.error as err
 script_directory = ""
 
 # The messages displayed to the user via the command line
-help_message = "RoverC Compiler\n" + "Written for RoverOs\n" + "Author: JGN1722 (Github)\n\n" + "Usage: roverlang.py [--help | --version] [--freestanding] [--test] filename [output_filename]"
+help_message = "RoverC Compiler\n" + "Written for RoverOs\n" + "Author: JGN1722 (Github)\n\n" + "Usage: roverc.py [--help | --version] [--freestanding] [--test] filename [output_filename]"
 version_message = "RoverC Compiler\n" + "Written for RoverOs\n" + "Author: JGN1722 (Github)\n" + "Version: 1.0"
 
 def ParseCommandLine():
@@ -24,9 +24,9 @@ def ParseCommandLine():
 	options = []
 	arguments = []
 	
-	# "w" format indicates that the output will run under windows
-	# "f" format indicates that the output will run on metal, such as when writing OSs
-	format = "w"
+	# 'w' format indicates that the output will run under windows
+	# 'f' format indicates that the output will run on metal, such as when writing OSs
+	format = ''
 	
 	run_tests = False
 	
@@ -34,15 +34,15 @@ def ParseCommandLine():
 	for arg in sys.argv[1:]:
 		
 		# If the argument begins with --, then it's the full name of an option
-		if len(arg) >= 2 and arg[0] + arg[1] == "--":
+		if len(arg) >= 2 and arg[0] + arg[1] == '--':
 			options.append(arg[2:])
 		
 		# If the argument begins with -, then it's the short name of an option
 		# Note that using short names, a user can pass several options at once
-		elif arg[0] == "-":
+		elif arg[0] == '-':
 			for c in arg[1:]:
 				if not IsAlpha(c):
-					abort("Invalid option character: " + c)
+					abort('Invalid option character: ' + c)
 			
 			options.extend(arg[1:])
 		
@@ -64,6 +64,14 @@ def ParseCommandLine():
 			run_tests = True
 		else:
 			abort("Unrecognized option: " + opt)
+	
+	if format == '':
+		if sys.platform.lower().startswith('win'):
+			format = 'w'
+		elif sys.platform.lower().startswith('linux'):
+			format = 'l'
+		else:
+			abort(f'Unsupported platform: {sys.platform}')
 	
 	# The source file is the first argument
 	if len(arguments) >= 1:
