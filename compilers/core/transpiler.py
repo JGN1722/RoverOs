@@ -35,7 +35,7 @@ def Undefined(n):
 	if IsKeyword(n):
 		abort(n + ' is misplaced')
 	else:
-		abort("Undefined variable (" + n + ")")
+		abort("Undefined identifier (" + n + ")")
 
 # A debug routine to dump the AST
 tab_number = 0

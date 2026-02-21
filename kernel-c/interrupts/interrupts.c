@@ -14,10 +14,9 @@ void build_idt() {
 	asm("lidt [eax]");
 }
 
-// TODO: take the GDT into account
 void install_interrupt_handler(uint32_t i, void (*fptr)()) {
 	idt[i].isr_low = fptr & 0xffff; // lower 16 bits
-	idt[i].kernel_cs = 0x08;
+	idt[i].kernel_cs = CODE_SEG;
 	idt[i].attributes = 0x8E;
 	idt[i].isr_high = fptr >> 16; // upper 16 bits
 	idt[i].reserved = 0;

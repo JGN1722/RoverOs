@@ -107,7 +107,14 @@ void putchar(char* ptr, uint32_t x, uint32_t y, uint8_t attr) {
 	}
 }
 
+//uint8_t color_code = 0x0f;
 void printf(const char* fmt, ...) {
+	//uint16_t *ptr = 0xc00B8000 + 24 * 2;
+	//*ptr = (color_code << 8) + 'x';
+	//color_code++;
+	
+	//for (int aaa = 0; aaa < 0x2fffff; aaa++) {}
+	
 	int i = 1;
 	while (*fmt != 0) {
 		if (*fmt == '%') {

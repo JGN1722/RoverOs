@@ -139,10 +139,10 @@ def FormatString(L, s): # If the list of escape sequences is changed, also chang
 	return L + " db " + r
 
 def get_abs_path(path, base_path):
-	if path[:3][1:] == ":\\":
+	if os.path.isabs(path):
 		return os.path.realpath(path)
 	else:
-		return os.path.realpath(base_path + "\\" + path)
+		return os.path.realpath(os.path.join(base_path, path))
 
 def ReadSourceText(path, base_directory):
 	abs_path = get_abs_path(path, base_directory)

@@ -537,6 +537,8 @@ def DeclPart(t, abstract=False):
 		if not index.type == 'Number':
 			Expected('constant numeric expression')
 		l = int(index.value)
+		if l == 0:
+			abort('Cannot declare an array with length 0')
 		
 		MatchString(']')
 		
