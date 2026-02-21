@@ -3,7 +3,6 @@
 RoverOS is a custom operating system designed from entirely from scratch, because I believe we learn the most by reinventing the wheel. And by from scratch, I mean that I am using a self made compiler for a subset of C, and that I'm not using an IDE.  
 
 Because of these added challenges, RoverOs is currently under heavy development, and will be for a while.  
-The project is **still very much active**. I have some debugging to do before I can start writing features again.  
 
 ## Features
 - [x] Custom bootloader
@@ -13,7 +12,7 @@ The project is **still very much active**. I have some debugging to do before I 
 - [ ] Kernel heap
 - [x] Global descriptor table
 - [x] Higher half kernel
-- [ ] Ext2 file system
+- [x] Ext2 file system
 - [ ] Disk driver
 - [ ] Syscalls
 - [ ] Userland
