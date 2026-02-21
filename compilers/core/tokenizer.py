@@ -118,7 +118,6 @@ def SkipInlineComment():
 	next_token_comment() # Skip the second '/' of the comment symbol
 	while not token == "\n":
 		next_token_comment()
-	next_token() # Prepare the terrain for the return to normal lexing
 
 def SkipPrologueComment(main_comment=True):
 	next_token_comment() # Skip the '/' of the comment symbol. The '*' will be skipped in the loop

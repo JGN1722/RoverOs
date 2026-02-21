@@ -207,7 +207,7 @@ class File:
 				if i >= len(self.logical_blocks):
 					break
 				
-				indirect_block[i] = self.logical_blocks[i]
+				indirect_block[i - start_i] = self.logical_blocks[i]
 				count += 1
 				i += 1
 			return indirect_block, i, count
@@ -220,7 +220,7 @@ class File:
 				if i >= len(self.logical_blocks):
 					break
 				
-				indirect[i], i, c = create_indirect_block(i)
+				indirect[i - start_i], i, c = create_indirect_block(i)
 				count += c
 			return indirect, i, count
 		
@@ -232,7 +232,7 @@ class File:
 				if i >= len(self.logical_blocks):
 					break
 				
-				indirect[i], i, c = create_indirect2(i)
+				indirect[i - start_i], i, c = create_indirect2(i)
 				count += c
 			return indirect, i, count
 		
@@ -460,8 +460,8 @@ class FileSystem:
 			if not block[i]:
 				data_block[i * 4:(i + 1) * 4] = struct.pack('<I', 0)
 				continue
-			data_block[i * 4:(i + 1) * 4] = struct.pack('<I', self.linearize_block(block[i]))
-		return self.linearize_block(data_block)
+			data_block[i * 4:(i + 1) * 4] = struct.pack('<I', self.linearize_block(block[i]) + 1)
+		return self.add_block_to_list(data_block)
 	
 	def linearize_data_blocks(self, dir):
 		"""

@@ -129,6 +129,8 @@ ret
 load_next_sect:
 
 movzx	ecx, BYTE [current_block_index]
+cmp	cl, 255
+je	disk_error ; Current arbitrary limitation, gotta look into it
 
 cmp	cx, 12
 jb	.no_indirection
@@ -146,6 +148,8 @@ call	disk_read
 
 ; This calculation is horrible, it's just a quick and dirty fix to commit
 ; before the end of the week. I'll fix it later.
+; Update: I did not commit before the end of the week. In fact, I committed
+; several months later.
 movzx	si, BYTE [current_block_index]
 
 sub	si, 12

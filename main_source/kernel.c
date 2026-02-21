@@ -11,7 +11,7 @@
 
 // Memory
 #include "..\kernel-c\memory\pmm.c"
-// #include "..\kernel-c\memory\vmm.c"
+#include "..\kernel-c\memory\vmm.c"
 
 // TODO: error handling
 void init_component(char *msg, void (*fptr)(void)) {
@@ -29,12 +29,12 @@ int main() {
 	
 	init_component("Setting up Global Descriptor Table...", setup_gdt);
 	init_component("Setting up interrupts...", setup_interrupts);
-	// init_component("Setting up memory...", setup_memory);
-	// init_component("Setting up virtual memory...", setup_vmemory);
+	init_component("Setting up memory...", setup_memory);
+	init_component("Setting up virtual memory...", setup_vmemory);
 	
 	PIC_mask(0xfd, 0xff); // Enable the keyboard only
 	
-	// asm("sti");
+	asm("sti");
 	
 	printf("all done, hanging\r\n");
 	while (1) asm("hlt");

@@ -24,6 +24,14 @@ file_name = ''
 line_number = 0
 character_number = 0
 
+'''
+In C, we're not supposed to be able to use #define that contain other macros
+such as '#define def(x, y) #define x y'. To avoid that, we count how many
+tokens are still coming from an expanded macro before trying to expand any
+more macros.
+'''
+still_in_macro = 0
+
 defined_macros = {
 	'_ROVERC':[[],[]],
 	'_WIN32':[[],[]],
@@ -345,6 +353,7 @@ def BuildChar():
 	Reload()
 
 def ExtendMacro(macro_name):
+	global still_in_macro
 	macro_value = defined_macros[macro_name][0]
 	macro_params = defined_macros[macro_name][1]
 	macro_args = []
@@ -377,6 +386,7 @@ def ExtendMacro(macro_name):
 			abort("Wrong number of arguments when calling macro " + macro_name + ": " + str(len(macro_args)) + " instead of " + str(len(macro_params)))
 	
 	k = 0 # k is the number of tokens of arguments that have been expanded
+	n = 0 # total number of expanded tokens
 	
 	for j in range(len(macro_value)):
 		index = -1
@@ -385,12 +395,15 @@ def ExtendMacro(macro_name):
 				index = i
 		
 		if index == -1:
+			n += 1
 			token_stream.insert(streampos + j + k + 1, (macro_value[j][0], macro_value[j][1], file_name, line_number, character_number))
 		else:
 			for l in range(len(macro_args[index])):
 				token_stream.insert(streampos + j + k + l + 1, (macro_args[index][l][0], macro_args[index][l][1], file_name, line_number, character_number))
 			k += len(macro_args[index]) - 1
+			n += len(macro_args[index]) - 1
 	
+	still_in_macro += n + 1
 	RemoveToken()
 
 def BuildNumber():
@@ -447,11 +460,11 @@ def BuildNumber():
 	Reload()
 
 def PreprocessTokenBlock(root_level=True):
+	global still_in_macro
 	
 	while not token == "\0":
-		
 		# Loop until we encounter a directive or a null token
-		while token != "#":
+		while token != "#" or still_in_macro != 0:
 			if token == "\0":
 				if not root_level:
 					Expected("#endif directive")
@@ -471,6 +484,9 @@ def PreprocessTokenBlock(root_level=True):
 				RemoveToken()
 			else:
 				Next()
+			
+			if still_in_macro:
+				still_in_macro -= 1
 		
 		Next()
 		directive = value

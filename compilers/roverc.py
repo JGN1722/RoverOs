@@ -68,8 +68,8 @@ if __name__ == "__main__":
 	source_file, output_file, format, run_tests = commandline.ParseCommandLine()
 	
 	# Read the source
-	if source_file == "":
-		abort("source file not specified")
+	if source_file == '':
+		abort('source file not specified')
 	source_text = ReadSourceText(source_file, script_directory)
 	
 	file_name = source_file

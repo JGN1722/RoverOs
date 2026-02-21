@@ -39,7 +39,7 @@ int map_virtual_to_physical(void *vaddr, void *paddr) {
 	if (page_table_index == 1023) return false;
 	
 	if (!(page_directory[page_table_index] & PG_PRESENT)) {
-		page_directory[page_table_index] = palloc() | PG_PRESENT | PG_WRITE;
+		page_directory[page_table_index] = palloc() | PG_PRESENT | PG_WRITE; // TODO: check for out of mem
 		
 		uint32_t *page_table = get_page_table_vaddr(page_table_index);
 		for (uint32_t i = 0; i < 1024; i++) {
@@ -139,7 +139,7 @@ void setup_vmemory() {
 	page_directory[1023] = (page_directory & PG_ADDR_MASK) | PG_PRESENT | PG_WRITE;
 	
 	// Map first 4 Mib to the the third Gib, that's where the kernel is
-	uint32_t *page_table = (uint32_t *)(palloc());
+	uint32_t *page_table = (uint32_t *)(palloc()); // TODO: check for out of mem
 	
 	// Here's a bit of a hack, to solve the problem of the page table's physical
 	// address not being mapped. What I'm gonna do is get the bootloader's
