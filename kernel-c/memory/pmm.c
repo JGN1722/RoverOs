@@ -57,9 +57,9 @@ void enum_memory_map() {
 	memory_map_entry *entry = MEM_MAP_ENTRIES_START;
 	uint32_t entry_count = *(uint32_t *)MEM_MAP_ADDRESS;
 	
-	printf("Base Address\t\tLength\t\t\tType\t\tAcpi attribs\r\n");
+	printf("Base Address\t\tLength\t\t\tType\t\tAcpi attribs\n");
 	while (entry_count > 0) {
-		printf("%d%d\t%d%d\t%d\t%d\r\n", entry->base_hi, entry->base_low, entry->len_hi, entry->len_low, entry->type, entry->acpi_attribs);
+		printf("%d%d\t%d%d\t%d\t%d\n", entry->base_hi, entry->base_low, entry->len_hi, entry->len_low, entry->type, entry->acpi_attribs);
 		entry += sizeof(memory_map_entry);
 		entry_count--;
 	}
@@ -101,7 +101,7 @@ uint32_t fill_bitmap() {
 	return byte_count * PMM_BLOCK_SIZE;
 }
 
-void setup_memory() {
+void setup_pmemory() {
 	uint32_t detected_mem = fill_bitmap();
 	printf("(detected 0x%d usable bytes)", detected_mem);
 }

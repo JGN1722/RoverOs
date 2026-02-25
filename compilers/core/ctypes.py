@@ -163,9 +163,3 @@ class EmptyType(Type_):
 	def make_array(self, arg, len):
 		self.__class__ = ArrayType
 		self.__init__(arg, len)
-
-unsig_char_max = 255
-int_max = 2147483647
-int_min = -2147483648
-long_max = 9223372036854775807
-long_min = -9223372036854775808

@@ -329,23 +329,23 @@ def BuildChar():
 		if len(value) != 1:
 			Expected('single character')
 		if value == 'n':
-			char_value = '13'
+			char_value = 10
 		elif value == 't':
-			char_value = '9'
+			char_value = 9
 		elif value == '\\':
-			char_value = str(ord('\\'))
+			char_value = ord('\\')
 		elif value == "'":
-			char_value = str(ord("'"))
+			char_value = ord("'")
 		elif value == 'r':
-			char_value = '10'
+			char_value = 13
 		elif value == '0':
-			char_value = '0'
+			char_value = 0
 		else:
 			Expected('valid escape sequence')
 	else:
-		if len(value) != 1:
-			Expected('single character')
-		char_value = str(ord(value))
+		char_value = 0
+		for i in range(len(value)):
+			char_value += ord(value[i]) * (256 ** (len(value) - 1 - i))
 	RemoveToken()
 	MatchRemoveToken("'")
 	token_stream.insert(streampos, ('0', char_value, file_name, l, c))

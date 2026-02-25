@@ -1,12 +1,12 @@
 [[roverc::interrupt]] void master_irq_default() {
-	printf("Unhandled IRQ received (master)\r\n");
+	printf("Unhandled IRQ received (master)\n");
 	
 	outb(PIC1_COMMAND, PIC_EOI);
 	
 }
 
 [[roverc::interrupt]] void slave_irq_default() {
-	printf("Unhandled IRQ received (slave) \r\n");
+	printf("Unhandled IRQ received (slave) \n");
 	
 	outb(PIC2_COMMAND, PIC_EOI);
 	outb(PIC1_COMMAND, PIC_EOI);
@@ -17,7 +17,7 @@ __attribute__((roverc::interrupt)) void keyboard_handler() {
 	
 	// For now, read and discard the key scan code
 	set_terminal_color(key_code);
-	printf("Key pressed!\r\nKey code: %c\r\n", key_code);
+	printf("Key pressed!\nKey code: %c\n", key_code);
 	
 	outb(PIC1_COMMAND, PIC_EOI);
 }

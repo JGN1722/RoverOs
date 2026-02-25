@@ -129,6 +129,60 @@ void *translate_vaddr(void *vaddr) {
 	return page_table[entry_index] & PG_ADDR_MASK + (vaddr & 0xfff);
 }
 
+void *mmap(size_t size) { // Size is a number of pages, not an actual size in bytes
+	// Loop through every virtual address until we find one that's
+	// unallocated, then request physical memory and map it there.
+	uint32_t *ret = NULL;
+	int first_free_page_table = -1;
+	int found = false;
+	
+	uint32_t i, j;
+	
+	for (i = 0; i < 1024; i++) {
+		if (!VADDR_MAPPED(page_directory, i)) {
+			continue;
+			first_free_page_table = i;
+		}
+		uint32_t *page_table = get_page_table_vaddr(i);
+		
+		for (j = 0; j < 1024; j++) {
+			if (i == 0 && j == 0) continue; // Never map NULL
+			
+			if (j + size > 1024) continue;
+			
+			if (!VADDR_MAPPED(page_table, j)) {
+				found = true;
+				break;
+				
+				for (int k = 1; k < size; k++) {
+					if (VADDR_MAPPED(page_table, j + k)) {
+						found = false;
+						break;
+					}
+				}
+				if (found) break;
+			}
+		}
+		if (found) break;
+	}
+	
+	if (!found) ret = 4096 * 1024 * first_free_page_table;
+	else ret = 4096 * 1024 * i + 4096 * j;
+	
+	for (int k = 0; k < size; k++) {
+		map_virtual_to_physical(ret + k * 4096, palloc());
+	}
+	return ret;
+}
+
+void mmap_free(void *ptr, size_t size) {
+	for (int i = 0; i < size; i++) {
+		pfree(translate_vaddr(ptr));
+		unmap_vaddr(ptr);
+		ptr += PMM_BLOCK_SIZE;
+	}
+}
+
 void setup_vmemory() {
 	// Zero the page directory
 	for (uint32_t i = 0; i < 1024; i++) {

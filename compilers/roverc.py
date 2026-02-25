@@ -4,7 +4,6 @@ Written for RoverOs
 Author: JGN1722 (Github)
 """
 
-from colorama import Fore, Style, init as init_colorama
 import subprocess
 import sys
 import os

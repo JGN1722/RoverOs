@@ -5,7 +5,7 @@ Author: JGN1722 (Github)
 Description: The fourth stage of the compiler, that takes an AST and generates assembly code from it
 """
 
-# There are 4 TODOs ( + 1 in helpers.py, 1 in roverc.py and 1 in preproc.py )
+# There are 4 TODOs ( + 1 in helpers.py and 1 in preproc.py )
 
 from core.helpers import *
 import core.symboltable as st
@@ -135,8 +135,12 @@ def CompileGlobalDecl(node):
 		if not isinstance(t, ctypes.NumberType) and not isinstance(t, ctypes.PointerType):
 			abort('Cannot initialize a non-number variable')
 		if node.children[0].type != 'Number':
-			abort('Initializer element is not constant')
-		cg.AllocateInitGlobalVariable(name, size if size != 0 else abort('Unknown storage size of ' + name), node.children[0].value)
+			if node.children[0].type == 'TypeCast' and node.children[0].children[0].type == 'Number':
+				cg.AllocateInitGlobalVariable(name, size if size != 0 else abort('Unknown storage size of ' + name), node.children[0].children[0].value)
+			else:
+				abort('Initializer element is not constant')
+		else:
+			cg.AllocateInitGlobalVariable(name, size if size != 0 else abort('Unknown storage size of ' + name), node.children[0].value)
 	else:
 		cg.AllocateGlobalVariable(name, size if size != 0 else abort('Unknown storage size of ' + name))
 
@@ -344,14 +348,19 @@ def CompileDoWhile(node):
 def CompileLocDecl(node):
 	global allocated_stack_units
 	
-	allocated_stack_units += 1
-	
 	if ident_ST.symbol_exists(node.value['name']):
 		abort('identifier redefinition (' + node.value['name'] + ')')
 	
 	vt = node.value['type']
 	if isinstance(vt, ctypes.FunctionType):
 		abort('nested functions are not allowed')
+	
+	size = GetTypeSize(node.value['type'])
+	if size % 4 == 0:
+		allocated = size // 4
+	else:
+		allocated = 1 + size // 4
+	allocated_stack_units += allocated
 	
 	ident_ST.add_symbol(node.value['name'], node.value, stack_offset=allocated_stack_units)
 	

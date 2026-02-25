@@ -22,6 +22,8 @@
 #define PG_GLOBAL	0b000010000000
 #define PG_PAT		0b000100000000
 
+#define VADDR_MAPPED(p, i) (p[(i)] & PG_ADDR_MASK != 0)
+
 // The three other flags are undefined
 
 void load_page_dir(uint32_t *page_directory);
@@ -34,6 +36,8 @@ void set_page_flags(void *vaddr, uint32_t flags);
 void clear_page_flags(void *vaddr, uint32_t flags);
 uint32_t get_page_flags(void *vaddr);
 void *translate_vaddr(void *vaddr);
+void *mmap(size_t size);
+void mmap_free(void *ptr, size_t size);
 void setup_vmemory();
 
 #endif

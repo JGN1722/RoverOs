@@ -24,6 +24,6 @@ void *palloc();
 void pfree(void *block);
 void enum_memory_map();
 uint32_t fill_bitmap();
-void setup_memory(); 
+void setup_pmemory(); 
 
 #endif

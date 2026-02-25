@@ -9,7 +9,7 @@ Because of these added challenges, RoverOs is currently under heavy development,
 - [x] VGA driver
 - [x] Physical memory manager
 - [x] Virtual memory
-- [ ] Kernel heap
+- [x] Kernel heap
 - [x] Global descriptor table
 - [x] Higher half kernel
 - [x] Ext2 file system
