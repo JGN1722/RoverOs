@@ -35,8 +35,9 @@ To build RoverOs on windows, run the provided build script. If you wish to run t
 To do so, you need to have Bochs installed. I have not tested building on Linux, or running with other emulators.  
 
 ## Acknowledgments  
-This project is inspired by various OS development resources, mostly on the [OsDev wiki](https://wiki.osdev.org/Expanded_Main_Page). For the compiler, I must thank Jack Crenshaw and his incredibly useful [Let's Build a Compiler](https://compilers.iecc.com/crenshaw/), as well as Ruslan Spivak for his blog series [Let's build a simple interpreter](https://ruslanspivak.com/lsbasi-part1/). My inspiration comes from tishion's [PiscisOs](https://tishion.github.io/PiscisOS/).
+This project is inspired by various OS development resources, mostly on the [OsDev wiki](https://wiki.osdev.org/Expanded_Main_Page). For the compiler, I must thank Jack Crenshaw and his incredibly useful [Let's Build a Compiler](https://compilers.iecc.com/crenshaw/), as well as Ruslan Spivak for his blog series [Let's build a simple interpreter](https://ruslanspivak.com/lsbasi-part1/). My inspiration comes from tishion's [PiscisOs](https://tishion.github.io/PiscisOS/). Thank you to [fysnet's FYSOS](https://github.com/fysnet/FYSOS) for the bucket heap algorithm.
 
 ---
+
 
 **Disclaimer:** This project is for educational and experimental purposes. It is not intended for production use, and has not been tested on real hardware yet.  
