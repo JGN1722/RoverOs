@@ -39,7 +39,8 @@ int map_virtual_to_physical(void *vaddr, void *paddr) {
 	if (page_table_index == 1023) return false;
 	
 	if (!(page_directory[page_table_index] & PG_PRESENT)) {
-		page_directory[page_table_index] = palloc() | PG_PRESENT | PG_WRITE; // TODO: check for out of mem
+		page_directory[page_table_index] = palloc() | PG_PRESENT | PG_WRITE;
+		if (page_directory[page_table_index] == NULL) PANIC("out of physical memory");
 		
 		uint32_t *page_table = get_page_table_vaddr(page_table_index);
 		for (uint32_t i = 0; i < 1024; i++) {
@@ -170,7 +171,15 @@ void *mmap(size_t size) { // Size is a number of pages, not an actual size in by
 	else ret = 4096 * 1024 * i + 4096 * j;
 	
 	for (int k = 0; k < size; k++) {
-		map_virtual_to_physical(ret + k * 4096, palloc());
+		void *ptr = palloc();
+		if (ptr == NULL) {
+			for (int kk = 0; kk < k; kk++) {
+				pfree(translate_vaddr(ret + kk * 4096));
+				unmap_vaddr(ret + kk * 4096);
+			}
+			return NULL;
+		}
+		map_virtual_to_physical(ret + k * 4096, ptr);
 	}
 	return ret;
 }
@@ -183,7 +192,7 @@ void mmap_free(void *ptr, size_t size) {
 	}
 }
 
-void setup_vmemory() {
+int setup_vmemory() {
 	// Zero the page directory
 	for (uint32_t i = 0; i < 1024; i++) {
 		page_directory[i] = 0x00000000 | PG_WRITE;
@@ -193,7 +202,8 @@ void setup_vmemory() {
 	page_directory[1023] = (page_directory & PG_ADDR_MASK) | PG_PRESENT | PG_WRITE;
 	
 	// Map first 4 Mib to the the third Gib, that's where the kernel is
-	uint32_t *page_table = (uint32_t *)(palloc()); // TODO: check for out of mem
+	uint32_t *page_table = (uint32_t *)(palloc());
+	if (page_table == NULL) PANIC("out of physical memory");
 	
 	// Here's a bit of a hack, to solve the problem of the page table's physical
 	// address not being mapped. What I'm gonna do is get the bootloader's
@@ -213,4 +223,6 @@ void setup_vmemory() {
 	page_directory[0x300] = ((uint32_t)page_table) | PG_PRESENT | PG_WRITE;
 	
 	load_page_dir(page_directory - 0xc0000000);
+	
+	return 0;
 }

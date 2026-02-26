@@ -69,9 +69,6 @@ class Attribute: # TODO: better attribute handling
 	def __eq__(self, other):
 		return self.vendor == other.vendor and self.name == other.name and self.arguments == other.arguments
 
-class TestModeError(Exception):
-	pass
-
 def GetSizeQualifier(s):
 	return "DWORD" if s == 4 else "WORD" if s == 2 else "BYTE" if s == 1 else ""
 
@@ -166,6 +163,26 @@ def convert_to_ext(file_path, new_ext):
 		
 	# If an extension exists, replace it with the new extension
 	return base + '.' + new_ext
+
+def levenshtein(str1, str2):
+	d = [None] * (len(str1) + 1)
+	for i in range(len(d)):
+		d[i] = [None] * (len(str2) + 1)
+	
+	for i in range(len(str2) + 1):
+		d[0][i] = i
+	for i in range(len(str1) + 1):
+		d[i][0] = i
+	
+	for i in range(1, len(str1) + 1):
+		for j in range(1, len(str2) + 1):
+			k = 0
+			if str1[i - 1] != str2[j - 1]:
+				k = 1
+			
+			d[i][j] = min(d[i][j - 1] + 1, d[i -  1][j] + 1, d[i - 1][j - 1] + k)
+	
+	return d[len(str1)][len(str2)]
 
 # Error functions
 def abort(s):

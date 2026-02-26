@@ -1,11 +1,11 @@
-[[roverc::interrupt]] void except_default() {      printf("Unhandled exception\n");}
-[[roverc::interrupt]] void except_null_div() {     printf("Division by 0\n");}
-[[roverc::interrupt]] void except_overflow() {     printf("Overflow\n");}
-[[roverc::interrupt]] void except_double_fault() { printf("Double fault\n");}
-[[roverc::interrupt]] void except_ss_fault() {     printf("Stack segment fault\n");}
-[[roverc::interrupt]] void except_gpf() {          printf("General protection fault\n");}
-[[roverc::interrupt]] void except_page_fault() {   printf("Page fault\n");}
-[[roverc::interrupt]] void except_float() {        printf("Floating point exception\n");}
+[[roverc::interrupt]] void except_default() {      PANIC("Unhandled exception");}
+[[roverc::interrupt]] void except_null_div() {     PANIC("Division by 0");}
+[[roverc::interrupt]] void except_overflow() {     PANIC("Overflow");}
+[[roverc::interrupt]] void except_double_fault() { PANIC("Double fault");}
+[[roverc::interrupt]] void except_ss_fault() {     PANIC("Stack segment fault");}
+[[roverc::interrupt]] void except_gpf() {          PANIC("General protection fault");}
+[[roverc::interrupt]] void except_page_fault() {   PANIC("Page fault");}
+[[roverc::interrupt]] void except_float() {        PANIC("Floating point exception");}
 
 void install_exception_interrupts() {
 	// First, install the default handler everywhere

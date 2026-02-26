@@ -66,10 +66,12 @@ void install_generic_interrupt_handler() {
 	}
 }
 
-void setup_interrupts() {
+int setup_interrupts() {
 	build_idt();
 	install_generic_interrupt_handler();
 	install_exception_interrupts();
 	install_irq_interrupts();
 	PIC_remap(MASTER_IRQ_VECTOR_OFFSET, SLAVE_IRQ_VECTOR_OFFSET);
+	
+	return 0;
 }

@@ -42,7 +42,7 @@ struct mem_pebble_t {
 	struct mem_pebble_t *next;
 };
 
-void malloc_init(size_t size);
+int malloc_init(size_t size);
 void *kmalloc(size_t size);
 void *krealloc(void *ptr, size_t size);
 void kfree(void *ptr);

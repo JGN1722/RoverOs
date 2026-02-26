@@ -35,7 +35,17 @@ def Undefined(n):
 	if IsKeyword(n):
 		abort(n + ' is misplaced')
 	else:
-		abort("Undefined identifier (" + n + ")")
+		min_dist = len(n) + 1
+		suggestion = ''
+		for symbol in ident_ST.symbol_list():
+			d = levenshtein(n, symbol)
+			if d <= min_dist:
+				min_dist = d
+				suggestion = symbol
+		if suggestion != '' and d < min(len(n) - 1, 3):
+			abort(f'Undefined identifier ({n}). Did you mean {suggestion} ?')
+		else:
+			abort(f'Undefined identifier ({n})')
 
 # A debug routine to dump the AST
 tab_number = 0
@@ -245,7 +255,7 @@ def CompileBlock(node, can_break=False, can_continue=False, break_label='', cont
 			CompileDoWhile(statement)
 		elif statement.value == 'RETURN':
 			CompileReturn(statement)
-		elif statement.value == 'Block':
+		elif statement.type == 'Block':
 			CompileBlock(statement, can_break, can_continue, break_label, continue_label)
 		elif statement.value == 'BREAK':
 			CompileBreak(statement, can_break, break_label)

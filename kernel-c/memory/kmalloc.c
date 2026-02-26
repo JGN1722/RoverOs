@@ -221,7 +221,7 @@ void *krealloc(void *ptr, size_t size) {
 	if (pebble->magic != MALLOC_MAGIC_PEBBLE) return NULL;
 	
 	if (size <= pebble->size) {
-		ret = pebble;
+		ret = ptr;
 	} else {
 		ret = kmalloc(size);
 		if (ret) {
@@ -233,12 +233,16 @@ void *krealloc(void *ptr, size_t size) {
 	return ret;
 }
 
-void malloc_init(size_t size) {
+int malloc_init(size_t size) {
 	kernel_heap = create_bucket(size);
+	if (kernel_heap != NULL) return 0;
+	else return 1;
 }
 
-void setup_memory() {
-	setup_pmemory();
-	setup_vmemory();
-	malloc_init(PMM_BLOCK_SIZE);
+int setup_memory() {
+	int r1 = setup_pmemory();
+	int r2 = setup_vmemory();
+	int r3 = malloc_init(PMM_BLOCK_SIZE);
+	
+	return r1 | r2 | r3;
 }

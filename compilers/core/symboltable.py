@@ -29,6 +29,12 @@ class SymbolTable:
 	
 	def symbol_in_first_scope(self, name):
 		return name in self.scopes[0]
+	
+	def symbol_list(self):
+		lst = []
+		for i in range(len(self.scopes)):
+			lst += self.scopes[i].keys()
+		return lst
 
 class IdentSymbolTable(SymbolTable):
 	def __init__(self):

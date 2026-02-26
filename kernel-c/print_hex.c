@@ -1,5 +1,5 @@
 char buffd[9];
-char* cstrud(uint32_t num) {
+const char* cstrud(uint32_t num) {
 	buffd[8] = '\0';
 	
 	char c;
@@ -14,7 +14,7 @@ char* cstrud(uint32_t num) {
 }
 
 char buffb[3];
-char* cstrub(uint8_t num) {
+const char* cstrub(uint8_t num) {
 	buffb[2] = '\0';
 	
 	char c;

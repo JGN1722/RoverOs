@@ -18,4 +18,11 @@ typedef uint32_t size_t;
 #define max(A,B) ((A) > (B) : (A) ? (B))
 #define min(A,B) ((A) < (B) : (A) ? (B))
 
+#define PANIC(str) \
+{\
+	printf("Kernel panic in file %s, line %d!\n%s\n", __FILE__, __LINE__, str);\
+	asm("cli");\
+	while (1) asm("hlt");\
+}
+
 #endif

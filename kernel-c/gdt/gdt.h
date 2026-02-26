@@ -21,6 +21,6 @@ typedef struct gdtr_t gdtr_t;
 #define CODE_SEG 0x08
 #define DATA_SEG 0x10
 
-void setup_gdt();
+int setup_gdt();
 
 #endif

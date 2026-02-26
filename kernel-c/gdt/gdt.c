@@ -26,7 +26,7 @@ void flush_gdt(gdtr_t *gdtr, uint16_t data_seg) {
 	asm(".end:");
 }
 
-void setup_gdt() {
+int setup_gdt() {
 	set_descriptor(NULL_SEG / sizeof(gdt_descriptor_t), 0, 0, 0);
 	set_descriptor(CODE_SEG / sizeof(gdt_descriptor_t), 0, 0xfffff, 0b110010011010);
 	set_descriptor(DATA_SEG / sizeof(gdt_descriptor_t), 0, 0xfffff, 0b110010010010);
@@ -35,4 +35,5 @@ void setup_gdt() {
 	gdtr.base = &gdt;
 	
 	flush_gdt(&gdtr, DATA_SEG);
+	return 0;
 }

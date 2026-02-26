@@ -38,6 +38,6 @@ uint32_t get_page_flags(void *vaddr);
 void *translate_vaddr(void *vaddr);
 void *mmap(size_t size);
 void mmap_free(void *ptr, size_t size);
-void setup_vmemory();
+int setup_vmemory();
 
 #endif

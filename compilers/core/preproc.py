@@ -303,7 +303,7 @@ def BuildString():
 		string_value += value
 		RemoveToken()
 	MatchRemoveToken(chr(34))
-	token_stream.insert(streampos, ("s", string_value, f, l, c))
+	token_stream.insert(streampos, ('s', string_value, f, l, c))
 	
 	Reload()
 
@@ -459,6 +459,16 @@ def BuildNumber():
 	token_stream.insert(streampos, ('0', str(n), file_name, l, c))
 	Reload()
 
+def InsertLineNumber():
+	l, c = line_number, character_number
+	MatchRemoveToken('__LINE__')
+	token_stream.insert(streampos, ('0', str(l), file_name, l, c))
+
+def InsertFileName():
+	l, c = line_number, character_number
+	MatchRemoveToken('__FILE__')
+	token_stream.insert(streampos, ('s', file_name, file_name, l, c))
+
 def PreprocessTokenBlock(root_level=True):
 	global still_in_macro
 	
@@ -478,10 +488,14 @@ def PreprocessTokenBlock(root_level=True):
 				BuildString()
 			elif token == "'":
 				BuildChar()
-			elif value == "0":
+			elif value == '0':
 				BuildNumber()
 			elif IsBlank(token):
 				RemoveToken()
+			elif value == '__LINE__':
+				InsertLineNumber()
+			elif value == '__FILE__':
+				InsertFileName()
 			else:
 				Next()
 			

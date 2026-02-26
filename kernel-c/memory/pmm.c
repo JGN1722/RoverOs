@@ -101,7 +101,10 @@ uint32_t fill_bitmap() {
 	return byte_count * PMM_BLOCK_SIZE;
 }
 
-void setup_pmemory() {
+int setup_pmemory() {
 	uint32_t detected_mem = fill_bitmap();
 	printf("(detected 0x%d usable bytes)", detected_mem);
+	
+	if (detected_mem != 0) return 0;
+	else return 1;
 }

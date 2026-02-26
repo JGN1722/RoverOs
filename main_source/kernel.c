@@ -14,14 +14,20 @@
 #include "../kernel-c/memory/vmm.c"
 #include "../kernel-c/memory/kmalloc.c"
 
-// TODO: error handling
-void init_component(char *msg, void (*fptr)(void)) {
-	set_terminal_color(COLOR(WHITE,BLACK));
+void init_component(char *msg, int (*fptr)(void)) {
 	printf(" + %s", msg);
-	fptr();
-	set_terminal_color(COLOR(GREEN,BLACK));
-	printf(" [ OK ]\n");
-	set_terminal_color(COLOR(WHITE,BLACK));
+	int ret = fptr();
+	
+	if (ret) {
+		set_terminal_color(COLOR(RED,BLACK));
+		printf(" [ ERROR ]\n");
+		set_terminal_color(COLOR(WHITE,BLACK));
+		asm("hlt");
+	} else {
+		set_terminal_color(COLOR(GREEN,BLACK));
+		printf(" [ OK ]\n");
+		set_terminal_color(COLOR(WHITE,BLACK));
+	}
 }
 
 int main() {
