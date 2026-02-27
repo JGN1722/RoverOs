@@ -9,7 +9,6 @@ import sys
 import os
 
 script_directory = os.path.dirname(os.path.abspath(__file__))
-include_directory = script_directory + '/ROVERINCLUDE/'
 
 # Import the needed files
 from core.helpers import *
@@ -25,31 +24,32 @@ commandline.script_directory = script_directory
 tokenizer.script_directory = script_directory
 preproc.script_directory = script_directory
 
-preproc.include_directory = include_directory
-
-
 def compile(asm):
 	global source_file, output_file
 	
-	with open(script_directory + "\\output.asm", "w") as file:
+	asm_file = os.path.join(script_directory, 'output.asm')
+	with open(asm_file, 'w') as file:
 		file.write(asm)
 	
-	subprocess.run([script_directory + "\\fasm.exe",script_directory + "\\output.asm",output_file])
+	if sys.platform.lower().startswith('win'):
+		assembler = os.path.join(script_directory, 'fasm.exe')
+	elif sys.platform.lower().startswith('linux'):
+		assembler = os.path.join(script_directory, 'fasm')
+	subprocess.run([assembler, asm_file, output_file])
 
 # Error functions
 def abort(s):
 	err.abort(s)
 
-file_name = ""
-source_file = ""
-output_file = ""
+file_name = ''
+output_file = ''
 
 # A debug routine to dump the AST
 tab_number = 0
 def print_node(node):
 	global tab_number
 	
-	print("\t" * tab_number,f"Node {node.type} with value {node.value}")
+	print('\t' * tab_number,f'Node {node.type} with value {node.value}')
 	if node.children != []:
 		tab_number += 1
 		
@@ -57,21 +57,19 @@ def print_node(node):
 			try:
 				print_node(child)
 			except:
-				print("\t" * tab_number,child)
+				print('\t' * tab_number,child)
 		
 		tab_number -= 1
 
 # Main code
 if __name__ == "__main__":
 	# Check the command line arguments and options
-	source_file, output_file, format, run_tests = commandline.ParseCommandLine()
+	file_name, output_file, format = commandline.ParseCommandLine()
 	
 	# Read the source
-	if source_file == '':
+	if file_name == '':
 		abort('source file not specified')
-	source_text = ReadSourceText(source_file, script_directory)
-	
-	file_name = source_file
+	source_text = ReadSourceText(file_name, script_directory)
 	
 	# Tokenize the program
 	tokenizer.file_name = file_name
@@ -98,4 +96,3 @@ if __name__ == "__main__":
 	
 	# Assemble the program
 	compile(asm)
-

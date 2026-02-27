@@ -14,7 +14,7 @@ import core.error as err
 script_directory = ""
 
 # The messages displayed to the user via the command line
-help_message = "RoverC Compiler\n" + "Written for RoverOs\n" + "Author: JGN1722 (Github)\n\n" + "Usage: roverc.py [--help | --version] [--freestanding] [--test] filename [output_filename]"
+help_message = "RoverC Compiler\n" + "Written for RoverOs\n" + "Author: JGN1722 (Github)\n\n" + "Usage: roverc.py [--help | --version] [--freestanding] filename [output_filename]"
 version_message = "RoverC Compiler\n" + "Written for RoverOs\n" + "Author: JGN1722 (Github)\n" + "Version: 1.0"
 
 def ParseCommandLine():
@@ -27,8 +27,6 @@ def ParseCommandLine():
 	# 'w' format indicates that the output will run under windows
 	# 'f' format indicates that the output will run on metal, such as when writing OSs
 	format = ''
-	
-	run_tests = False
 	
 	# Get the arguments
 	for arg in sys.argv[1:]:
@@ -52,18 +50,16 @@ def ParseCommandLine():
 	
 	# Act following the arguments
 	for opt in options:
-		if opt == "h" or opt == "help":
+		if opt == 'h' or opt == 'help':
 			print(help_message)
 			sys.exit()
-		elif opt == "v" or opt == "version":
+		elif opt == 'v' or opt == 'version':
 			print(version_message)
 			sys.exit()
-		elif opt == "f" or opt == "freestanding":
-			format = "f"
-		elif opt == "t" or opt == "test":
-			run_tests = True
+		elif opt == 'f' or opt == 'freestanding':
+			format = 'f'
 		else:
-			abort("Unrecognized option: " + opt)
+			abort('Unrecognized option: ' + opt)
 	
 	if format == '':
 		if sys.platform.lower().startswith('win'):
@@ -77,19 +73,21 @@ def ParseCommandLine():
 	if len(arguments) >= 1:
 		source_file = get_abs_path(arguments[0], os.getcwd())
 	else:
-		source_file = ""
+		source_file = ''
 	
 	# The output path is the second argument, if specified
 	if len(arguments) >= 2:
 		output_file = get_abs_path(arguments[1], os.getcwd())
 	
 	# If nothing is specified, deduce the output path by appending the extension corresponding to the format
-	elif format == "w":
+	elif format == 'w':
 		output_file = convert_to_ext(get_abs_path(source_file, script_directory), 'exe')
-	elif format == "f":
+	elif format == 'f':
 		output_file = convert_to_ext(get_abs_path(source_file, script_directory), 'bin')
+	elif format == 'l':
+		abort('Cannot currently compile for Linux')
 	
-	return source_file, output_file, format, run_tests
+	return source_file, output_file, format
 
 # Error functions
 def abort(s):

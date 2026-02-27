@@ -13,7 +13,6 @@ import core.tokenizer as tokenizer
 import core.error as err
 
 script_directory = ''
-include_directory = ''
 fmt = ''
 
 token_stream = []

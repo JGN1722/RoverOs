@@ -805,10 +805,10 @@ class SuperBlock:
 			self.def_resgid
 		).ljust(1024, b'\x00')
 
-script_dir = os.path.dirname(os.path.abspath(__file__)) + '\\'
-KERNEL_FILE = script_dir + '..\\image\\kernel.bin'
-BOOTLOADER = script_dir + '..\\image\\boot_sect.bin'
-IMAGE_NAME = script_dir + '..\\image\\image.bin'
+script_dir = os.path.dirname(os.path.abspath(__file__))
+KERNEL_FILE = os.path.join(script_dir,'../image/kernel.bin')
+BOOTLOADER = os.path.join(script_dir,'../image/boot_sect.bin')
+IMAGE_NAME = os.path.join(script_dir,'../image/image.bin')
 
 fs = FileSystem(
 	boot_file=BOOTLOADER,

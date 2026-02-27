@@ -4,6 +4,7 @@
 
 // Drivers
 #include "../kernel-c/drivers/vga.c"
+#include "../kernel-c/drivers/disk.c"
 
 // Descriptor tables
 #include "../kernel-c/gdt/gdt.c"

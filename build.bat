@@ -4,7 +4,7 @@
 :: Written by JGN1722 (Github)
 ::
 :: View the source on Github:
-:: github.com/JGN1722/RoverOs
+:: https://github.com/JGN1722/RoverOs
 ::
 
 cd /d %~dp0
